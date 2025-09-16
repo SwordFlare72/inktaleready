@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
 const GENRES = [
-  { value: "", label: "All Genres" },
+  { value: "all", label: "All Genres" },
   { value: "romance", label: "Romance" },
   { value: "fantasy", label: "Fantasy" },
   { value: "mystery", label: "Mystery" },
@@ -27,7 +27,7 @@ export default function Search() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [genre, setGenre] = useState("");
+  const [genre, setGenre] = useState("all");
 
   // Debounce search term
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function Search() {
     debouncedSearchTerm.trim().length > 0
       ? {
           searchTerm: debouncedSearchTerm.trim(),
-          genre: genre || undefined,
+          genre: genre !== "all" ? genre : undefined,
         }
       : "skip"
   );

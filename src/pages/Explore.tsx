@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 
 const GENRES = [
-  { value: "", label: "All Genres" },
+  { value: "all", label: "All Genres" },
   { value: "romance", label: "Romance" },
   { value: "fantasy", label: "Fantasy" },
   { value: "mystery", label: "Mystery" },
@@ -32,13 +32,13 @@ const SORT_OPTIONS = [
 export default function Explore() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [genre, setGenre] = useState("");
+  const [genre, setGenre] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [cursor, setCursor] = useState<string | null>(null);
 
   const stories = useQuery(api.stories.listExplore, {
     paginationOpts: { numItems: 12, cursor },
-    genre: genre || undefined,
+    genre: genre !== "all" ? genre : undefined,
     sortBy: sortBy as any,
   });
 
