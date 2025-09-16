@@ -234,3 +234,81 @@ export const searchStories = query({
     return storiesWithAuthors;
   },
 });
+
+// Get stories for explore page with filtering and sorting
+export const listExplore = query({
+  args: {
+    paginationOpts: v.object({
+      numItems: v.number(),
+      cursor: v.union(v.string(), v.null()),
+    }),
+    genre: v.optional(v.string()),
+    sortBy: v.optional(v.union(v.literal("popular"), v.literal("recent"), v.literal("views"))),
+  },
+  handler: async (ctx, args) => {
+    let base;
+    
+    if (args.genre) {
+      base = ctx.db
+        .query("stories")
+        .withIndex("by_published_and_genre", (q) => 
+          q.eq("isPublished", true).eq("genre", args.genre as any)
+        );
+    } else {
+      base = ctx.db
+        .query("stories")
+        .withIndex("by_published", (q) => q.eq("isPublished", true));
+    }
+
+    // Apply ordering based on sortBy
+    if (args.sortBy === "recent") {
+      base = base.order("desc");
+    } else {
+      // For popular/views, we'll sort in memory within the page
+      base = base.order("desc");
+    }
+
+    const result = await base.paginate(args.paginationOpts);
+
+    // Sort in memory for popular/views (within the current page only)
+    if (args.sortBy === "popular") {
+      result.page.sort((a, b) => b.totalLikes - a.totalLikes);
+    } else if (args.sortBy === "views") {
+      result.page.sort((a, b) => b.totalViews - a.totalViews);
+    }
+
+    // Attach author info
+    const pageWithAuthors = await Promise.all(
+      result.page.map(async (story) => {
+        const author = await ctx.db.get(story.authorId);
+        return {
+          ...story,
+          author: author ? { name: author.name, image: author.image } : null,
+        };
+      })
+    );
+
+    return {
+      ...result,
+      page: pageWithAuthors,
+    };
+  },
+});
+
+// Check if user is following a story
+export const isFollowing = query({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return false;
+
+    const follow = await ctx.db
+      .query("storyFollows")
+      .withIndex("by_user_and_story", (q) => 
+        q.eq("userId", user._id).eq("storyId", args.storyId)
+      )
+      .unique();
+
+    return !!follow;
+  },
+});

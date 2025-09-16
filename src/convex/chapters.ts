@@ -201,3 +201,26 @@ export const hasUserLikedChapter = query({
     return !!like;
   },
 });
+
+// Get adjacent chapters for navigation
+export const getAdjacent = query({
+  args: { chapterId: v.id("chapters") },
+  handler: async (ctx, args) => {
+    const chapter = await ctx.db.get(args.chapterId);
+    if (!chapter) return { prevId: null, nextId: null };
+
+    const chapters = await ctx.db
+      .query("chapters")
+      .withIndex("by_story", (q) => q.eq("storyId", chapter.storyId))
+      .filter((q) => q.eq(q.field("isPublished"), true))
+      .order("asc")
+      .collect();
+
+    const currentIndex = chapters.findIndex(ch => ch._id === args.chapterId);
+    
+    return {
+      prevId: currentIndex > 0 ? chapters[currentIndex - 1]._id : null,
+      nextId: currentIndex < chapters.length - 1 ? chapters[currentIndex + 1]._id : null,
+    };
+  },
+});

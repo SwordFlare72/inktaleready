@@ -88,7 +88,9 @@ const schema = defineSchema(
       .index("by_author", ["authorId"])
       .index("by_genre", ["genre"])
       .index("by_published", ["isPublished"])
-      .index("by_last_updated", ["lastUpdated"]),
+      .index("by_last_updated", ["lastUpdated"])
+      .index("by_published_and_genre", ["isPublished", "genre"])
+      .index("by_published_and_last_updated", ["isPublished", "lastUpdated"]),
 
     // Chapters table
     chapters: defineTable({

@@ -18,6 +18,9 @@ import type * as auth from "../auth.js";
 import type * as chapters from "../chapters.js";
 import type * as comments from "../comments.js";
 import type * as http from "../http.js";
+import type * as notifications from "../notifications.js";
+import type * as readingProgress from "../readingProgress.js";
+import type * as seedDemo from "../seedDemo.js";
 import type * as stories from "../stories.js";
 import type * as users from "../users.js";
 
@@ -35,6 +38,9 @@ declare const fullApi: ApiFromModules<{
   chapters: typeof chapters;
   comments: typeof comments;
   http: typeof http;
+  notifications: typeof notifications;
+  readingProgress: typeof readingProgress;
+  seedDemo: typeof seedDemo;
   stories: typeof stories;
   users: typeof users;
 }>;
