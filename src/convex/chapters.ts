@@ -233,11 +233,22 @@ export const toggleChapterLike = mutation({
     const chapter = await ctx.db.get(args.chapterId);
     if (!chapter) throw new Error("Chapter not found");
 
+    // Fetch parent story for aggregate updates
+    const story = await ctx.db.get(chapter.storyId);
+
     if (existing) {
       await ctx.db.delete(existing._id);
       await ctx.db.patch(args.chapterId, {
         likes: Math.max(0, chapter.likes - 1),
       });
+
+      // Decrement story totalLikes if available
+      if (story) {
+        await ctx.db.patch(chapter.storyId, {
+          totalLikes: Math.max(0, story.totalLikes - 1),
+        });
+      }
+
       return false;
     } else {
       await ctx.db.insert("chapterLikes", {
@@ -247,6 +258,14 @@ export const toggleChapterLike = mutation({
       await ctx.db.patch(args.chapterId, {
         likes: chapter.likes + 1,
       });
+
+      // Increment story totalLikes if available
+      if (story) {
+        await ctx.db.patch(chapter.storyId, {
+          totalLikes: story.totalLikes + 1,
+        });
+      }
+
       return true;
     }
   },
@@ -312,6 +331,7 @@ export const deleteChapter = mutation({
       .query("chapterLikes")
       .withIndex("by_chapter", (q) => q.eq("chapterId", args.chapterId))
       .collect();
+    const likesCount = likes.length;
 
     for (const like of likes) {
       await ctx.db.delete(like._id);
@@ -328,12 +348,18 @@ export const deleteChapter = mutation({
     }
 
     // Update story totals
+    const patches: Record<string, number> = {
+      lastUpdated: Date.now(),
+    } as any;
+
     if (chapter.isPublished) {
-      await ctx.db.patch(chapter.storyId, {
-        totalChapters: Math.max(0, story.totalChapters - 1),
-        lastUpdated: Date.now(),
-      });
+      patches.totalChapters = Math.max(0, story.totalChapters - 1);
     }
+
+    // Subtract this chapter's likes from story totalLikes
+    patches.totalLikes = Math.max(0, story.totalLikes - likesCount);
+
+    await ctx.db.patch(chapter.storyId, patches as any);
 
     await ctx.db.delete(args.chapterId);
     return true;
