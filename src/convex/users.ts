@@ -33,6 +33,76 @@ export const getCurrentUser = async (ctx: QueryCtx) => {
   return await ctx.db.get(userId);
 };
 
+// Add: is user following another user?
+export const isFollowingUser = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) return false;
+    if (me._id === args.userId) return false;
+
+    const existing = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", me._id))
+      .filter((q) => q.eq(q.field("followingId"), args.userId))
+      .unique();
+
+    return !!existing;
+  },
+});
+
+// Add: list followers of a user
+export const listFollowers = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("follows")
+      .withIndex("by_following", (q) => q.eq("followingId", args.userId))
+      .collect();
+
+    const users = await Promise.all(
+      rows.map(async (r) => {
+        const u = await ctx.db.get(r.followerId);
+        if (!u) return null;
+        return {
+          _id: u._id,
+          name: u.name,
+          image: u.image,
+          bio: u.bio,
+        };
+      })
+    );
+
+    return users.filter(Boolean);
+  },
+});
+
+// Add: list following of a user
+export const listFollowing = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
+      .collect();
+
+    const users = await Promise.all(
+      rows.map(async (r) => {
+        const u = await ctx.db.get(r.followingId);
+        if (!u) return null;
+        return {
+          _id: u._id,
+          name: u.name,
+          image: u.image,
+          bio: u.bio,
+        };
+      })
+    );
+
+    return users.filter(Boolean);
+  },
+});
+
 // Get user by ID (public profile)
 export const getUserPublic = query({
   args: { userId: v.id("users") },
@@ -47,10 +117,16 @@ export const getUserPublic = query({
       .filter((q) => q.eq(q.field("isPublished"), true))
       .collect();
 
-    // Get follower count
+    // Followers
     const followers = await ctx.db
       .query("follows")
       .withIndex("by_following", (q) => q.eq("followingId", args.userId))
+      .collect();
+
+    // Add: Following count
+    const following = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
       .collect();
 
     return {
@@ -61,6 +137,7 @@ export const getUserPublic = query({
       isWriter: user.isWriter,
       writerLevel: user.writerLevel || 1,
       totalFollowers: followers.length,
+      totalFollowing: following.length, // Add: following count
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,

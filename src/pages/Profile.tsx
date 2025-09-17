@@ -13,6 +13,7 @@ import { Edit, Users, BookOpen, Eye, Heart } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import { DialogDescription } from "@/components/ui/dialog";
 
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,8 @@ export default function Profile() {
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editImage, setEditImage] = useState("");
+  const [openFollowers, setOpenFollowers] = useState(false);
+  const [openFollowing, setOpenFollowing] = useState(false);
 
   const isOwnProfile = !id || (currentUser && id === currentUser._id);
   const targetUserId = id as Id<"users"> | undefined;
@@ -54,6 +57,24 @@ export default function Profile() {
 
   const updateMe = useMutation(api.users.updateMe);
   const toggleUserFollow = useMutation(api.users.toggleUserFollow);
+
+  const isFollowing = useQuery(
+    api.users.isFollowingUser,
+    !isOwnProfile && targetUserId ? { userId: targetUserId } : "skip"
+  );
+
+  const followersList = useQuery(
+    api.users.listFollowers,
+    isOwnProfile
+      ? (currentUser?._id ? { userId: currentUser._id as Id<"users"> } : "skip")
+      : (targetUserId ? { userId: targetUserId } : "skip")
+  );
+  const followingList = useQuery(
+    api.users.listFollowing,
+    isOwnProfile
+      ? (currentUser?._id ? { userId: currentUser._id as Id<"users"> } : "skip")
+      : (targetUserId ? { userId: targetUserId } : "skip")
+  );
 
   const displayUser = isOwnProfile ? currentUser : profileUser;
 
@@ -116,54 +137,69 @@ export default function Profile() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Profile Header */}
         <Card className="mb-8">
-          <CardContent className="p-8">
-            <div className="flex items-start gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={displayUser.image} />
-                <AvatarFallback className="text-2xl">
-                  {displayUser.name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              
+          <CardContent className="p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 text-center sm:text-left">
+              <div className="flex justify-center sm:block">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+                  <AvatarImage src={displayUser.image} />
+                  <AvatarFallback className="text-2xl">
+                    {displayUser.name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold mb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                  <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold mb-2 truncate">
                       {displayUser.name || "Anonymous User"}
                     </h1>
                     {displayUser.isWriter && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
                         <BookOpen className="h-4 w-4" />
                         Writer Level {displayUser.writerLevel || 1}
                       </div>
                     )}
                   </div>
-                  
-                  <div className="flex items-center gap-2">
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     {isOwnProfile ? (
-                      <Button onClick={handleEditProfile}>
+                      <Button onClick={handleEditProfile} className="w-full sm:w-auto">
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Profile
                       </Button>
                     ) : (
-                      <Button onClick={handleFollowUser}>
+                      <Button onClick={handleFollowUser} className="w-full sm:w-auto">
                         <Users className="h-4 w-4 mr-2" />
-                        Follow
+                        {isFollowing ? "Unfollow" : "Follow"}
                       </Button>
                     )}
                   </div>
                 </div>
-                
+
                 {displayUser.bio && (
-                  <p className="text-muted-foreground mb-4">{displayUser.bio}</p>
+                  <p className="text-muted-foreground mb-4 line-clamp-3">{displayUser.bio}</p>
                 )}
-                
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-1">
+
+                {/* Stats row with tappable counts */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm">
+                  <button
+                    className="flex items-center gap-1 text-foreground hover:underline"
+                    onClick={() => setOpenFollowers(true)}
+                  >
                     <Users className="h-4 w-4" />
                     <span>{displayUser.totalFollowers || 0} followers</span>
-                  </div>
-                  <div className="flex items-center gap-1">
+                  </button>
+                  {"totalFollowing" in displayUser && (
+                    <button
+                      className="flex items-center gap-1 text-foreground hover:underline"
+                      onClick={() => setOpenFollowing(true)}
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>{(displayUser as any).totalFollowing || 0} following</span>
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1 text-muted-foreground">
                     <BookOpen className="h-4 w-4" />
                     <span>{storiesToShow.length} stories</span>
                   </div>
@@ -178,8 +214,9 @@ export default function Profile() {
           <h2 className="text-2xl font-bold mb-6">
             {isOwnProfile ? "My Stories" : "Stories"}
           </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {/* Compact cards on mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {storiesToShow.map((story: any) => (
               <Card key={story._id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <div onClick={() => navigate(`/story/${story._id}`)}>
@@ -192,13 +229,13 @@ export default function Profile() {
                       />
                     </div>
                   )}
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold mb-2 line-clamp-2">{story.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  <CardContent className="p-3 sm:p-4">
+                    <h3 className="font-semibold mb-1 sm:mb-2 line-clamp-2">{story.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
                       {story.description}
                     </p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="px-2 py-1 bg-muted rounded-full">
+                      <span className="px-2 py-1 bg-muted rounded-full capitalize">
                         {story.genre}
                       </span>
                       <div className="flex items-center gap-3">
@@ -343,6 +380,84 @@ export default function Profile() {
                 </Button>
                 <Button onClick={handleSaveProfile}>Save Changes</Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Followers Dialog */}
+        <Dialog open={openFollowers} onOpenChange={setOpenFollowers}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Followers</DialogTitle>
+              <DialogDescription>People who follow this user</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 max-h-[60vh] overflow-auto">
+              {followersList === undefined ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : followersList.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No followers yet</div>
+              ) : (
+                followersList.map((u: any) => (
+                  <div
+                    key={u._id}
+                    className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                    onClick={() => {
+                      setOpenFollowers(false);
+                      navigate(`/profile/${u._id}`);
+                    }}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={u.image} />
+                      <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{u.name || "User"}</div>
+                      {u.bio && (
+                        <div className="text-xs text-muted-foreground truncate">{u.bio}</div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Following Dialog */}
+        <Dialog open={openFollowing} onOpenChange={setOpenFollowing}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Following</DialogTitle>
+              <DialogDescription>People this user follows</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 max-h-[60vh] overflow-auto">
+              {followingList === undefined ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : followingList.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Not following anyone</div>
+              ) : (
+                followingList.map((u: any) => (
+                  <div
+                    key={u._id}
+                    className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                    onClick={() => {
+                      setOpenFollowing(false);
+                      navigate(`/profile/${u._id}`);
+                    }}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={u.image} />
+                      <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{u.name || "User"}</div>
+                      {u.bio && (
+                        <div className="text-xs text-muted-foreground truncate">{u.bio}</div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </DialogContent>
         </Dialog>
