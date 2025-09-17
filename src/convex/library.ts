@@ -200,3 +200,38 @@ export const listMyLists = query({
     );
   },
 });
+
+export const listPublicListsByUser = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const lists = await ctx.db
+      .query("readingLists")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const publicLists = lists.filter((l) => l.isPublic);
+
+    return await Promise.all(
+      publicLists.map(async (list) => {
+        const stories = await Promise.all(
+          list.storyIds.map(async (storyId) => {
+            const story = await ctx.db.get(storyId);
+            if (!story) return null;
+            const author = await ctx.db.get(story.authorId);
+            return {
+              ...story,
+              author: author ? { name: author.name, image: author.image } : null,
+            };
+          })
+        );
+
+        const validStories = stories.filter(Boolean);
+        return {
+          ...list,
+          stories: validStories,
+          storyCount: validStories.length,
+        };
+      })
+    );
+  },
+});

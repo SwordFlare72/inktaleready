@@ -43,6 +43,15 @@ export default function Profile() {
 
   const storiesToShow = isOwnProfile ? (userStories?.page ?? []) : (profileUser?.stories ?? []);
 
+  const publicLists = useQuery(
+    api.library.listPublicListsByUser,
+    (isOwnProfile && currentUser)
+      ? { userId: currentUser._id as Id<"users"> }
+      : targetUserId
+        ? { userId: targetUserId }
+        : "skip"
+  );
+
   const updateMe = useMutation(api.users.updateMe);
   const toggleUserFollow = useMutation(api.users.toggleUserFollow);
 
@@ -220,6 +229,78 @@ export default function Profile() {
                   Start Writing
                 </Button>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Public Reading Lists */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-6">
+            {isOwnProfile ? "My Public Reading Lists" : "Public Reading Lists"}
+          </h2>
+
+          {publicLists === undefined ? (
+            <div className="text-sm text-muted-foreground">Loading reading lists...</div>
+          ) : publicLists.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                {isOwnProfile
+                  ? "You have no public reading lists yet"
+                  : "No public reading lists"}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {publicLists.map((list: any) => (
+                <Card key={list._id}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{list.name}</CardTitle>
+                    {list.description && (
+                      <p className="text-sm text-muted-foreground">{list.description}</p>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-xs text-muted-foreground mb-3">
+                      {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
+                    </div>
+                    <div className="space-y-3">
+                      {list.stories.slice(0, 4).map((story: any) => (
+                        <div
+                          key={story._id}
+                          className="flex items-center gap-3 cursor-pointer group"
+                          onClick={() => navigate(`/story/${story._id}`)}
+                        >
+                          <div className="h-12 w-9 rounded bg-muted overflow-hidden flex items-center justify-center">
+                            {story.coverImage ? (
+                              <img
+                                src={story.coverImage}
+                                alt={story.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <BookOpen className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate group-hover:underline">
+                              {story.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {story.author?.name ?? "Anonymous"} • {story.genre}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {list.storyCount > 4 && (
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        +{list.storyCount - 4} more
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>
