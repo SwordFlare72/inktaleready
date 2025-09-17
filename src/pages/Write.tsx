@@ -266,6 +266,14 @@ export default function Write() {
                     <Eye className="h-4 w-4 mr-2" />
                     Analytics
                   </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteStory(story._id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
                 </div>
 
                 <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">

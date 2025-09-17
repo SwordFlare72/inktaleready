@@ -6,6 +6,9 @@ import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { BookOpen, FilePlus2, Pencil, Rows, UploadCloud } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
+import { useMutation } from "convex/react";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 export default function StoryChaptersManage() {
   const { storyId } = useParams();
@@ -15,6 +18,8 @@ export default function StoryChaptersManage() {
     api.chapters.listForManage,
     storyId ? { storyId: storyId as Id<"stories"> } : "skip"
   );
+
+  const deleteChapter = useMutation(api.chapters.deleteChapter);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
@@ -72,6 +77,21 @@ export default function StoryChaptersManage() {
                         onClick={() => navigate(`/write/${storyId}/chapter/${ch._id}/edit`)}
                       >
                         <Pencil className="h-4 w-4 mr-2" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={async () => {
+                          if (!confirm("Delete this chapter? This cannot be undone.")) return;
+                          try {
+                            await deleteChapter({ chapterId: ch._id });
+                            toast.success("Chapter deleted");
+                          } catch {
+                            toast.error("Failed to delete chapter");
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete
                       </Button>
                     </div>
                   </li>

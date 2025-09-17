@@ -45,8 +45,9 @@ export default function ChapterEditor() {
   }, [existing]);
 
   const exec = (cmd: string, value?: string) => {
-    document.execCommand(cmd, false, value);
+    // Ensure the editor keeps focus and the selection is active before executing
     editorRef.current?.focus();
+    document.execCommand(cmd, false, value);
   };
 
   const insertImageFromFile = async (file: File) => {
@@ -145,24 +146,66 @@ export default function ChapterEditor() {
             />
 
             <div className="flex flex-wrap gap-2 border rounded-md p-2 bg-muted/40">
-              <Button variant="outline" size="sm" onClick={() => exec("bold")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  exec("bold");
+                }}
+              >
                 <Bold className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => exec("italic")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  exec("italic");
+                }}
+              >
                 <Italic className="h-4 w-4" />
               </Button>
               <span className="w-px h-6 bg-border" />
-              <Button variant="outline" size="sm" onClick={() => exec("justifyLeft")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  exec("justifyLeft");
+                }}
+              >
                 <AlignLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => exec("justifyCenter")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  exec("justifyCenter");
+                }}
+              >
                 <AlignCenter className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => exec("justifyRight")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  exec("justifyRight");
+                }}
+              >
                 <AlignRight className="h-4 w-4" />
               </Button>
               <span className="w-px h-6 bg-border" />
-              <Button variant="outline" size="sm" onClick={handlePickImage}>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handlePickImage();
+                }}
+              >
                 <ImageIcon className="h-4 w-4 mr-2" /> Image
               </Button>
             </div>
