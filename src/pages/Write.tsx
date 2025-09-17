@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -189,316 +189,335 @@ export default function Write() {
     setShowCreateChapter(true);
   };
 
+  // Add: simple time-ago helper
+  const timeAgo = (ms: number) => {
+    const s = Math.floor((Date.now() - ms) / 1000);
+    if (s < 60) return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    return `${d}d ago`;
+  };
+
+  // Aggregate stats
+  const totalStories = myStories?.length || 0;
+  const totalViews = myStories?.reduce((sum, s) => sum + s.totalViews, 0) || 0;
+  const totalLikes = myStories?.reduce((sum, s) => sum + s.totalLikes, 0) || 0;
+  const totalChapters = myStories?.reduce((sum, s) => sum + s.totalChapters, 0) || 0;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen bg-background"
     >
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Writer Dashboard</h1>
-          <p className="text-muted-foreground">
-            Create and manage your stories and chapters
-          </p>
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold">Writer Dashboard</h1>
+            <p className="text-muted-foreground">Manage your stories and connect with readers</p>
+          </div>
+          <Button
+            onClick={() => setShowCreateStory(true)}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Story
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Stories List */}
-          <div className="lg:col-span-1">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">My Stories</h2>
-              <Dialog open={showCreateStory} onOpenChange={setShowCreateStory}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Story
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Create New Story</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Title *</label>
-                      <Input
-                        value={storyTitle}
-                        onChange={(e) => setStoryTitle(e.target.value)}
-                        placeholder="Enter story title..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Description *</label>
-                      <Textarea
-                        value={storyDescription}
-                        onChange={(e) => setStoryDescription(e.target.value)}
-                        placeholder="Enter story description..."
-                        rows={4}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Genre *</label>
-                      <Select value={storyGenre} onValueChange={setStoryGenre}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select genre" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GENRES.map((genre) => (
-                            <SelectItem key={genre.value} value={genre.value}>
-                              {genre.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Tags</label>
-                      <Input
-                        value={storyTags}
-                        onChange={(e) => setStoryTags(e.target.value)}
-                        placeholder="Enter tags separated by commas..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Cover Image URL</label>
-                      <Input
-                        value={storyCover}
-                        onChange={(e) => setStoryCover(e.target.value)}
-                        placeholder="Enter image URL..."
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowCreateStory(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateStory}>Create Story</Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm opacity-90">Total Stories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">{totalStories}</div>
+                <BookOpen className="w-5 h-5 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-3">
-              {myStories?.map((story) => (
-                <Card 
-                  key={story._id} 
-                  className={`cursor-pointer transition-colors ${
-                    selectedStoryId === story._id ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => setSelectedStoryId(story._id)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-1">{story.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                          {story.description}
-                        </p>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>{story.totalChapters} chapters</span>
-                          <span>{story.totalViews} views</span>
-                          <span className={story.isPublished ? 'text-green-600' : 'text-orange-600'}>
-                            {story.isPublished ? 'Published' : 'Draft'}
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteStory(story._id);
-                        }}
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm opacity-90">Total Views</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">{totalViews}</div>
+                <Eye className="w-5 h-5 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-500 to-pink-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm opacity-90">Total Likes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">{totalLikes}</div>
+                <Heart className="w-5 h-5 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm opacity-90">Chapters</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">{totalChapters}</div>
+                <FileText className="w-5 h-5 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowCreateStory(true)} className="bg-purple-600 hover:bg-purple-700">
+              <Plus className="w-4 h-4 mr-2" /> New Story
+            </Button>
+          </div>
+        </div>
+
+        {/* My Stories */}
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-semibold">My Stories ({totalStories})</h2>
+        </div>
+
+        <div className="space-y-4">
+          {myStories?.map((story) => (
+            <Card key={story._id} className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-lg truncate">{story.title}</h3>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          story.isCompleted
+                            ? "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                            : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
+                        }`}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        {story.isCompleted ? "Completed" : "Ongoing"}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 capitalize">
+                        {story.genre}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {myStories?.length === 0 && (
-              <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">No stories yet</p>
-                <Button onClick={() => setShowCreateStory(true)}>
-                  Create Your First Story
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Story Details & Chapters */}
-          <div className="lg:col-span-2">
-            {selectedStory ? (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      {selectedStory.title}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/story/${selectedStory._id}`)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Preview
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">{selectedStory.description}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Genre: {selectedStory.genre}</span>
-                      <span>{selectedStory.totalChapters} chapters</span>
-                      <span>{selectedStory.totalViews} views</span>
-                      <span>{selectedStory.totalLikes} likes</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">Chapters</h3>
-                  <Dialog open={showCreateChapter} onOpenChange={(open) => {
-                    setShowCreateChapter(open);
-                    if (!open) resetChapterForm();
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Chapter
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {editingChapter ? 'Edit Chapter' : 'Create New Chapter'}
-                        </DialogTitle>
-                      </DialogHeader>
-                      
-                      <Tabs value={showPreview ? "preview" : "edit"} onValueChange={(v) => setShowPreview(v === "preview")}>
-                        <TabsList>
-                          <TabsTrigger value="edit">Edit</TabsTrigger>
-                          <TabsTrigger value="preview">Preview</TabsTrigger>
-                        </TabsList>
-                        
-                        <TabsContent value="edit" className="space-y-4">
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Chapter Title *</label>
-                            <Input
-                              value={chapterTitle}
-                              onChange={(e) => setChapterTitle(e.target.value)}
-                              placeholder="Enter chapter title..."
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Content *</label>
-                            <Textarea
-                              value={chapterContent}
-                              onChange={(e) => setChapterContent(e.target.value)}
-                              placeholder="Write your chapter content here..."
-                              rows={20}
-                              className="font-mono"
-                            />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id="draft"
-                              checked={isDraft}
-                              onChange={(e) => setIsDraft(e.target.checked)}
-                            />
-                            <label htmlFor="draft" className="text-sm">Save as draft</label>
-                          </div>
-                        </TabsContent>
-                        
-                        <TabsContent value="preview" className="space-y-4">
-                          <div className="border rounded-lg p-6">
-                            <h2 className="text-2xl font-bold mb-4">{chapterTitle || "Chapter Title"}</h2>
-                            <div 
-                              className="prose prose-gray dark:prose-invert max-w-none"
-                              dangerouslySetInnerHTML={{ 
-                                __html: chapterContent.replace(/\n/g, '<br>') || "Chapter content will appear here..."
-                              }}
-                            />
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                      
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowCreateChapter(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleCreateChapter}>
-                          <Save className="h-4 w-4 mr-2" />
-                          {editingChapter ? 'Update Chapter' : 'Save Chapter'}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-
-                <div className="space-y-3">
-                  {selectedStory.chapters?.map((chapter) => (
-                    <Card key={chapter._id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold">
-                              Chapter {chapter.chapterNumber}: {chapter.title}
-                            </h4>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                              <span>{chapter.wordCount} words</span>
-                              <span>{chapter.views} views</span>
-                              <span>{chapter.likes} likes</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => startEditChapter(chapter)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteChapter(chapter._id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {selectedStory.chapters?.length === 0 && (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground mb-4">No chapters yet</p>
-                    <Button onClick={() => setShowCreateChapter(true)}>
-                      Write Your First Chapter
-                    </Button>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      {story.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Last updated {timeAgo(story.lastUpdated)}</p>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  Select a story to view and manage its chapters
-                </p>
-              </div>
-            )}
-          </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      setSelectedStoryId(story._id);
+                      setEditingChapter(null);
+                      setShowCreateChapter(true);
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> New Chapter
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedStoryId(story._id)}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Manage ({story.totalChapters})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Analytics
+                  </Button>
+                </div>
+
+                <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="w-4 h-4" /> {story.totalViews}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Heart className="w-4 h-4" /> {story.totalLikes}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <MessageCircle className="w-4 h-4" /> {story.totalComments}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {myStories?.length === 0 && (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">No stories yet</p>
+              <Button onClick={() => setShowCreateStory(true)}>
+                Create Your First Story
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Create Story Dialog (controlled) */}
+        <Dialog open={showCreateStory} onOpenChange={setShowCreateStory}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Story</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Title *</label>
+                <Input
+                  value={storyTitle}
+                  onChange={(e) => setStoryTitle(e.target.value)}
+                  placeholder="Enter story title..."
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description *</label>
+                <Textarea
+                  value={storyDescription}
+                  onChange={(e) => setStoryDescription(e.target.value)}
+                  placeholder="Enter story description..."
+                  rows={4}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Genre *</label>
+                <Select value={storyGenre} onValueChange={setStoryGenre}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENRES.map((genre) => (
+                      <SelectItem key={genre.value} value={genre.value}>
+                        {genre.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tags</label>
+                <Input
+                  value={storyTags}
+                  onChange={(e) => setStoryTags(e.target.value)}
+                  placeholder="Enter tags separated by commas..."
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Cover Image URL</label>
+                <Input
+                  value={storyCover}
+                  onChange={(e) => setStoryCover(e.target.value)}
+                  placeholder="Enter image URL..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowCreateStory(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateStory}>Create Story</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create/Edit Chapter Dialog (controlled) */}
+        <Dialog open={showCreateChapter} onOpenChange={(open) => {
+          setShowCreateChapter(open);
+          if (!open) resetChapterForm();
+        }}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingChapter ? 'Edit Chapter' : 'Create New Chapter'}
+              </DialogTitle>
+            </DialogHeader>
+
+            <Tabs value={showPreview ? "preview" : "edit"} onValueChange={(v) => setShowPreview(v === "preview")}>
+              <TabsList>
+                <TabsTrigger value="edit">Edit</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="edit" className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Chapter Title *</label>
+                  <Input
+                    value={chapterTitle}
+                    onChange={(e) => setChapterTitle(e.target.value)}
+                    placeholder="Enter chapter title..."
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Content *</label>
+                  <Textarea
+                    value={chapterContent}
+                    onChange={(e) => setChapterContent(e.target.value)}
+                    placeholder="Write your chapter content here..."
+                    rows={20}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="draft"
+                    checked={isDraft}
+                    onChange={(e) => setIsDraft(e.target.checked)}
+                  />
+                  <label htmlFor="draft" className="text-sm">Save as draft</label>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="preview" className="space-y-4">
+                <div className="border rounded-lg p-6">
+                  <h2 className="text-2xl font-bold mb-4">{chapterTitle || "Chapter Title"}</h2>
+                  <div
+                    className="prose prose-gray dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: chapterContent.replace(/\n/g, '<br>') || "Chapter content will appear here..."
+                    }}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateChapter(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateChapter}>
+                <Save className="h-4 w-4 mr-2" />
+                {editingChapter ? 'Update Chapter' : 'Save Chapter'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </motion.div>
   );
