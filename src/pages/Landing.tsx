@@ -17,13 +17,50 @@ import {
   Zap,
   Search as SearchIcon,
   Moon,
+  Sun,
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
 
 export default function Landing() {
   const { isLoading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   
+  // Add: Theme state synced with localStorage and system preference
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    } else if (stored === "light") {
+      document.documentElement.classList.remove("dark");
+      setIsDark(false);
+    } else {
+      // Fallback to prefers-color-scheme
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (prefersDark) {
+        document.documentElement.classList.add("dark");
+        setIsDark(true);
+      } else {
+        document.documentElement.classList.remove("dark");
+        setIsDark(false);
+      }
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
+
   // Add: Only query Convex when the URL is configured
   const canQuery = typeof import.meta.env.VITE_CONVEX_URL === "string" && import.meta.env.VITE_CONVEX_URL.length > 0;
 
@@ -69,10 +106,11 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              aria-label="Toggle theme"
+              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+              onClick={toggleTheme}
               className="h-9 w-9 inline-flex items-center justify-center rounded-md border hover:bg-muted"
             >
-              <Moon className="h-5 w-5" />
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <Button onClick={() => navigate("/search")} className="gap-2">
               <SearchIcon className="h-4 w-4" />
