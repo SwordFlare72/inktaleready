@@ -15,7 +15,11 @@ import {
   ArrowRight,
   Sparkles,
   PenTool,
-  Eye
+  Eye,
+  Home,
+  Bell,
+  User,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -353,6 +357,65 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Mobile Bottom Tab Bar */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50">
+        <div className="mx-auto max-w-xl">
+          <nav className="m-3 rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur border shadow-lg">
+            <div className="grid grid-cols-6">
+              <button
+                className="flex flex-col items-center gap-1 py-3 text-purple-600"
+                onClick={() => navigate("/")}
+                aria-label="Home"
+              >
+                <Home className="h-5 w-5" />
+                <span className="text-[11px] font-medium">Home</span>
+              </button>
+              <button
+                className="flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/search")}
+                aria-label="Search"
+              >
+                <Search className="h-5 w-5" />
+                <span className="text-[11px] font-medium">Search</span>
+              </button>
+              <button
+                className="flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/library")}
+                aria-label="Library"
+              >
+                <BookOpen className="h-5 w-5" />
+                <span className="text-[11px] font-medium">Library</span>
+              </button>
+              <button
+                className="flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/write")}
+                aria-label="Write"
+              >
+                <PenTool className="h-5 w-5" />
+                <span className="text-[11px] font-medium">Write</span>
+              </button>
+              <button
+                className="flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/notifications")}
+                aria-label="Alerts"
+              >
+                <Bell className="h-5 w-5" />
+                <span className="text-[11px] font-medium">Alerts</span>
+              </button>
+              <button
+                className="flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/profile")}
+                aria-label="Profile"
+              >
+                <User className="h-5 w-5" />
+                <span className="text-[11px] font-medium">Profile</span>
+              </button>
+            </div>
+          </nav>
+        </div>
+      </div>
+
     </motion.div>
   );
 }
