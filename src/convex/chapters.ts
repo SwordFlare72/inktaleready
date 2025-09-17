@@ -37,6 +37,19 @@ export const getChaptersByStory = query({
   },
 });
 
+// Add: list all chapters (draft + published) for manage view
+export const listForManage = query({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, args) => {
+    const chapters = await ctx.db
+      .query("chapters")
+      .withIndex("by_story", (q) => q.eq("storyId", args.storyId))
+      .order("asc")
+      .collect();
+    return chapters;
+  },
+});
+
 // Create a new chapter
 export const createChapter = mutation({
   args: {

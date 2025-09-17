@@ -3,7 +3,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useAction, useMutation } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Save } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -11,16 +11,22 @@ import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 export default function ChapterEditor() {
-  const { storyId } = useParams();
+  const { storyId, chapterId } = useParams();
   const navigate = useNavigate();
   const editorRef = useRef<HTMLDivElement | null>(null);
 
   const createChapter = useMutation(api.chapters.createChapter);
+  const updateChapter = useMutation(api.chapters.updateChapter);
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
 
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  // Load chapter when editing
+  const existing = useQuery(
+    api.chapters.getChapterById,
+    chapterId ? { chapterId: chapterId as Id<"chapters"> } : "skip"
+  );
 
   useEffect(() => {
     // basic editor defaults
@@ -28,6 +34,15 @@ export default function ChapterEditor() {
       editorRef.current.focus();
     }
   }, []);
+
+  useEffect(() => {
+    if (existing) {
+      setTitle(existing.title);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = existing.content || "";
+      }
+    }
+  }, [existing]);
 
   const exec = (cmd: string, value?: string) => {
     document.execCommand(cmd, false, value);
@@ -77,14 +92,28 @@ export default function ChapterEditor() {
     }
     setIsSaving(true);
     try {
-      await createChapter({
-        storyId: storyId as Id<"stories">,
-        title: title.trim(),
-        content,
-        isDraft: !publish,
-      });
-      toast.success(publish ? "Chapter published!" : "Draft saved!");
-      navigate(`/write`);
+      if (chapterId) {
+        // Editing existing chapter
+        await updateChapter({
+          chapterId: chapterId as Id<"chapters">,
+          title: title.trim(),
+          content,
+          isDraft: !publish,
+          isPublished: publish,
+        });
+        toast.success(publish ? "Chapter updated & published!" : "Draft updated!");
+      } else {
+        // Creating new chapter
+        await createChapter({
+          storyId: storyId as Id<"stories">,
+          title: title.trim(),
+          content,
+          isDraft: !publish,
+        });
+        toast.success(publish ? "Chapter published!" : "Draft saved!");
+      }
+      // After save, go back to manage page
+      navigate(`/write/${storyId}/manage`);
     } catch {
       toast.error("Failed to save chapter");
     } finally {

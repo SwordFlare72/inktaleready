@@ -253,7 +253,7 @@ export default function Write() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedStoryId(story._id)}
+                    onClick={() => navigate(`/write/${story._id}/manage`)}
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Manage ({story.totalChapters})
