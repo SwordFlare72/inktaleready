@@ -104,6 +104,8 @@ const schema = defineSchema(
       comments: v.number(),
       isPublished: v.boolean(),
       isDraft: v.boolean(),
+      // Add: optional cover image for chapters
+      coverImage: v.optional(v.string()),
     })
       .index("by_story", ["storyId"])
       .index("by_story_and_number", ["storyId", "chapterNumber"]),

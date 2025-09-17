@@ -44,6 +44,8 @@ export const createChapter = mutation({
     title: v.string(),
     content: v.string(),
     isDraft: v.optional(v.boolean()),
+    // Add: chapter cover
+    coverImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -61,6 +63,7 @@ export const createChapter = mutation({
     
     const chapterNumber = existingChapters.length + 1;
     const wordCount = args.content.split(/\s+/).length;
+    const draft = args.isDraft ?? true;
 
     const chapterId = await ctx.db.insert("chapters", {
       storyId: args.storyId,
@@ -71,12 +74,13 @@ export const createChapter = mutation({
       views: 0,
       likes: 0,
       comments: 0,
-      isPublished: !args.isDraft,
-      isDraft: args.isDraft || false,
+      isPublished: !draft,
+      isDraft: draft,
+      coverImage: args.coverImage,
     });
 
-    // Update story stats
-    if (!args.isDraft) {
+    // Update story stats only when published
+    if (!draft) {
       await ctx.db.patch(args.storyId, {
         totalChapters: story.totalChapters + 1,
         lastUpdated: Date.now(),
@@ -112,6 +116,8 @@ export const updateChapter = mutation({
     content: v.optional(v.string()),
     isPublished: v.optional(v.boolean()),
     isDraft: v.optional(v.boolean()),
+    // Add: cover image update
+    coverImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -130,8 +136,13 @@ export const updateChapter = mutation({
       updates.content = args.content;
       updates.wordCount = args.content.split(/\s+/).length;
     }
+    if (args.coverImage !== undefined) updates.coverImage = args.coverImage;
     if (args.isPublished !== undefined) updates.isPublished = args.isPublished;
     if (args.isDraft !== undefined) updates.isDraft = args.isDraft;
+
+    const prevPublished = chapter.isPublished;
+    const nextPublished =
+      updates.isPublished !== undefined ? updates.isPublished : chapter.isPublished;
 
     await ctx.db.patch(args.chapterId, updates);
 
@@ -139,6 +150,33 @@ export const updateChapter = mutation({
     await ctx.db.patch(chapter.storyId, {
       lastUpdated: Date.now(),
     });
+
+    // Handle publish state transitions for totals + notifications
+    if (!prevPublished && nextPublished) {
+      await ctx.db.patch(chapter.storyId, {
+        totalChapters: story.totalChapters + 1,
+      });
+
+      const followers = await ctx.db
+        .query("storyFollows")
+        .withIndex("by_story", (q) => q.eq("storyId", chapter.storyId))
+        .collect();
+
+      for (const follow of followers) {
+        await ctx.db.insert("notifications", {
+          userId: follow.userId,
+          type: "new_chapter",
+          title: "New Chapter Published",
+          message: `"${story.title}" has a new chapter: "${updates.title ?? chapter.title}"`,
+          isRead: false,
+          relatedId: args.chapterId,
+        });
+      }
+    } else if (prevPublished && !nextPublished) {
+      await ctx.db.patch(chapter.storyId, {
+        totalChapters: Math.max(0, story.totalChapters - 1),
+      });
+    }
 
     return args.chapterId;
   },

@@ -49,6 +49,7 @@ export default function Write() {
   const [chapterContent, setChapterContent] = useState("");
   const [isDraft, setIsDraft] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
+  const [chapterCover, setChapterCover] = useState("");
 
   const myStories = useQuery(api.stories.getMyStories, isAuthenticated ? {} : "skip");
   const selectedStory = useQuery(api.stories.getStoryById, 
@@ -100,6 +101,39 @@ export default function Write() {
       setSelectedStoryId(storyId);
     } catch (error) {
       toast.error("Failed to create story");
+    }
+  };
+
+  const saveChapter = async (publish: boolean) => {
+    if (!selectedStoryId || !chapterTitle.trim() || !chapterContent.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    try {
+      if (editingChapter) {
+        await updateChapter({
+          chapterId: editingChapter._id,
+          title: chapterTitle.trim(),
+          content: chapterContent.trim(),
+          isDraft: !publish,
+          isPublished: publish,
+          coverImage: chapterCover.trim() || undefined,
+        });
+        toast.success(publish ? "Chapter published!" : "Draft saved!");
+      } else {
+        await createChapter({
+          storyId: selectedStoryId,
+          title: chapterTitle.trim(),
+          content: chapterContent.trim(),
+          isDraft: !publish,
+          coverImage: chapterCover.trim() || undefined,
+        });
+        toast.success(publish ? "Chapter published!" : "Draft saved!");
+      }
+      setShowCreateChapter(false);
+      resetChapterForm();
+    } catch (error) {
+      toast.error("Failed to save chapter");
     }
   };
 
@@ -179,6 +213,7 @@ export default function Write() {
     setIsDraft(true);
     setEditingChapter(null);
     setShowPreview(false);
+    setChapterCover("");
   };
 
   const startEditChapter = (chapter: any) => {
@@ -186,6 +221,7 @@ export default function Write() {
     setChapterTitle(chapter.title);
     setChapterContent(chapter.content);
     setIsDraft(chapter.isDraft);
+    setChapterCover(chapter.coverImage || "");
     setShowCreateChapter(true);
   };
 
@@ -213,16 +249,16 @@ export default function Write() {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-background"
     >
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-3 py-6">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold">Writer Dashboard</h1>
-            <p className="text-muted-foreground">Manage your stories and connect with readers</p>
+            <h1 className="text-2xl font-extrabold">Writer Dashboard</h1>
+            <p className="text-muted-foreground text-sm">Manage your stories and connect with readers</p>
           </div>
           <Button
             onClick={() => setShowCreateStory(true)}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            className="bg-indigo-600 hover:bg-indigo-700"
             size="sm"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -231,52 +267,37 @@ export default function Write() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm opacity-90">Total Stories</CardTitle>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <Card className="p-3">
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">Stories</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">{totalStories}</div>
-                <BookOpen className="w-5 h-5 opacity-80" />
-              </div>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold">{totalStories}</div>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm opacity-90">Total Views</CardTitle>
+          <Card className="p-3">
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">Views</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">{totalViews}</div>
-                <Eye className="w-5 h-5 opacity-80" />
-              </div>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold">{totalViews}</div>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-500 to-pink-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm opacity-90">Total Likes</CardTitle>
+          <Card className="p-3">
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">Likes</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">{totalLikes}</div>
-                <Heart className="w-5 h-5 opacity-80" />
-              </div>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold">{totalLikes}</div>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm opacity-90">Chapters</CardTitle>
+          <Card className="p-3">
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs text-muted-foreground">Chapters</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">{totalChapters}</div>
-                <FileText className="w-5 h-5 opacity-80" />
-              </div>
+            <CardContent className="pt-0">
+              <div className="text-xl font-bold">{totalChapters}</div>
             </CardContent>
           </Card>
         </div>
@@ -451,7 +472,7 @@ export default function Write() {
           setShowCreateChapter(open);
           if (!open) resetChapterForm();
         }}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingChapter ? 'Edit Chapter' : 'Create New Chapter'}
@@ -473,16 +494,32 @@ export default function Write() {
                     placeholder="Enter chapter title..."
                   />
                 </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Cover Image URL</label>
+                  <Input
+                    value={chapterCover}
+                    onChange={(e) => setChapterCover(e.target.value)}
+                    placeholder="Enter image URL..."
+                  />
+                  {chapterCover && (
+                    <div className="mt-2">
+                      <img src={chapterCover} alt="Chapter cover preview" className="h-28 w-auto rounded-md border object-cover" />
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="text-sm font-medium mb-2 block">Content *</label>
                   <Textarea
                     value={chapterContent}
                     onChange={(e) => setChapterContent(e.target.value)}
                     placeholder="Write your chapter content here..."
-                    rows={20}
+                    rows={16}
                     className="font-mono"
                   />
                 </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -496,7 +533,10 @@ export default function Write() {
 
               <TabsContent value="preview" className="space-y-4">
                 <div className="border rounded-lg p-6">
-                  <h2 className="text-2xl font-bold mb-4">{chapterTitle || "Chapter Title"}</h2>
+                  <h2 className="text-2xl font-bold mb-2">{chapterTitle || "Chapter Title"}</h2>
+                  {chapterCover && (
+                    <img src={chapterCover} alt="Chapter cover" className="h-40 w-full object-cover rounded mb-4" />
+                  )}
                   <div
                     className="prose prose-gray dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={{
@@ -511,9 +551,13 @@ export default function Write() {
               <Button variant="outline" onClick={() => setShowCreateChapter(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateChapter}>
+              <Button variant="secondary" onClick={() => saveChapter(false)}>
                 <Save className="h-4 w-4 mr-2" />
-                {editingChapter ? 'Update Chapter' : 'Save Chapter'}
+                Save Draft
+              </Button>
+              <Button onClick={() => saveChapter(true)}>
+                <Save className="h-4 w-4 mr-2" />
+                {editingChapter ? 'Publish Changes' : 'Publish'}
               </Button>
             </div>
           </DialogContent>
