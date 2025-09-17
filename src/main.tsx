@@ -14,6 +14,13 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Explore from "./pages/Explore.tsx";
 import Search from "./pages/Search.tsx";
 import Story from "./pages/Story.tsx";
+import Reader from "./pages/Reader.tsx";
+import Library from "./pages/Library.tsx";
+import Write from "./pages/Write.tsx";
+import Notifications from "./pages/Notifications.tsx";
+import Profile from "./pages/Profile.tsx";
+import Earnings from "./pages/Earnings.tsx";
+import Messages from "./pages/Messages.tsx";
 import "./types/global.d.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -55,6 +62,14 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/explore" element={<Explore />} />
             <Route path="/search" element={<Search />} />
             <Route path="/story/:id" element={<Story />} />
+            <Route path="/read/:id" element={<Reader />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/write" element={<Write />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/earnings" element={<Earnings />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

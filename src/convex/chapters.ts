@@ -81,6 +81,23 @@ export const createChapter = mutation({
         totalChapters: story.totalChapters + 1,
         lastUpdated: Date.now(),
       });
+
+      // Notify story followers about new chapter
+      const followers = await ctx.db
+        .query("storyFollows")
+        .withIndex("by_story", (q) => q.eq("storyId", args.storyId))
+        .collect();
+
+      for (const follow of followers) {
+        await ctx.db.insert("notifications", {
+          userId: follow.userId,
+          type: "new_chapter",
+          title: "New Chapter Published",
+          message: `"${story.title}" has a new chapter: "${args.title}"`,
+          isRead: false,
+          relatedId: chapterId,
+        });
+      }
     }
 
     return chapterId;
@@ -222,5 +239,52 @@ export const getAdjacent = query({
       prevId: currentIndex > 0 ? chapters[currentIndex - 1]._id : null,
       nextId: currentIndex < chapters.length - 1 ? chapters[currentIndex + 1]._id : null,
     };
+  },
+});
+
+// Delete a chapter
+export const deleteChapter = mutation({
+  args: { chapterId: v.id("chapters") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Must be authenticated");
+
+    const chapter = await ctx.db.get(args.chapterId);
+    if (!chapter) throw new Error("Chapter not found");
+
+    const story = await ctx.db.get(chapter.storyId);
+    if (!story) throw new Error("Story not found");
+    if (story.authorId !== user._id) throw new Error("Not authorized");
+
+    // Delete chapter likes
+    const likes = await ctx.db
+      .query("chapterLikes")
+      .withIndex("by_chapter", (q) => q.eq("chapterId", args.chapterId))
+      .collect();
+
+    for (const like of likes) {
+      await ctx.db.delete(like._id);
+    }
+
+    // Delete comments
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_chapter", (q) => q.eq("chapterId", args.chapterId))
+      .collect();
+
+    for (const comment of comments) {
+      await ctx.db.delete(comment._id);
+    }
+
+    // Update story totals
+    if (chapter.isPublished) {
+      await ctx.db.patch(chapter.storyId, {
+        totalChapters: Math.max(0, story.totalChapters - 1),
+        lastUpdated: Date.now(),
+      });
+    }
+
+    await ctx.db.delete(args.chapterId);
+    return true;
   },
 });

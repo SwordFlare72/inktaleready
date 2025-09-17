@@ -193,6 +193,30 @@ const schema = defineSchema(
       .index("by_user", ["userId"])
       .index("by_comment", ["commentId"])
       .index("by_user_and_comment", ["userId", "commentId"]),
+
+    // Reports table
+    reports: defineTable({
+      userId: v.id("users"),
+      targetType: v.union(v.literal("story"), v.literal("chapter")),
+      targetId: v.string(),
+      reason: v.string(),
+      details: v.optional(v.string()),
+      status: v.union(v.literal("pending"), v.literal("resolved"), v.literal("dismissed")),
+    })
+      .index("by_user", ["userId"])
+      .index("by_target", ["targetType", "targetId"])
+      .index("by_status", ["status"]),
+
+    // Messages table
+    messages: defineTable({
+      senderId: v.id("users"),
+      recipientId: v.id("users"),
+      body: v.string(),
+      isRead: v.boolean(),
+    })
+      .index("by_sender", ["senderId"])
+      .index("by_recipient", ["recipientId"])
+      .index("by_user_pair", ["senderId", "recipientId"]),
   },
   {
     schemaValidation: false,

@@ -58,3 +58,30 @@ export const markAllRead = mutation({
     );
   },
 });
+
+// Internal helper to create notifications
+export const createNotification = mutation({
+  args: {
+    userId: v.id("users"),
+    type: v.union(
+      v.literal("new_chapter"),
+      v.literal("new_story"),
+      v.literal("comment_reply"),
+      v.literal("comment_like"),
+      v.literal("new_follower")
+    ),
+    title: v.string(),
+    message: v.string(),
+    relatedId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("notifications", {
+      userId: args.userId,
+      type: args.type,
+      title: args.title,
+      message: args.message,
+      isRead: false,
+      relatedId: args.relatedId,
+    });
+  },
+});

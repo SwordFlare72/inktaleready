@@ -23,11 +23,18 @@ export default function Landing() {
   const { isLoading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   
+  // Add: Only query Convex when the URL is configured
+  const canQuery = typeof import.meta.env.VITE_CONVEX_URL === "string" && import.meta.env.VITE_CONVEX_URL.length > 0;
+
   // Get some featured stories for the homepage
-  const featuredStories = useQuery(api.stories.getPublishedStories, {
-    paginationOpts: { numItems: 6, cursor: null },
-    sortBy: "popular"
-  });
+  const featuredStories = useQuery(api.stories.getPublishedStories, 
+    canQuery
+      ? {
+          paginationOpts: { numItems: 6, cursor: null },
+          sortBy: "popular",
+        }
+      : "skip"
+  );
 
   const handleGetStarted = () => {
     if (isAuthenticated) {

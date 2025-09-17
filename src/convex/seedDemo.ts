@@ -101,6 +101,76 @@ export const seedDemo = mutation({
       isDraft: false,
     });
 
-    return "Demo data created successfully!";
+    // Add more chapters for story 2
+    await ctx.db.insert("chapters", {
+      storyId: story2Id,
+      title: "Unlikely Alliance",
+      content: "The meeting took place on the planet's surface, in a clearing surrounded by towering crystalline trees that hummed with an otherworldly energy. Elena had insisted on neutral ground, though she couldn't shake the feeling that this entire world was watching them.\n\nMarcus Chen was not what she had expected. Where Coalition propaganda painted Centauri officers as cold and calculating, she found a man with laugh lines around his eyes and dirt under his fingernails—a fellow explorer, not a politician in uniform.\n\n'The atmospheric readings are off the charts,' he said, sharing his data pad without hesitation. 'This planet... it's like it's alive.'",
+      chapterNumber: 2,
+      wordCount: 142,
+      views: 480,
+      likes: 38,
+      comments: 9,
+      isPublished: true,
+      isDraft: false,
+    });
+
+    // Create story follows for the user
+    await ctx.db.insert("storyFollows", {
+      userId: user._id,
+      storyId: story1Id,
+      isFavorite: true,
+    });
+
+    await ctx.db.insert("storyFollows", {
+      userId: user._id,
+      storyId: story2Id,
+      isFavorite: false,
+    });
+
+    // Create reading progress
+    const firstChapter = await ctx.db
+      .query("chapters")
+      .withIndex("by_story", (q) => q.eq("storyId", story1Id))
+      .first();
+
+    if (firstChapter) {
+      await ctx.db.insert("readingProgress", {
+        userId: user._id,
+        storyId: story1Id,
+        lastChapterId: firstChapter._id,
+        lastReadAt: Date.now() - 3600000, // 1 hour ago
+      });
+    }
+
+    // Create a reading list
+    const readingListId = await ctx.db.insert("readingLists", {
+      userId: user._id,
+      name: "Favorites",
+      description: "My favorite stories to read",
+      isPublic: true,
+      storyIds: [story1Id, story2Id],
+    });
+
+    // Create sample notifications
+    await ctx.db.insert("notifications", {
+      userId: user._id,
+      type: "new_chapter",
+      title: "New Chapter Available",
+      message: "The Dragon's Heart has a new chapter: 'The Choice'",
+      isRead: false,
+      relatedId: story1Id,
+    });
+
+    await ctx.db.insert("notifications", {
+      userId: user._id,
+      type: "comment_reply",
+      title: "Someone replied to your comment",
+      message: "A reader replied to your comment on 'Stellar Romance'",
+      isRead: true,
+      relatedId: story2Id,
+    });
+
+    return "Demo data created successfully with stories, chapters, follows, reading progress, lists, and notifications!";
   },
 });

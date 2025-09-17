@@ -312,3 +312,83 @@ export const isFollowing = query({
     return !!follow;
   },
 });
+
+// Delete a story (with cascading deletes)
+export const deleteStory = mutation({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Must be authenticated");
+
+    const story = await ctx.db.get(args.storyId);
+    if (!story) throw new Error("Story not found");
+    if (story.authorId !== user._id) throw new Error("Not authorized");
+
+    // Delete all chapters
+    const chapters = await ctx.db
+      .query("chapters")
+      .withIndex("by_story", (q) => q.eq("storyId", args.storyId))
+      .collect();
+
+    for (const chapter of chapters) {
+      await ctx.db.delete(chapter._id);
+    }
+
+    // Delete story follows
+    const follows = await ctx.db
+      .query("storyFollows")
+      .withIndex("by_story", (q) => q.eq("storyId", args.storyId))
+      .collect();
+
+    for (const follow of follows) {
+      await ctx.db.delete(follow._id);
+    }
+
+    // Delete reading progress
+    const progress = await ctx.db.query("readingProgress").collect();
+    for (const prog of progress) {
+      if (prog.storyId === args.storyId) {
+        await ctx.db.delete(prog._id);
+      }
+    }
+
+    // Delete the story
+    await ctx.db.delete(args.storyId);
+    return true;
+  },
+});
+
+// Get writer stats
+export const myStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
+
+    const stories = await ctx.db
+      .query("stories")
+      .withIndex("by_author", (q) => q.eq("authorId", user._id))
+      .collect();
+
+    const totalViews = stories.reduce((sum, story) => sum + story.totalViews, 0);
+    const totalLikes = stories.reduce((sum, story) => sum + story.totalLikes, 0);
+    const totalComments = stories.reduce((sum, story) => sum + story.totalComments, 0);
+    const publishedStories = stories.filter(s => s.isPublished).length;
+
+    return {
+      totalStories: stories.length,
+      publishedStories,
+      totalViews,
+      totalLikes,
+      totalComments,
+      stories: stories.map(story => ({
+        _id: story._id,
+        title: story.title,
+        totalViews: story.totalViews,
+        totalLikes: story.totalLikes,
+        totalComments: story.totalComments,
+        isPublished: story.isPublished,
+      })),
+    };
+  },
+});

@@ -88,6 +88,21 @@ export const createComment = mutation({
       parentCommentId: args.parentCommentId,
     });
 
+    // Notify parent comment author if this is a reply
+    if (args.parentCommentId) {
+      const parentComment = await ctx.db.get(args.parentCommentId);
+      if (parentComment && parentComment.authorId !== user._id) {
+        await ctx.db.insert("notifications", {
+          userId: parentComment.authorId,
+          type: "comment_reply",
+          title: "New Reply",
+          message: `${user.name || "Someone"} replied to your comment`,
+          isRead: false,
+          relatedId: commentId,
+        });
+      }
+    }
+
     // Update chapter comment count
     const chapter = await ctx.db.get(args.chapterId);
     if (chapter) {
