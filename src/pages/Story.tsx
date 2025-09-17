@@ -4,9 +4,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck } from "lucide-react";
+import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, ArrowLeft, Share2 } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export default function Story() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,21 @@ export default function Story() {
   const readingProgress = useQuery(api.readingProgress.getProgress, id ? { storyId: id as any } : "skip");
   
   const toggleFollow = useMutation(api.stories.toggleStoryFollow);
+
+  // Load similar stories by genre (exclude current later in render)
+  const similar = useQuery(
+    api.stories.listExplore,
+    // only run when story is loaded
+    story
+      ? {
+          paginationOpts: { numItems: 6, cursor: null },
+          genre: story.genre as any,
+          sortBy: "popular",
+        }
+      : "skip",
+  );
+
+  const [expandDesc, setExpandDesc] = useState(false);
 
   if (!id) {
     navigate("/explore");
@@ -57,6 +73,15 @@ export default function Story() {
     navigate(`/read/${chapterId}`);
   };
 
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Story link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
   if (story === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -86,8 +111,23 @@ export default function Story() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen overflow-y-auto bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900"
+      className="min-h-screen overflow-y-auto bg-background"
     >
+      {/* Top bar */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-8 pb-28">
         {/* Story Header */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -132,9 +172,19 @@ export default function Story() {
               </div>
             </div>
 
-            <p className="text-muted-foreground mb-6 leading-relaxed">
-              {story.description}
+            <p className="text-muted-foreground mb-3 leading-relaxed">
+              {expandDesc || (story.description?.length || 0) <= 180
+                ? story.description
+                : `${story.description.slice(0, 180)}...`}
             </p>
+            {story.description && story.description.length > 180 && (
+              <button
+                onClick={() => setExpandDesc((v) => !v)}
+                className="text-primary text-sm font-medium hover:underline mb-6"
+              >
+                {expandDesc ? "Show less" : "Read more"}
+              </button>
+            )}
 
             <div className="flex flex-wrap gap-2 mb-6">
               {story.tags.map((tag) => (
@@ -248,6 +298,44 @@ export default function Story() {
             )}
           </CardContent>
         </Card>
+
+        {/* Similar Stories */}
+        {similar && similar.page && similar.page.filter(s => s._id !== (story as any)._id).length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-3">Similar Stories</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {similar.page
+                .filter((s) => s._id !== (story as any)._id)
+                .map((s) => (
+                  <div
+                    key={s._id}
+                    onClick={() => navigate(`/story/${s._id}`)}
+                    className="cursor-pointer rounded-lg border hover:bg-accent/50 transition-colors overflow-hidden"
+                  >
+                    <div className="aspect-[3/4] w-full bg-muted">
+                      {s.coverImage ? (
+                        <img
+                          src={s.coverImage}
+                          alt={s.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <div className="text-sm font-medium line-clamp-2">{s.title}</div>
+                      <div className="mt-1 text-xs text-muted-foreground capitalize">
+                        {s.genre}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
