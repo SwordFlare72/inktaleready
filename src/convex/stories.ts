@@ -202,6 +202,10 @@ export const searchStories = query({
   args: {
     searchTerm: v.string(),
     genre: v.optional(v.string()),
+    // Add advanced filters
+    sortBy: v.optional(v.union(v.literal("popular"), v.literal("recent"), v.literal("views"))),
+    minChapters: v.optional(v.number()),
+    hasCover: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Simple text search - in production you'd want full-text search
@@ -218,6 +222,24 @@ export const searchStories = query({
 
     if (args.genre) {
       filtered = filtered.filter(story => story.genre === args.genre);
+    }
+
+    // Apply additional filters
+    if (args.minChapters !== undefined) {
+      filtered = filtered.filter(story => story.totalChapters >= args.minChapters!);
+    }
+    if (args.hasCover) {
+      filtered = filtered.filter(story => !!story.coverImage && story.coverImage.length > 0);
+    }
+
+    // Apply sorting
+    if (args.sortBy === "popular") {
+      filtered.sort((a, b) => b.totalLikes - a.totalLikes);
+    } else if (args.sortBy === "views") {
+      filtered.sort((a, b) => b.totalViews - a.totalViews);
+    } else {
+      // recent by lastUpdated desc
+      filtered.sort((a, b) => b.lastUpdated - a.lastUpdated);
     }
 
     // Get author info

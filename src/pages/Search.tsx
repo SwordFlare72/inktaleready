@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Eye, Heart, Search as SearchIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { Switch } from "@/components/ui/switch";
 
 const GENRES = [
   { value: "all", label: "All Genres" },
@@ -29,6 +30,11 @@ export default function Search() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [genre, setGenre] = useState("all");
 
+  // Add: advanced filter state
+  const [sortBy, setSortBy] = useState<"recent" | "popular" | "views">("recent");
+  const [hasCover, setHasCover] = useState(false);
+  const [minChapters, setMinChapters] = useState<string>("");
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -44,6 +50,10 @@ export default function Search() {
       ? {
           searchTerm: debouncedSearchTerm.trim(),
           genre: genre !== "all" ? genre : undefined,
+          // Pass advanced filters
+          sortBy,
+          hasCover: hasCover ? true : undefined,
+          minChapters: minChapters.trim() ? Number(minChapters) : undefined,
         }
       : "skip"
   );
@@ -90,6 +100,62 @@ export default function Search() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Advanced Filters */}
+        <div className="mb-6 space-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-2">Sort By</label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={sortBy === "recent" ? "default" : "outline"}
+                onClick={() => setSortBy("recent")}
+                className={sortBy === "recent" ? "bg-purple-600 text-white" : ""}
+                size="sm"
+              >
+                Recently Updated
+              </Button>
+              <Button
+                variant={sortBy === "popular" ? "default" : "outline"}
+                onClick={() => setSortBy("popular")}
+                className={sortBy === "popular" ? "bg-purple-600 text-white" : ""}
+                size="sm"
+              >
+                Most Popular
+              </Button>
+              <Button
+                variant={sortBy === "views" ? "default" : "outline"}
+                onClick={() => setSortBy("views")}
+                className={sortBy === "views" ? "bg-purple-600 text-white" : ""}
+                size="sm"
+              >
+                Most Views
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <div className="flex items-center justify-between sm:justify-start sm:gap-3 border rounded-md px-3 py-2">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium block">With Cover Only</label>
+                <p className="text-xs text-muted-foreground">Hide stories without a cover</p>
+              </div>
+              <Switch checked={hasCover} onCheckedChange={setHasCover} />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Min Chapters</label>
+              <Input
+                type="number"
+                min={0}
+                placeholder="e.g. 5"
+                value={minChapters}
+                onChange={(e) => setMinChapters(e.target.value)}
+              />
+            </div>
+
+            <div className="hidden sm:block" />
+          </div>
         </div>
 
         {/* Results */}
