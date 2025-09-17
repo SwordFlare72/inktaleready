@@ -23,6 +23,7 @@ import Earnings from "./pages/Earnings.tsx";
 import Messages from "./pages/Messages.tsx";
 import BottomNav from "@/components/BottomNav.tsx";
 import "./types/global.d.ts";
+import ChapterEditor from "./pages/ChapterEditor.tsx";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -66,6 +67,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/read/:id" element={<Reader />} />
             <Route path="/library" element={<Library />} />
             <Route path="/write" element={<Write />} />
+            <Route path="/write/:storyId/chapter/new" element={<ChapterEditor />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:id" element={<Profile />} />

@@ -33,9 +33,7 @@ export default function Write() {
   const { isAuthenticated, user } = useAuth();
   
   const [showCreateStory, setShowCreateStory] = useState(false);
-  const [showCreateChapter, setShowCreateChapter] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<Id<"stories"> | null>(null);
-  const [editingChapter, setEditingChapter] = useState<any>(null);
   
   // Story form state
   const [storyTitle, setStoryTitle] = useState("");
@@ -44,13 +42,6 @@ export default function Write() {
   const [storyTags, setStoryTags] = useState("");
   const [storyCover, setStoryCover] = useState("");
   
-  // Chapter form state
-  const [chapterTitle, setChapterTitle] = useState("");
-  const [chapterContent, setChapterContent] = useState("");
-  const [isDraft, setIsDraft] = useState(true);
-  const [showPreview, setShowPreview] = useState(false);
-  const [chapterCover, setChapterCover] = useState("");
-
   const myStories = useQuery(api.stories.getMyStories, isAuthenticated ? {} : "skip");
   const selectedStory = useQuery(api.stories.getStoryById, 
     selectedStoryId ? { storyId: selectedStoryId } : "skip"
@@ -104,72 +95,6 @@ export default function Write() {
     }
   };
 
-  const saveChapter = async (publish: boolean) => {
-    if (!selectedStoryId || !chapterTitle.trim() || !chapterContent.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-    try {
-      if (editingChapter) {
-        await updateChapter({
-          chapterId: editingChapter._id,
-          title: chapterTitle.trim(),
-          content: chapterContent.trim(),
-          isDraft: !publish,
-          isPublished: publish,
-          coverImage: chapterCover.trim() || undefined,
-        });
-        toast.success(publish ? "Chapter published!" : "Draft saved!");
-      } else {
-        await createChapter({
-          storyId: selectedStoryId,
-          title: chapterTitle.trim(),
-          content: chapterContent.trim(),
-          isDraft: !publish,
-          coverImage: chapterCover.trim() || undefined,
-        });
-        toast.success(publish ? "Chapter published!" : "Draft saved!");
-      }
-      setShowCreateChapter(false);
-      resetChapterForm();
-    } catch (error) {
-      toast.error("Failed to save chapter");
-    }
-  };
-
-  const handleCreateChapter = async () => {
-    if (!selectedStoryId || !chapterTitle.trim() || !chapterContent.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      if (editingChapter) {
-        await updateChapter({
-          chapterId: editingChapter._id,
-          title: chapterTitle.trim(),
-          content: chapterContent.trim(),
-          isDraft,
-          isPublished: !isDraft,
-        });
-        toast.success("Chapter updated successfully!");
-      } else {
-        await createChapter({
-          storyId: selectedStoryId,
-          title: chapterTitle.trim(),
-          content: chapterContent.trim(),
-          isDraft,
-        });
-        toast.success("Chapter created successfully!");
-      }
-      
-      setShowCreateChapter(false);
-      resetChapterForm();
-    } catch (error) {
-      toast.error("Failed to save chapter");
-    }
-  };
-
   const handleDeleteStory = async (storyId: Id<"stories">) => {
     if (!confirm("Are you sure you want to delete this story? This action cannot be undone.")) {
       return;
@@ -186,43 +111,12 @@ export default function Write() {
     }
   };
 
-  const handleDeleteChapter = async (chapterId: Id<"chapters">) => {
-    if (!confirm("Are you sure you want to delete this chapter?")) {
-      return;
-    }
-
-    try {
-      await deleteChapter({ chapterId });
-      toast.success("Chapter deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete chapter");
-    }
-  };
-
   const resetStoryForm = () => {
     setStoryTitle("");
     setStoryDescription("");
     setStoryGenre("");
     setStoryTags("");
     setStoryCover("");
-  };
-
-  const resetChapterForm = () => {
-    setChapterTitle("");
-    setChapterContent("");
-    setIsDraft(true);
-    setEditingChapter(null);
-    setShowPreview(false);
-    setChapterCover("");
-  };
-
-  const startEditChapter = (chapter: any) => {
-    setEditingChapter(chapter);
-    setChapterTitle(chapter.title);
-    setChapterContent(chapter.content);
-    setIsDraft(chapter.isDraft);
-    setChapterCover(chapter.coverImage || "");
-    setShowCreateChapter(true);
   };
 
   // Add: simple time-ago helper
@@ -349,9 +243,7 @@ export default function Write() {
                   <Button
                     variant="default"
                     onClick={() => {
-                      setSelectedStoryId(story._id);
-                      setEditingChapter(null);
-                      setShowCreateChapter(true);
+                      navigate(`/write/${story._id}/chapter/new`);
                     }}
                     className="bg-purple-600 hover:bg-purple-700"
                     size="sm"
@@ -463,102 +355,6 @@ export default function Write() {
                 </Button>
                 <Button onClick={handleCreateStory}>Create Story</Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Create/Edit Chapter Dialog (controlled) */}
-        <Dialog open={showCreateChapter} onOpenChange={(open) => {
-          setShowCreateChapter(open);
-          if (!open) resetChapterForm();
-        }}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingChapter ? 'Edit Chapter' : 'Create New Chapter'}
-              </DialogTitle>
-            </DialogHeader>
-
-            <Tabs value={showPreview ? "preview" : "edit"} onValueChange={(v) => setShowPreview(v === "preview")}>
-              <TabsList>
-                <TabsTrigger value="edit">Edit</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="edit" className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Chapter Title *</label>
-                  <Input
-                    value={chapterTitle}
-                    onChange={(e) => setChapterTitle(e.target.value)}
-                    placeholder="Enter chapter title..."
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Cover Image URL</label>
-                  <Input
-                    value={chapterCover}
-                    onChange={(e) => setChapterCover(e.target.value)}
-                    placeholder="Enter image URL..."
-                  />
-                  {chapterCover && (
-                    <div className="mt-2">
-                      <img src={chapterCover} alt="Chapter cover preview" className="h-28 w-auto rounded-md border object-cover" />
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Content *</label>
-                  <Textarea
-                    value={chapterContent}
-                    onChange={(e) => setChapterContent(e.target.value)}
-                    placeholder="Write your chapter content here..."
-                    rows={16}
-                    className="font-mono"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="draft"
-                    checked={isDraft}
-                    onChange={(e) => setIsDraft(e.target.checked)}
-                  />
-                  <label htmlFor="draft" className="text-sm">Save as draft</label>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="preview" className="space-y-4">
-                <div className="border rounded-lg p-6">
-                  <h2 className="text-2xl font-bold mb-2">{chapterTitle || "Chapter Title"}</h2>
-                  {chapterCover && (
-                    <img src={chapterCover} alt="Chapter cover" className="h-40 w-full object-cover rounded mb-4" />
-                  )}
-                  <div
-                    className="prose prose-gray dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: chapterContent.replace(/\n/g, '<br>') || "Chapter content will appear here..."
-                    }}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreateChapter(false)}>
-                Cancel
-              </Button>
-              <Button variant="secondary" onClick={() => saveChapter(false)}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Draft
-              </Button>
-              <Button onClick={() => saveChapter(true)}>
-                <Save className="h-4 w-4 mr-2" />
-                {editingChapter ? 'Publish Changes' : 'Publish'}
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
