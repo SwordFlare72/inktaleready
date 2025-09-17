@@ -141,9 +141,9 @@ export default function Write() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-background"
+      className="min-h-screen bg-background overflow-y-auto"
     >
-      <div className="max-w-2xl mx-auto px-3 py-6">
+      <div className="max-w-2xl mx-auto px-3 py-6 pb-28">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div>
