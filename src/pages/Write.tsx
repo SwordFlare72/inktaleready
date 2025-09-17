@@ -231,6 +231,15 @@ export default function Write() {
                       <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 capitalize">
                         {story.genre}
                       </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          story.isPublished
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                        }`}
+                      >
+                        {story.isPublished ? "Published" : "Draft"}
+                      </span>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                       {story.description}
@@ -265,6 +274,22 @@ export default function Write() {
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     Analytics
+                  </Button>
+                  <Button
+                    variant={story.isPublished ? "outline" : "default"}
+                    size="sm"
+                    className={story.isPublished ? "" : "bg-green-600 hover:bg-green-700"}
+                    onClick={async () => {
+                      try {
+                        await updateStory({ storyId: story._id, isPublished: !story.isPublished });
+                        toast.success(story.isPublished ? "Story unpublished" : "Story published");
+                      } catch {
+                        toast.error("Failed to update publish status");
+                      }
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    {story.isPublished ? "Unpublish" : "Publish"}
                   </Button>
                   <Button
                     variant="destructive"
