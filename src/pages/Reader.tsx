@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, BookOpen, Heart, MessageCircle, Share2, Flag, Settings, ChevronLeft, Eye } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
@@ -23,6 +23,9 @@ export default function Reader() {
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [showReportDialog, setShowReportDialog] = useState(false);
+
+  // Add: guard to avoid repeatedly incrementing views on reactive re-renders
+  const incrementedForChapterRef = useRef<string | null>(null);
 
   const chapter = useQuery(api.chapters.getChapterById, id ? { chapterId: id as Id<"chapters"> } : "skip");
   const adjacent = useQuery(api.chapters.getAdjacent, id ? { chapterId: id as Id<"chapters"> } : "skip");
@@ -39,9 +42,12 @@ export default function Reader() {
   const setProgress = useMutation(api.readingProgress.setProgress);
   const createReport = useMutation(api.reports.createReport);
 
-  // Increment views and set reading progress on load
+  // Replace the effect that increments views and sets progress to be idempotent per chapter
   useEffect(() => {
-    if (chapter && id) {
+    if (!id || !chapter) return;
+
+    if (incrementedForChapterRef.current !== id) {
+      incrementedForChapterRef.current = id;
       incrementViews({ chapterId: id as Id<"chapters"> });
       
       if (isAuthenticated) {
@@ -51,7 +57,7 @@ export default function Reader() {
         });
       }
     }
-  }, [chapter, id, isAuthenticated]);
+  }, [id, chapter?._id, isAuthenticated]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
