@@ -72,6 +72,7 @@ export const getStoryById = query({
         views: ch.views,
         likes: ch.likes,
         comments: ch.comments,
+        _creationTime: ch._creationTime,
       })),
     };
   },
