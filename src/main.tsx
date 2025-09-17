@@ -21,6 +21,7 @@ import Notifications from "./pages/Notifications.tsx";
 import Profile from "./pages/Profile.tsx";
 import Earnings from "./pages/Earnings.tsx";
 import Messages from "./pages/Messages.tsx";
+import BottomNav from "@/components/BottomNav.tsx";
 import "./types/global.d.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -72,6 +73,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/messages" element={<Messages />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <BottomNav />
         </BrowserRouter>
         <Toaster />
       </ConvexAuthProvider>
