@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
+import { ArrowRight, Loader2, Mail, UserX, Chrome } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -30,6 +30,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Enable/disable Google button based on env flag until backend is configured
+  const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -173,6 +176,24 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       >
                         <UserX className="mr-2 h-4 w-4" />
                         Continue as Guest
+                      </Button>
+
+                      {/* Continue with Google */}
+                      <Button
+                        type="button"
+                        className="w-full mt-2"
+                        variant="default"
+                        onClick={async () => {
+                          try {
+                            await signIn("google");
+                          } catch (error) {
+                            console.error("Google sign-in error:", error);
+                          }
+                        }}
+                        disabled={isLoading || !googleEnabled}
+                      >
+                        <Chrome className="mr-2 h-4 w-4" />
+                        Continue with Google
                       </Button>
                     </div>
                   </CardContent>
