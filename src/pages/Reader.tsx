@@ -227,8 +227,8 @@ export default function Reader() {
         </Card>
 
         {/* Actions */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button
               variant={hasLiked ? "default" : "outline"}
               onClick={handleLike}
@@ -289,10 +289,11 @@ export default function Reader() {
             </Dialog>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:justify-end">
             <Button
               variant="outline"
               disabled={!adjacent?.prevId}
+              className="w-full md:w-auto"
               onClick={() => adjacent?.prevId && navigate(`/read/${adjacent.prevId}`)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -301,6 +302,7 @@ export default function Reader() {
             <Button
               variant="outline"
               disabled={!adjacent?.nextId}
+              className="w-full md:w-auto"
               onClick={() => adjacent?.nextId && navigate(`/read/${adjacent.nextId}`)}
             >
               Next
