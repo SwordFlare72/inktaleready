@@ -50,6 +50,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const me = useQuery(api.users.currentUser, {});
   const setUsername = useMutation(api.users.setUsername);
   const updateMe = useMutation(api.users.updateMe);
+  const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
 
   // Helper to resolve username/email
   const getEmailForLogin = useMutation(api.users.getEmailForLogin);
@@ -109,9 +110,24 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     setSuUsernameError(null);
     try {
-      if (suPassword !== suConfirm) {
-        throw new Error("Passwords do not match");
+      // Basic client validation
+      const desired = suUsername.trim();
+      if (desired.length < 3 || desired.length > 20 || !/^[a-zA-Z0-9_]+$/.test(desired)) {
+        setSuUsernameError("Invalid username format");
+        return;
       }
+      if (suPassword !== suConfirm) {
+        setError("Passwords do not match");
+        return;
+      }
+
+      // Check username availability BEFORE creating account
+      const available = await isUsernameAvailable({ username: desired });
+      if (!available) {
+        setSuUsernameError("Username is already taken");
+        return;
+      }
+
       // 1) Create account
       const fd = new FormData();
       const normalizedEmail = suEmail.replace(/\s+/g, "").toLowerCase();
@@ -121,9 +137,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("password", fd);
 
       // 2) Try to set username (retry until session cookie is available)
-      const desired = suUsername.trim();
       let saved = false;
-      let usernameTaken = false; // track username-taken specifically
       for (let i = 0; i < 6; i++) {
         try {
           await setUsername({ username: desired });
@@ -136,38 +150,37 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             continue;
           }
           if (msg.includes("username is already taken")) {
-            // Show inline message under the Username field and stop retries
             setSuUsernameError("Username is already taken");
-            usernameTaken = true;
-            break;
+            return;
           }
-          // Any other error bubbles up to global friendly message
           throw new Error("Failed to set username");
         }
       }
+
       // 3) Optional gender
       if (suGender && suGender.trim()) {
         try {
           await updateMe({ gender: suGender.trim() });
         } catch {
-          // ignore if still warming up; user can edit later
+          // ignore warmup
+        }
+      }
+
+      // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
+      if (!saved) {
+        if (shouldPromptUsername) {
+          setUsernameInput(desired);
+          setShowUsernameDialog(true);
+          return;
+        } else {
+          setSuUsernameError("Could not set username. Please try again.");
+          return;
         }
       }
 
       toast.success("Account created");
-      if (!saved) {
-        // Only prompt dialog for auth warmup cases, not for 'username taken'
-        if (!usernameTaken) {
-          setUsernameInput(desired);
-          setShouldPromptUsername(true);
-          setShowUsernameDialog(true);
-        }
-        // If username is taken, stay on the form with inline error; do not navigate
-      } else {
-        navigate(redirectAfterAuth || "/");
-      }
+      navigate(redirectAfterAuth || "/");
     } catch (err: any) {
-      // Show a concise, friendly error instead of the raw server stack
       const msg = String(err?.message || "");
       if (msg.toLowerCase().includes("passwords do not match")) {
         setError("Passwords do not match");
@@ -368,7 +381,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <p className="text-sm text-red-500">{error}</p>
                   )}
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={
+                      isLoading ||
+                      !suUsername.trim() ||
+                      !!suUsernameError ||
+                      !suEmail.trim() ||
+                      !suPassword ||
+                      !suConfirm ||
+                      suPassword !== suConfirm
+                    }
+                  >
                     {isLoading ? "Creating..." : "Create Account"}
                   </Button>
 

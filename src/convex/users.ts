@@ -334,3 +334,19 @@ export const getEmailForLogin = mutation({
     return user.email;
   },
 });
+
+export const isUsernameAvailable = mutation({
+  args: { username: v.string() },
+  handler: async (ctx, args) => {
+    const normalized = args.username.trim().toLowerCase();
+    if (normalized.length < 3 || normalized.length > 20) return false;
+    if (!/^[a-zA-Z0-9_]+$/.test(normalized)) return false;
+
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", normalized))
+      .unique();
+
+    return !existing;
+  },
+});
