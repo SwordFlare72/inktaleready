@@ -89,7 +89,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       navigate(redirectAfterAuth || "/");
     } catch {
       // Any failure at credential verification stage -> wrong credentials.
-      setError("Wrong Username Or Password");
+      setError("Invalid Username Or Password");
     } finally {
       setIsLoading(false);
     }
@@ -218,7 +218,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       type="button"
                       variant="link"
                       className="px-1"
-                      onClick={() => setMode("signup")}
+                      onClick={() => {
+                        setError(null);
+                        setMode("signup");
+                      }}
                     >
                       Sign up
                     </Button>
@@ -311,7 +314,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       type="button"
                       variant="link"
                       className="px-1"
-                      onClick={() => setMode("login")}
+                      onClick={() => {
+                        setError(null);
+                        setMode("login");
+                      }}
                     >
                       Log in
                     </Button>
