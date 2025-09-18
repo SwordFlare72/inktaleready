@@ -110,14 +110,40 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 2) Set username (unique) and optional gender
-      await setUsername({ username: suUsername.trim() });
+      // 2) Try to set username (retry until session cookie is available)
+      const desired = suUsername.trim();
+      let saved = false;
+      for (let i = 0; i < 6; i++) {
+        try {
+          await setUsername({ username: desired });
+          saved = true;
+          break;
+        } catch (err: any) {
+          // If auth not yet ready, wait briefly and retry
+          if (String(err?.message || "").toLowerCase().includes("authenticated")) {
+            await new Promise((r) => setTimeout(r, 250));
+            continue;
+          }
+          throw err;
+        }
+      }
+      // 3) Optional gender
       if (suGender && suGender.trim()) {
-        await updateMe({ gender: suGender.trim() });
+        try {
+          await updateMe({ gender: suGender.trim() });
+        } catch {
+          // ignore if still warming up; user can edit later
+        }
       }
 
       toast.success("Account created");
-      navigate(redirectAfterAuth || "/");
+      // If username wasn't saved yet due to session warmup, open the dialog to finish it
+      if (!saved) {
+        setUsernameInput(desired);
+        setShowUsernameDialog(true);
+      } else {
+        navigate(redirectAfterAuth || "/");
+      }
     } catch (err: any) {
       setError(err?.message || "Sign up failed");
     } finally {
