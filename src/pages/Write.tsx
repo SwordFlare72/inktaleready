@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -65,6 +65,11 @@ export default function Write() {
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
+  // Better file-picker UX state
+  const [createCoverName, setCreateCoverName] = useState("");
+  const [editCoverName, setEditCoverName] = useState("");
+  const createFileInputRef = useRef<HTMLInputElement | null>(null);
+  const editFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const uploadCoverAndGetUrl = async (file: File): Promise<string | null> => {
     try {
@@ -457,20 +462,56 @@ export default function Write() {
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Cover Image</label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <input
+                    ref={createFileInputRef}
                     type="file"
                     accept="image/*"
+                    className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
+                      // Basic validation
+                      if (!file.type.startsWith("image/")) {
+                        toast.error("Please select an image file");
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error("Image must be 5MB or less");
+                        return;
+                      }
+                      setCreateCoverName(file.name);
                       const url = await uploadCoverAndGetUrl(file);
                       if (url) setStoryCover(url);
                     }}
                   />
-                  <span className="text-xs text-muted-foreground">
-                    or paste a URL below
-                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => createFileInputRef.current?.click()}
+                  >
+                    Choose Image
+                  </Button>
+                  {createCoverName && (
+                    <span className="text-xs text-muted-foreground truncate max-w-[10rem]">
+                      {createCoverName}
+                    </span>
+                  )}
+                  {storyCover && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setStoryCover("");
+                        setCreateCoverName("");
+                        createFileInputRef.current && (createFileInputRef.current.value = "");
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
                 </div>
                 <Input
                   className="mt-2"
@@ -478,7 +519,7 @@ export default function Write() {
                   onChange={(e) => setStoryCover(e.target.value)}
                   placeholder="https://..."
                 />
-                {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading...</p>}
+                {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading image…</p>}
                 {storyCover && (
                   <div className="mt-2 w-24 h-32 overflow-hidden rounded border">
                     <img src={storyCover} className="w-full h-full object-cover" />
@@ -551,20 +592,55 @@ export default function Write() {
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Cover Image</label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <input
+                    ref={editFileInputRef}
                     type="file"
                     accept="image/*"
+                    className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
+                      if (!file.type.startsWith("image/")) {
+                        toast.error("Please select an image file");
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error("Image must be 5MB or less");
+                        return;
+                      }
+                      setEditCoverName(file.name);
                       const url = await uploadCoverAndGetUrl(file);
                       if (url) setEditCover(url);
                     }}
                   />
-                  <span className="text-xs text-muted-foreground">
-                    or paste a URL below
-                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editFileInputRef.current?.click()}
+                  >
+                    Choose Image
+                  </Button>
+                  {editCoverName && (
+                    <span className="text-xs text-muted-foreground truncate max-w-[10rem]">
+                      {editCoverName}
+                    </span>
+                  )}
+                  {editCover && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditCover("");
+                        setEditCoverName("");
+                        editFileInputRef.current && (editFileInputRef.current.value = "");
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
                 </div>
                 <Input
                   className="mt-2"
@@ -572,7 +648,7 @@ export default function Write() {
                   onChange={(e) => setEditCover(e.target.value)}
                   placeholder="https://..."
                 />
-                {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading...</p>}
+                {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading image…</p>}
                 {editCover && (
                   <div className="mt-2 w-24 h-32 overflow-hidden rounded border">
                     <img src={editCover} className="w-full h-full object-cover" />
