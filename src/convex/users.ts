@@ -110,20 +110,17 @@ export const getUserPublic = query({
     const user = await ctx.db.get(args.userId);
     if (!user) return null;
 
-    // Get user's published stories
     const stories = await ctx.db
       .query("stories")
       .withIndex("by_author", (q) => q.eq("authorId", args.userId))
       .filter((q) => q.eq(q.field("isPublished"), true))
       .collect();
 
-    // Followers
     const followers = await ctx.db
       .query("follows")
       .withIndex("by_following", (q) => q.eq("followingId", args.userId))
       .collect();
 
-    // Add: Following count
     const following = await ctx.db
       .query("follows")
       .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
@@ -137,7 +134,10 @@ export const getUserPublic = query({
       isWriter: user.isWriter,
       writerLevel: user.writerLevel || 1,
       totalFollowers: followers.length,
-      totalFollowing: following.length, // Add: following count
+      totalFollowing: following.length,
+      // Add: expose username & banner image
+      username: user.username,
+      bannerImage: (user as any).bannerImage,
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,
@@ -159,6 +159,8 @@ export const updateMe = mutation({
     image: v.optional(v.string()),
     bio: v.optional(v.string()),
     gender: v.optional(v.string()),
+    // Add: banner image update
+    bannerImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -169,6 +171,7 @@ export const updateMe = mutation({
     if (args.image !== undefined) updates.image = args.image;
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
+    if (args.bannerImage !== undefined) (updates as any).bannerImage = args.bannerImage;
 
     await ctx.db.patch(user._id, updates);
     return user._id;

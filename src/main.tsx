@@ -25,6 +25,7 @@ import BottomNav from "@/components/BottomNav.tsx";
 import "./types/global.d.ts";
 import ChapterEditor from "./pages/ChapterEditor.tsx";
 import StoryChaptersManage from "./pages/StoryChaptersManage.tsx";
+import EditProfile from "./pages/EditProfile.tsx";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -74,6 +75,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/profile/edit" element={<EditProfile />} />
             <Route path="/earnings" element={<Earnings />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="*" element={<NotFound />} />

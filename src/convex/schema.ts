@@ -71,6 +71,8 @@ const schema = defineSchema(
       // Add: username (unique via index + check) and optional gender
       username: v.optional(v.string()),
       gender: v.optional(v.string()),
+      // Add: banner image for profile header
+      bannerImage: v.optional(v.string()),
     })
       .index("email", ["email"]) // index for the email. do not remove or modify
       // Add: index for username uniqueness lookups

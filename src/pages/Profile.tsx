@@ -17,6 +17,7 @@ import { DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
@@ -123,6 +124,9 @@ export default function Profile() {
 
   const displayUser = isOwnProfile ? currentUser : profileUser;
 
+  const readingListCount = Array.isArray(publicLists) ? publicLists.length : 0;
+  const followerCount = typeof displayUser?.totalFollowers === "number" ? displayUser.totalFollowers : 0;
+
   if (!isAuthenticated && isOwnProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -157,102 +161,113 @@ export default function Profile() {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-background"
     >
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Profile Header */}
-        <Card className="mb-8">
-          <CardContent className="p-4 sm:p-8">
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 text-center sm:text-left">
-              <div className="flex justify-center sm:block">
-                <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+      <div className="max-w-6xl mx-auto px-0 sm:px-4 pb-8">
+        {/* Profile Header with Banner */}
+        <div className="w-full relative">
+          <div className="h-40 sm:h-56 w-full bg-muted overflow-hidden">
+            {displayUser.bannerImage ? (
+              <img
+                src={displayUser.bannerImage}
+                alt="Profile banner"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+                No cover image
+              </div>
+            )}
+          </div>
+
+          {/* Avatar + name row */}
+          <div className="px-4 sm:px-6 -mt-10 sm:-mt-12 relative">
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex items-end gap-3">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-background">
                   <AvatarImage src={displayUser.image} />
                   <AvatarFallback className="text-2xl">
                     {displayUser.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
-              </div>
-
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-                  <div className="min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold mb-2 truncate">
-                      {displayUser.name || "Anonymous User"}
-                    </h1>
-                    {displayUser.isWriter && (
-                      <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
-                        <BookOpen className="h-4 w-4" />
-                        Writer Level {displayUser.writerLevel || 1}
-                      </div>
-                    )}
+                <div className="pb-2">
+                  <div className="text-2xl sm:text-3xl font-bold leading-tight">
+                    {displayUser.name || "Anonymous User"}
                   </div>
-
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    {isOwnProfile ? (
-                      <>
-                        <Button onClick={handleEditProfile} className="w-full sm:w-auto">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-
-                        {/* Settings menu with Logout */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full sm:w-auto" size="icon" aria-label="Settings">
-                              <SettingsIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel>Settings</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setLogoutOpen(true)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <LogOut className="h-4 w-4 mr-2" />
-                              Log out
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </>
-                    ) : (
-                      <Button onClick={handleFollowUser} className="w-full sm:w-auto">
-                        <Users className="h-4 w-4 mr-2" />
-                        {isFollowing ? "Unfollow" : "Follow"}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {displayUser.bio && (
-                  <p className="text-muted-foreground mb-4 line-clamp-3">{displayUser.bio}</p>
-                )}
-
-                {/* Stats row with tappable counts */}
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm">
-                  <button
-                    className="flex items-center gap-1 text-foreground hover:underline"
-                    onClick={() => setOpenFollowers(true)}
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>{displayUser.totalFollowers || 0} followers</span>
-                  </button>
-                  {"totalFollowing" in displayUser && (
-                    <button
-                      className="flex items-center gap-1 text-foreground hover:underline"
-                      onClick={() => setOpenFollowing(true)}
-                    >
-                      <Users className="h-4 w-4" />
-                      <span>{(displayUser as any).totalFollowing || 0} following</span>
-                    </button>
+                  {/* Username line */}
+                  {displayUser.username && (
+                    <div className="text-sm text-muted-foreground">@{displayUser.username}</div>
                   )}
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{storiesToShow.length} stories</span>
-                  </div>
                 </div>
               </div>
+
+              {/* Settings button on top-right, keep logout in menu; add navigate to edit page */}
+              {isOwnProfile ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="mr-4 mt-2 sm:mr-6 sm:mt-3" aria-label="Settings">
+                      <SettingsIcon className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Settings</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/profile/edit")}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Profile Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setLogoutOpen(true)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="pr-4 sm:pr-6 pt-2">
+                  <Button onClick={handleFollowUser}>
+                    <Users className="h-4 w-4 mr-2" />
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Compact stats row */}
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-6 text-center sm:text-left">
+              <div className="px-2">
+                <div className="text-xl font-semibold">{storiesToShow.length}</div>
+                <div className="text-xs text-muted-foreground">Stories</div>
+              </div>
+              <div className="px-2">
+                <div className="text-xl font-semibold">{readingListCount}</div>
+                <div className="text-xs text-muted-foreground">Reading Lists</div>
+              </div>
+              <button className="px-2 text-left" onClick={() => setOpenFollowers(true)}>
+                <div className="text-xl font-semibold">{followerCount}</div>
+                <div className="text-xs text-muted-foreground">Followers</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* About / Bio */}
+        <div className="px-4 sm:px-6 mt-6">
+          {displayUser.bio ? (
+            <Card className="mb-8">
+              <CardContent className="py-4">
+                <div className="text-sm text-foreground whitespace-pre-wrap">{displayUser.bio}</div>
+              </CardContent>
+            </Card>
+          ) : isOwnProfile ? (
+            <Card className="mb-8">
+              <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                Tap Settings → Profile Settings to add a description about yourself.
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
 
         {/* Stories */}
         <div className="mb-8">
@@ -311,6 +326,32 @@ export default function Profile() {
                   Start Writing
                 </Button>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Followers grid (preview) */}
+        <div className="px-4 sm:px-6 mt-10 mb-8">
+          <h2 className="text-2xl font-bold mb-4">Followers</h2>
+          {followersList === undefined ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : followersList.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No followers yet</div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+              {followersList.slice(0, 12).map((u: any) => (
+                <div
+                  key={u._id}
+                  className="flex flex-col items-center gap-2 cursor-pointer"
+                  onClick={() => navigate(`/profile/${u._id}`)}
+                >
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={u.image} />
+                    <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                  <div className="text-xs line-clamp-1">{u.name || "User"}</div>
+                </div>
+              ))}
             </div>
           )}
         </div>
