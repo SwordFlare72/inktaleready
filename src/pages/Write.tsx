@@ -271,27 +271,27 @@ export default function Write() {
         </div>
 
         {/* Stats - revamped visual cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
           {statCards.map((item) => {
             const Icon = item.icon;
             return (
               <motion.div
                 key={item.key}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.015 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                <Card className="relative overflow-hidden">
+                <Card className="relative overflow-hidden h-[82px]">
                   <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${item.color}`} />
-                  <CardHeader className="pb-1 relative z-10">
+                  <CardHeader className="pb-0 pt-2 px-3 relative z-10">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-xs text-muted-foreground">{item.label}</CardTitle>
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/70 border">
-                        <Icon className="h-3.5 w-3.5" />
+                      <CardTitle className="text-[11px] text-muted-foreground">{item.label}</CardTitle>
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/70 border">
+                        <Icon className="h-3 w-3" />
                       </span>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-0 relative z-10">
-                    <div className="text-xl font-bold tabular-nums">{item.value}</div>
+                  <CardContent className="pt-0 px-3 pb-2 relative z-10">
+                    <div className="text-lg font-bold tabular-nums leading-tight">{item.value}</div>
                   </CardContent>
                 </Card>
               </motion.div>
