@@ -291,8 +291,8 @@ export default function Write() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 px-3 pb-2 relative z-10">
-                    {/* Ensure strong contrast and visibility over gradients */}
-                    <div className="text-lg font-bold tabular-nums leading-tight text-white drop-shadow-sm">
+                    {/* Move number to bottom-left with strong visibility */}
+                    <div className="absolute bottom-2 left-3 text-2xl font-extrabold tracking-tight text-white drop-shadow-md tabular-nums">
                       {Math.max(0, Number(item.value ?? 0)).toLocaleString()}
                     </div>
                   </CardContent>
