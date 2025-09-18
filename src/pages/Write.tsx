@@ -182,6 +182,38 @@ export default function Write() {
   const totalLikes = myStories?.reduce((sum, s) => sum + s.totalLikes, 0) || 0;
   const totalChapters = myStories?.reduce((sum, s) => sum + s.totalChapters, 0) || 0;
 
+  // Add: compact config for nicer analytics cards
+  const statCards = [
+    {
+      key: "stories",
+      label: "Stories",
+      value: totalStories,
+      color: "from-indigo-500/20 to-indigo-500/5 text-indigo-600 dark:text-indigo-300",
+      icon: BookOpen,
+    },
+    {
+      key: "views",
+      label: "Views",
+      value: totalViews,
+      color: "from-blue-500/20 to-blue-500/5 text-blue-600 dark:text-blue-300",
+      icon: Eye,
+    },
+    {
+      key: "likes",
+      label: "Likes",
+      value: totalLikes,
+      color: "from-rose-500/20 to-rose-500/5 text-rose-600 dark:text-rose-300",
+      icon: Heart,
+    },
+    {
+      key: "chapters",
+      label: "Chapters",
+      value: totalChapters,
+      color: "from-emerald-500/20 to-emerald-500/5 text-emerald-600 dark:text-emerald-300",
+      icon: FileText,
+    },
+  ] as const;
+
   const openEditStory = (story: any) => {
     setEditingStoryId(story._id);
     setEditTitle(story.title || "");
@@ -238,40 +270,33 @@ export default function Write() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          <Card className="p-3">
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Stories</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold">{totalStories}</div>
-            </CardContent>
-          </Card>
-          <Card className="p-3">
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Views</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold">{totalViews}</div>
-            </CardContent>
-          </Card>
-          <Card className="p-3">
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Likes</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold">{totalLikes}</div>
-            </CardContent>
-          </Card>
-          <Card className="p-3">
-            <CardHeader className="pb-1">
-              <CardTitle className="text-xs text-muted-foreground">Chapters</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold">{totalChapters}</div>
-            </CardContent>
-          </Card>
+        {/* Stats - revamped visual cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          {statCards.map((item) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={item.key}
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <Card className="relative overflow-hidden">
+                  <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${item.color}`} />
+                  <CardHeader className="pb-1 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xs text-muted-foreground">{item.label}</CardTitle>
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/70 border">
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 relative z-10">
+                    <div className="text-xl font-bold tabular-nums">{item.value}</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* Quick Actions */}
