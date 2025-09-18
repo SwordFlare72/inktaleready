@@ -39,6 +39,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [suPassword, setSuPassword] = useState("");
   const [suConfirm, setSuConfirm] = useState("");
   const [suGender, setSuGender] = useState<string | undefined>(undefined);
+  const [suUsernameError, setSuUsernameError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +107,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuUsernameError(null);
     try {
       if (suPassword !== suConfirm) {
         throw new Error("Passwords do not match");
@@ -121,6 +123,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // 2) Try to set username (retry until session cookie is available)
       const desired = suUsername.trim();
       let saved = false;
+      let usernameTaken = false; // track username-taken specifically
       for (let i = 0; i < 6; i++) {
         try {
           await setUsername({ username: desired });
@@ -132,8 +135,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             await new Promise((r) => setTimeout(r, 250));
             continue;
           }
-          // Show inline error like "Username is already taken." and stop
-          throw err;
+          if (msg.includes("username is already taken")) {
+            // Show inline message under the Username field and stop retries
+            setSuUsernameError("Username is already taken");
+            usernameTaken = true;
+            break;
+          }
+          // Any other error bubbles up to global friendly message
+          throw new Error("Failed to set username");
         }
       }
       // 3) Optional gender
@@ -147,15 +156,26 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       toast.success("Account created");
       if (!saved) {
-        // Explicitly prompt username only if session warmup blocked saving
-        setUsernameInput(desired);
-        setShouldPromptUsername(true);
-        setShowUsernameDialog(true);
+        // Only prompt dialog for auth warmup cases, not for 'username taken'
+        if (!usernameTaken) {
+          setUsernameInput(desired);
+          setShouldPromptUsername(true);
+          setShowUsernameDialog(true);
+        }
+        // If username is taken, stay on the form with inline error; do not navigate
       } else {
         navigate(redirectAfterAuth || "/");
       }
     } catch (err: any) {
-      setError(err?.message || "Sign up failed");
+      // Show a concise, friendly error instead of the raw server stack
+      const msg = String(err?.message || "");
+      if (msg.toLowerCase().includes("passwords do not match")) {
+        setError("Passwords do not match");
+      } else if (msg.toLowerCase().includes("failed to set username")) {
+        setError("Could not set username. Please try again.");
+      } else {
+        setError("Sign up failed");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -285,13 +305,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Input
                       placeholder="Enter your username"
                       value={suUsername}
-                      onChange={(e) => setSuUsername(e.target.value)}
+                      onChange={(e) => {
+                        setSuUsername(e.target.value);
+                        if (suUsernameError) setSuUsernameError(null);
+                      }}
                       disabled={isLoading}
                       required
                     />
                     <p className="text-[11px] text-muted-foreground mt-1">
                       3–20 chars. Letters, numbers, underscores only.
                     </p>
+                    {suUsernameError && (
+                      <p className="text-sm text-red-500 mt-1">{suUsernameError}</p>
+                    )}
                   </div>
                   <div>
                     <Label className="mb-1 block">Email</Label>
@@ -354,6 +380,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       className="px-1"
                       onClick={() => {
                         setError(null);
+                        setSuUsernameError(null);
                         setMode("login");
                       }}
                     >
