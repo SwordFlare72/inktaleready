@@ -293,32 +293,34 @@ export const getEmailForLogin = mutation({
     const rawInput = args.identifier.trim();
     if (!rawInput) throw new Error("Enter email or username");
 
-    // If input looks like an email, normalize aggressively and return it,
-    // otherwise resolve username -> email via index.
     if (rawInput.includes("@")) {
-      // Remove ALL whitespace inside the email (handles cases like "gmail. com")
       const compact = rawInput.replace(/\s+/g, "");
       const lower = compact.toLowerCase();
 
-      // 1) Try exact
       let existing =
         await ctx.db.query("users").withIndex("email", (q) => q.eq("email", compact)).unique();
 
-      // 2) Try lowercased
       if (!existing) {
         existing =
           await ctx.db.query("users").withIndex("email", (q) => q.eq("email", lower)).unique();
       }
 
-      // 3) Fallback: case-insensitive scan (handles any legacy casing/formatting)
+      // Fallback: case-insensitive scan with normalization of stored emails (remove all whitespace)
       if (!existing) {
         const all = await ctx.db.query("users").collect();
-        const found = all.find((u) => (u.email || "").toLowerCase() === lower);
-        if (found?.email) return found.email;
+        const found = all.find((u) => {
+          const normalizedStored = (u.email || "").replace(/\s+/g, "").toLowerCase();
+          return normalizedStored === lower;
+        });
+        if (found?.email) {
+          // Return the compacted version to avoid passing whitespace to the provider
+          return (found.email || "").replace(/\s+/g, "");
+        }
       }
 
       if (!existing?.email) throw new Error("User not found");
-      return existing.email;
+      // Ensure we return an email without whitespace for downstream auth
+      return existing.email.replace(/\s+/g, "");
     }
 
     // Username path: stored normalized lowercase
