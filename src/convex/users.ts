@@ -279,3 +279,21 @@ export const setUsername = mutation({
     return true;
   },
 });
+
+// Add: helper to resolve login identifier (email or username) into an email
+export const getEmailForLogin = mutation({
+  args: { identifier: v.string() },
+  handler: async (ctx, args) => {
+    const id = args.identifier.trim().toLowerCase();
+    if (!id) throw new Error("Enter email or username");
+    if (id.includes("@")) return id;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", id))
+      .unique();
+
+    if (!user?.email) throw new Error("User not found");
+    return user.email;
+  },
+});
