@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle } from "lucide-react";
 import { useState } from "react";
@@ -54,6 +54,38 @@ export default function Write() {
   const updateChapter = useMutation(api.chapters.updateChapter);
   const deleteChapter = useMutation(api.chapters.deleteChapter);
 
+  const [showEditStory, setShowEditStory] = useState(false);
+  const [editingStoryId, setEditingStoryId] = useState<Id<"stories"> | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editGenre, setEditGenre] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editCover, setEditCover] = useState("");
+
+  const getUploadUrl = useAction(api.files.getUploadUrl);
+  const getFileUrl = useAction(api.files.getFileUrl);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const uploadCoverAndGetUrl = async (file: File): Promise<string | null> => {
+    try {
+      setUploadingCover(true);
+      const uploadUrl = await getUploadUrl({});
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await res.json();
+      const publicUrl = await getFileUrl({ storageId });
+      return publicUrl ?? null;
+    } catch (e) {
+      toast.error("Failed to upload image");
+      return null;
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -76,16 +108,24 @@ export default function Write() {
       toast.error("Please fill in all required fields");
       return;
     }
+    // Enforce up to 20 tags
+    const tagsArr = storyTags
+      .split(",")
+      .map(t => t.trim())
+      .filter(Boolean);
+    if (tagsArr.length > 20) {
+      toast.error("You can add up to 20 tags");
+      return;
+    }
 
     try {
       const storyId = await createStory({
         title: storyTitle.trim(),
         description: storyDescription.trim(),
         genre: storyGenre,
-        tags: storyTags.split(",").map(tag => tag.trim()).filter(Boolean),
+        tags: tagsArr,
         coverImage: storyCover.trim() || undefined,
       });
-      
       toast.success("Story created successfully!");
       setShowCreateStory(false);
       resetStoryForm();
@@ -136,6 +176,47 @@ export default function Write() {
   const totalViews = myStories?.reduce((sum, s) => sum + s.totalViews, 0) || 0;
   const totalLikes = myStories?.reduce((sum, s) => sum + s.totalLikes, 0) || 0;
   const totalChapters = myStories?.reduce((sum, s) => sum + s.totalChapters, 0) || 0;
+
+  const openEditStory = (story: any) => {
+    setEditingStoryId(story._id);
+    setEditTitle(story.title || "");
+    setEditDescription(story.description || "");
+    setEditGenre(story.genre || "");
+    setEditTags((story.tags || []).join(", "));
+    setEditCover(story.coverImage || "");
+    setShowEditStory(true);
+  };
+
+  const handleSaveEditStory = async () => {
+    if (!editingStoryId) return;
+    if (!editTitle.trim() || !editDescription.trim() || !editGenre) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    const tagsArr = editTags
+      .split(",")
+      .map(t => t.trim())
+      .filter(Boolean);
+    if (tagsArr.length > 20) {
+      toast.error("You can add up to 20 tags");
+      return;
+    }
+
+    try {
+      await updateStory({
+        storyId: editingStoryId,
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        genre: editGenre,
+        tags: tagsArr,
+        coverImage: editCover.trim() || undefined,
+      });
+      toast.success("Story updated");
+      setShowEditStory(false);
+    } catch {
+      toast.error("Failed to update story");
+    }
+  };
 
   return (
     <motion.div
@@ -270,10 +351,10 @@ export default function Write() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => openEditStory(story)}
                   >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Analytics
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
                   </Button>
                   <Button
                     variant={story.isPublished ? "outline" : "default"}
@@ -375,18 +456,156 @@ export default function Write() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Cover Image URL</label>
+                <label className="text-sm font-medium mb-2 block">Cover Image</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = await uploadCoverAndGetUrl(file);
+                      if (url) setStoryCover(url);
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    or paste a URL below
+                  </span>
+                </div>
                 <Input
+                  className="mt-2"
                   value={storyCover}
                   onChange={(e) => setStoryCover(e.target.value)}
-                  placeholder="Enter image URL..."
+                  placeholder="https://..."
                 />
+                {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading...</p>}
+                {storyCover && (
+                  <div className="mt-2 w-24 h-32 overflow-hidden rounded border">
+                    <img src={storyCover} className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tags (comma-separated, up to 20)</label>
+                <Input
+                  value={storyTags}
+                  onChange={(e) => setStoryTags(e.target.value)}
+                  placeholder="amour, amourshipping, ash"
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {storyTags
+                    .split(",")
+                    .map(t => t.trim())
+                    .filter(Boolean)
+                    .slice(0, 20)
+                    .map(tag => (
+                      <span key={tag} className="px-2 py-1 rounded-full bg-muted text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowCreateStory(false)}>
                   Cancel
                 </Button>
                 <Button onClick={handleCreateStory}>Create Story</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showEditStory} onOpenChange={setShowEditStory}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Story</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Title *</label>
+                <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description *</label>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={4}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Genre *</label>
+                <Select value={editGenre} onValueChange={setEditGenre}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENRES.map((genre) => (
+                      <SelectItem key={genre.value} value={genre.value}>
+                        {genre.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Cover Image</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = await uploadCoverAndGetUrl(file);
+                      if (url) setEditCover(url);
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    or paste a URL below
+                  </span>
+                </div>
+                <Input
+                  className="mt-2"
+                  value={editCover}
+                  onChange={(e) => setEditCover(e.target.value)}
+                  placeholder="https://..."
+                />
+                {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading...</p>}
+                {editCover && (
+                  <div className="mt-2 w-24 h-32 overflow-hidden rounded border">
+                    <img src={editCover} className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tags (comma-separated, up to 20)</label>
+                <Input
+                  value={editTags}
+                  onChange={(e) => setEditTags(e.target.value)}
+                  placeholder="amour, amourshipping, ash"
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {editTags
+                    .split(",")
+                    .map(t => t.trim())
+                    .filter(Boolean)
+                    .slice(0, 20)
+                    .map(tag => (
+                      <span key={tag} className="px-2 py-1 rounded-full bg-muted text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowEditStory(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEditStory}>Save</Button>
               </div>
             </div>
           </DialogContent>

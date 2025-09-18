@@ -91,12 +91,22 @@ export const createStory = mutation({
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Must be authenticated to create a story");
 
+    // Normalize, de-duplicate and cap tags to 20
+    const tags: string[] = Array.from(
+      new Set(
+        args.tags
+          .map(t => t.trim())
+          .filter(Boolean)
+          .map(t => t.toLowerCase())
+      )
+    ).slice(0, 20);
+
     const storyId = await ctx.db.insert("stories", {
       title: args.title,
       description: args.description,
       authorId: user._id,
       genre: args.genre as any,
-      tags: args.tags,
+      tags,
       coverImage: args.coverImage,
       isCompleted: false,
       totalChapters: 0,
@@ -155,7 +165,17 @@ export const updateStory = mutation({
     if (args.title !== undefined) updates.title = args.title;
     if (args.description !== undefined) updates.description = args.description;
     if (args.genre !== undefined) updates.genre = args.genre;
-    if (args.tags !== undefined) updates.tags = args.tags;
+    if (args.tags !== undefined) {
+      // Normalize, de-duplicate and cap to 20
+      updates.tags = Array.from(
+        new Set(
+          args.tags
+            .map(t => t.trim())
+            .filter(Boolean)
+            .map(t => t.toLowerCase())
+        )
+      ).slice(0, 20);
+    }
     if (args.coverImage !== undefined) updates.coverImage = args.coverImage;
     if (args.isCompleted !== undefined) updates.isCompleted = args.isCompleted;
     if (args.isPublished !== undefined) updates.isPublished = args.isPublished;
