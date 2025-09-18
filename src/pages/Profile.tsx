@@ -14,11 +14,14 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { DialogDescription } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Settings as SettingsIcon, LogOut } from "lucide-react";
 
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, user: currentUser } = useAuth();
+  const { isAuthenticated, user: currentUser, signOut } = useAuth();
   
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editName, setEditName] = useState("");
@@ -26,6 +29,7 @@ export default function Profile() {
   const [editImage, setEditImage] = useState("");
   const [openFollowers, setOpenFollowers] = useState(false);
   const [openFollowing, setOpenFollowing] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const isOwnProfile = !id || (currentUser && id === currentUser._id);
   const targetUserId = id as Id<"users"> | undefined;
@@ -164,10 +168,32 @@ export default function Profile() {
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     {isOwnProfile ? (
-                      <Button onClick={handleEditProfile} className="w-full sm:w-auto">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Profile
-                      </Button>
+                      <>
+                        <Button onClick={handleEditProfile} className="w-full sm:w-auto">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Profile
+                        </Button>
+
+                        {/* Settings menu with Logout */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full sm:w-auto" size="icon" aria-label="Settings">
+                              <SettingsIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Settings</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setLogoutOpen(true)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <LogOut className="h-4 w-4 mr-2" />
+                              Log out
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
                     ) : (
                       <Button onClick={handleFollowUser} className="w-full sm:w-auto">
                         <Users className="h-4 w-4 mr-2" />
@@ -461,6 +487,33 @@ export default function Profile() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Logout Confirmation */}
+        <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Log out of Fiction Hub?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You can always sign back in with your email or continue as a guest. Are you sure you want to log out?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 text-white hover:bg-red-700"
+                onClick={async () => {
+                  try {
+                    await signOut();
+                  } catch {
+                    // non-blocking; auth provider handles errors internally
+                  }
+                }}
+              >
+                Log out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </motion.div>
   );
