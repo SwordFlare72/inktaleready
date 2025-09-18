@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { MessageCircle, Send } from "lucide-react";
 
@@ -31,6 +32,7 @@ export default function Notifications() {
   const markAllRead = useMutation(api.notifications.markAllRead);
   const searchResults = useQuery(api.users.searchUsers, isAuthenticated && search.trim().length >= 2 ? { q: search.trim() } : "skip");
   const sendMessage = useMutation(api.messages.sendMessage);
+  const conversations = useQuery(api.messages.listConversations, isAuthenticated ? {} : "skip");
 
   if (!isAuthenticated) {
     return (
@@ -89,9 +91,9 @@ export default function Notifications() {
       className="min-h-screen bg-background"
     >
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Notifications</h1>
+            <h1 className="text-3xl font-bold mb-2">Updates</h1>
             <p className="text-muted-foreground">
               {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
             </p>
@@ -110,55 +112,104 @@ export default function Notifications() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {notifications?.page.map((notification) => (
-            <Card 
-              key={notification._id}
-              className={`cursor-pointer transition-colors ${
-                !notification.isRead ? 'bg-muted/50' : ''
-              }`}
-              onClick={() => !notification.isRead && handleMarkRead(notification._id)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    {notification.type === "new_chapter" && <Bell className="h-5 w-5 text-blue-500" />}
-                    {notification.type === "comment_reply" && <Bell className="h-5 w-5 text-green-500" />}
-                    {notification.type === "new_follower" && <Bell className="h-5 w-5 text-purple-500" />}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-1">{notification.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(notification._creationTime).toLocaleString()}
-                    </p>
-                  </div>
-                  {!notification.isRead && (
-                    <div className="flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkRead(notification._id);
-                        }}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Tabs defaultValue="notifications" className="w-full">
+          <TabsList className="grid grid-cols-2 w-full max-w-sm">
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+          </TabsList>
 
-        {notifications?.page.length === 0 && (
-          <div className="text-center py-12">
-            <BellOff className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">No notifications yet</p>
-          </div>
-        )}
+          <TabsContent value="notifications" className="mt-6">
+            <div className="space-y-4">
+              {notifications?.page.map((notification) => (
+                <Card
+                  key={notification._id}
+                  className={`cursor-pointer transition-colors ${!notification.isRead ? "bg-muted/50" : ""}`}
+                  onClick={() => !notification.isRead && handleMarkRead(notification._id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        {notification.type === "new_chapter" && <Bell className="h-5 w-5 text-blue-500" />}
+                        {notification.type === "comment_reply" && <Bell className="h-5 w-5 text-green-500" />}
+                        {notification.type === "new_follower" && <Bell className="h-5 w-5 text-purple-500" />}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">{notification.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(notification._creationTime).toLocaleString()}
+                        </p>
+                      </div>
+                      {!notification.isRead && (
+                        <div className="flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkRead(notification._id);
+                            }}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {notifications?.page.length === 0 && (
+              <div className="text-center py-12">
+                <BellOff className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No notifications yet</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="messages" className="mt-6">
+            <div className="space-y-2">
+              {(conversations || []).map((c: any) => (
+                <Card
+                  key={c.partnerId}
+                  className="cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => navigate("/messages", { state: { partnerId: c.partnerId } })}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={c.partner?.image || undefined} />
+                        <AvatarFallback>{c.partner?.name?.charAt(0) || "U"}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="font-semibold truncate">
+                            {c.partner?.name || "Anonymous"}
+                          </h4>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(c.lastMessageTime).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {c.isLastMessageFromMe ? "You: " : ""}
+                          {c.lastMessage}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {conversations && conversations.length === 0 && (
+              <div className="text-center py-12">
+                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No messages yet</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={openCompose} onOpenChange={setOpenCompose}>

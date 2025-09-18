@@ -11,13 +11,26 @@ import { MessageCircle, Send } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { useLocation } from "react-router";
 
 export default function Messages() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  
+  const location = useLocation() as { state?: { partnerId?: Id<"users"> } };
+
   const [selectedPartnerId, setSelectedPartnerId] = useState<Id<"users"> | null>(null);
   const [messageText, setMessageText] = useState("");
+
+  // Add: initialize selected partner from navigation state
+  // This lets Alerts > Messages tab open a specific thread
+  // when user taps a conversation item.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useState(() => {
+    if (location?.state?.partnerId) {
+      setSelectedPartnerId(location.state.partnerId);
+    }
+    return null;
+  });
 
   const conversations = useQuery(api.messages.listConversations, isAuthenticated ? {} : "skip");
   const thread = useQuery(api.messages.listThread,
