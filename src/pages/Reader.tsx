@@ -218,7 +218,7 @@ export default function Reader() {
         </div>
 
         <Card className="mb-8">
-          <CardContent className="p-8">
+          <CardContent className="p-4 md:p-8">
             <div 
               className={`prose prose-gray dark:prose-invert max-w-none ${fontSizeClasses[fontSize]}`}
               dangerouslySetInnerHTML={{ __html: chapter.content.replace(/\n/g, '<br>') }}
@@ -227,9 +227,10 @@ export default function Reader() {
         </Card>
 
         {/* Actions */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
+              size="sm"
               variant={hasLiked ? "default" : "outline"}
               onClick={handleLike}
               className="flex items-center gap-2"
@@ -238,7 +239,7 @@ export default function Reader() {
               {chapter.likes}
             </Button>
 
-            <Button variant="outline" onClick={handleShare}>
+            <Button size="sm" variant="outline" onClick={handleShare}>
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
@@ -291,18 +292,20 @@ export default function Reader() {
 
           <div className="flex items-center gap-2 md:justify-end">
             <Button
+              size="sm"
               variant="outline"
               disabled={!adjacent?.prevId}
-              className="w-full md:w-auto"
+              className="min-w-[120px]"
               onClick={() => adjacent?.prevId && navigate(`/read/${adjacent.prevId}`)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Previous
             </Button>
             <Button
+              size="sm"
               variant="outline"
               disabled={!adjacent?.nextId}
-              className="w-full md:w-auto"
+              className="min-w-[120px]"
               onClick={() => adjacent?.nextId && navigate(`/read/${adjacent.nextId}`)}
             >
               Next
