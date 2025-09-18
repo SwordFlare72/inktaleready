@@ -18,6 +18,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, UserX, Chrome } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface AuthProps {
   redirectAfterAuth?: string;
@@ -34,12 +38,26 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Enable/disable Google button based on env flag until backend is configured
   const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
 
+  // Add: load current user to determine if username is missing
+  const me = useQuery(api.users.currentUser, {});
+  const setUsername = useMutation(api.users.setUsername);
+
+  // Add: username setup dialog state
+  const [showUsernameDialog, setShowUsernameDialog] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      // If user exists and lacks username, open username dialog; otherwise go home
+      if (me && !me.username) {
+        setShowUsernameDialog(true);
+      } else if (me) {
+        const redirect = redirectAfterAuth || "/";
+        navigate(redirect);
+      }
     }
-  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth]);
+
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -96,6 +114,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       console.error("Error details:", JSON.stringify(error, null, 2));
       setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsLoading(false);
+    }
+  };
+
+  // Add: handle saving username
+  const handleSaveUsername = async () => {
+    const val = usernameInput.trim();
+    if (!val) {
+      toast.error("Please enter a username");
+      return;
+    }
+    try {
+      await setUsername({ username: val });
+      toast.success("Username saved!");
+      setShowUsernameDialog(false);
+      navigate("/");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to save username");
     }
   };
 
@@ -298,6 +333,28 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </Card>
         </div>
       </div>
+
+      {/* Add: Username setup dialog */}
+      <Dialog open={showUsernameDialog} onOpenChange={(open) => setShowUsernameDialog(open)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose your username</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Enter your username"
+              value={usernameInput}
+              onChange={(e) => setUsernameInput(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              3–20 characters. Letters, numbers, and underscores only. This will be your public handle.
+            </p>
+            <Button onClick={handleSaveUsername} disabled={!usernameInput.trim()}>
+              Save and continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

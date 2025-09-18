@@ -158,6 +158,7 @@ export const updateMe = mutation({
     name: v.optional(v.string()),
     image: v.optional(v.string()),
     bio: v.optional(v.string()),
+    gender: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -167,6 +168,7 @@ export const updateMe = mutation({
     if (args.name !== undefined) updates.name = args.name;
     if (args.image !== undefined) updates.image = args.image;
     if (args.bio !== undefined) updates.bio = args.bio;
+    if (args.gender !== undefined) updates.gender = args.gender;
 
     await ctx.db.patch(user._id, updates);
     return user._id;
@@ -242,5 +244,38 @@ export const searchUsers = query({
       image: u.image,
       bio: u.bio,
     }));
+  },
+});
+
+// Add: setUsername with uniqueness check and normalization
+export const setUsername = mutation({
+  args: { username: v.string() },
+  handler: async (ctx, args) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Must be authenticated");
+
+    const raw = args.username.trim();
+    if (raw.length < 3 || raw.length > 20) {
+      throw new Error("Username must be 3-20 characters.");
+    }
+    // allow letters, numbers, underscores only
+    if (!/^[a-zA-Z0-9_]+$/.test(raw)) {
+      throw new Error("Username can only contain letters, numbers, and underscores.");
+    }
+
+    const normalized = raw.toLowerCase();
+
+    // Check if already taken (case-insensitive by storing/checking lowercase)
+    const taken = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", normalized))
+      .unique();
+
+    if (taken && taken._id !== me._id) {
+      throw new Error("Username is already taken.");
+    }
+
+    await ctx.db.patch(me._id, { username: normalized });
+    return true;
   },
 });

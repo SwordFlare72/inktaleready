@@ -67,7 +67,14 @@ const schema = defineSchema(
       totalFollowers: v.optional(v.number()),
       totalFollowing: v.optional(v.number()),
       isPremium: v.optional(v.boolean()),
-    }).index("email", ["email"]), // index for the email. do not remove or modify
+
+      // Add: username (unique via index + check) and optional gender
+      username: v.optional(v.string()),
+      gender: v.optional(v.string()),
+    })
+      .index("email", ["email"]) // index for the email. do not remove or modify
+      // Add: index for username uniqueness lookups
+      .index("by_username", ["username"]),
 
     // Stories table
     stories: defineTable({
