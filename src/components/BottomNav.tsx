@@ -17,7 +17,8 @@ export default function BottomNav() {
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-50">
-      <div className="mx-auto max-w-xl">
+      {/* Make nav visible and properly sized on desktop as well */}
+      <div className="mx-auto w-full px-3 max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl">
         <nav className="m-3 rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur border shadow-lg">
           <div className="grid grid-cols-6">
             <button
