@@ -31,6 +31,47 @@ export default function Profile() {
   const [openFollowing, setOpenFollowing] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
+  const handleEditProfile = () => {
+    const src: any = currentUser || profileUser;
+    setEditName(src?.name ?? "");
+    setEditBio(src?.bio ?? "");
+    setEditImage(src?.image ?? "");
+    setShowEditDialog(true);
+  };
+
+  const handleFollowUser = async () => {
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
+    if (!targetUserId) return;
+    try {
+      const followed = await toggleUserFollow({ userId: targetUserId });
+      toast.success(followed ? "Followed" : "Unfollowed");
+    } catch {
+      toast.error("Failed to update follow");
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
+    try {
+      const payload: any = {
+        name: editName.trim(),
+        bio: editBio.trim(),
+        image: editImage.trim(),
+      };
+      await updateMe(payload);
+      toast.success("Profile updated");
+      setShowEditDialog(false);
+    } catch {
+      toast.error("Failed to update profile");
+    }
+  };
+
   const isOwnProfile = !id || (currentUser && id === currentUser._id);
   const targetUserId = id as Id<"users"> | undefined;
 
@@ -82,44 +123,22 @@ export default function Profile() {
 
   const displayUser = isOwnProfile ? currentUser : profileUser;
 
-  const handleEditProfile = () => {
-    if (displayUser) {
-      setEditName(displayUser.name || "");
-      setEditBio(displayUser.bio || "");
-      setEditImage(displayUser.image || "");
-      setShowEditDialog(true);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      await updateMe({
-        name: editName.trim() || undefined,
-        bio: editBio.trim() || undefined,
-        image: editImage.trim() || undefined,
-      });
-      toast.success("Profile updated successfully!");
-      setShowEditDialog(false);
-    } catch (error) {
-      toast.error("Failed to update profile");
-    }
-  };
-
-  const handleFollowUser = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to follow users");
-      return;
-    }
-
-    if (!targetUserId) return;
-
-    try {
-      const followed = await toggleUserFollow({ userId: targetUserId });
-      toast.success(followed ? "User followed!" : "User unfollowed");
-    } catch (error) {
-      toast.error("Failed to update follow status");
-    }
-  };
+  if (!isAuthenticated && isOwnProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Sign In Required</h2>
+            <p className="text-muted-foreground mb-4">
+              Please sign in to view your profile
+            </p>
+            <Button onClick={() => navigate("/auth")}>Sign In</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!displayUser) {
     return (
