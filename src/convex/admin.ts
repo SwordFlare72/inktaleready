@@ -39,3 +39,27 @@ export const wipeAll = mutation({
     return { ok: true };
   },
 });
+
+import { getCurrentUser } from "./users";
+
+// Add: grant self admin if email is in ADMIN_ALLOWED_EMAILS
+export const grantSelfAdmin = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Must be authenticated");
+
+    const allowList = (process.env.ADMIN_ALLOWED_EMAILS || "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    const myEmail = (me.email || "").trim().toLowerCase();
+    if (!myEmail || !allowList.includes(myEmail)) {
+      throw new Error("Your email is not authorized to grant admin");
+    }
+
+    await ctx.db.patch(me._id, { role: "admin" as any });
+    return { ok: true, role: "admin" };
+  },
+});
