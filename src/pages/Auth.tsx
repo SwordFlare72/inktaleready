@@ -105,7 +105,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       }
       // 1) Create account
       const fd = new FormData();
-      fd.set("email", suEmail.trim());
+      // Normalize email: remove all whitespace and lowercase to prevent mismatches like "gmail. com"
+      const normalizedEmail = suEmail.replace(/\s+/g, "").toLowerCase();
+      fd.set("email", normalizedEmail);
       fd.set("password", suPassword);
       fd.set("flow", "signUp");
       await signIn("password", fd);
