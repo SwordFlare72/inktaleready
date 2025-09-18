@@ -290,19 +290,31 @@ export const setUsername = mutation({
 export const getEmailForLogin = mutation({
   args: { identifier: v.string() },
   handler: async (ctx, args) => {
-    const raw = args.identifier.trim();
-    if (!raw) throw new Error("Enter email or username");
+    const rawInput = args.identifier.trim();
+    if (!rawInput) throw new Error("Enter email or username");
 
-    if (raw.includes("@")) {
-      // Try exact match first (email may have case)
+    // If input looks like an email, normalize aggressively and return it,
+    // otherwise resolve username -> email via index.
+    if (rawInput.includes("@")) {
+      // Remove ALL whitespace inside the email (handles cases like "gmail. com")
+      const compact = rawInput.replace(/\s+/g, "");
+      const lower = compact.toLowerCase();
+
+      // 1) Try exact
       let existing =
-        await ctx.db.query("users").withIndex("email", (q) => q.eq("email", raw)).unique();
+        await ctx.db.query("users").withIndex("email", (q) => q.eq("email", compact)).unique();
 
-      // Fallback to lowercased match if exact not found
+      // 2) Try lowercased
       if (!existing) {
-        const lower = raw.toLowerCase();
         existing =
           await ctx.db.query("users").withIndex("email", (q) => q.eq("email", lower)).unique();
+      }
+
+      // 3) Fallback: case-insensitive scan (handles any legacy casing/formatting)
+      if (!existing) {
+        const all = await ctx.db.query("users").collect();
+        const found = all.find((u) => (u.email || "").toLowerCase() === lower);
+        if (found?.email) return found.email;
       }
 
       if (!existing?.email) throw new Error("User not found");
@@ -310,10 +322,10 @@ export const getEmailForLogin = mutation({
     }
 
     // Username path: stored normalized lowercase
-    const id = raw.toLowerCase();
+    const username = rawInput.toLowerCase();
     const user = await ctx.db
       .query("users")
-      .withIndex("by_username", (q) => q.eq("username", id))
+      .withIndex("by_username", (q) => q.eq("username", username))
       .unique();
 
     if (!user?.email) throw new Error("User not found");
