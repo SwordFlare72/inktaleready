@@ -7,10 +7,19 @@ import { motion } from "framer-motion";
 import { Bell, BellOff, Check, CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import { MessageCircle, Send } from "lucide-react";
 
 export default function Notifications() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const [openCompose, setOpenCompose] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState<{ _id: string; name?: string | null; image?: string | null } | null>(null);
+  const [messageBody, setMessageBody] = useState("");
 
   const notifications = useQuery(api.notifications.listForUser,
     isAuthenticated ? {
@@ -20,6 +29,8 @@ export default function Notifications() {
 
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
+  const searchResults = useQuery(api.users.searchUsers, isAuthenticated && search.trim().length >= 2 ? { q: search.trim() } : "skip");
+  const sendMessage = useMutation(api.messages.sendMessage);
 
   if (!isAuthenticated) {
     return (
@@ -55,6 +66,20 @@ export default function Notifications() {
     }
   };
 
+  const handleSendDirect = async () => {
+    if (!selectedUser || !messageBody.trim()) return;
+    try {
+      await sendMessage({ recipientId: selectedUser._id as any, body: messageBody.trim() });
+      toast.success("Message sent");
+      setOpenCompose(false);
+      setSearch("");
+      setSelectedUser(null);
+      setMessageBody("");
+    } catch {
+      toast.error("Failed to send message");
+    }
+  };
+
   const unreadCount = notifications?.page.filter(n => !n.isRead).length || 0;
 
   return (
@@ -71,12 +96,18 @@ export default function Notifications() {
               {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
             </p>
           </div>
-          {unreadCount > 0 && (
-            <Button onClick={handleMarkAllRead} variant="outline">
-              <CheckCheck className="h-4 w-4 mr-2" />
-              Mark All Read
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <Button onClick={handleMarkAllRead} variant="outline">
+                <CheckCheck className="h-4 w-4 mr-2" />
+                Mark All Read
+              </Button>
+            )}
+            <Button onClick={() => setOpenCompose(true)}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              New Message
             </Button>
-          )}
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -129,6 +160,90 @@ export default function Notifications() {
           </div>
         )}
       </div>
+
+      <Dialog open={openCompose} onOpenChange={setOpenCompose}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send Direct Message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Search user</label>
+              <Input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setSelectedUser(null);
+                }}
+                placeholder="Type at least 2 characters..."
+              />
+              {search.trim().length >= 2 && (
+                <div className="mt-2 max-h-56 overflow-y-auto space-y-1">
+                  {searchResults?.map((u) => (
+                    <button
+                      key={u._id}
+                      onClick={() => setSelectedUser(u as any)}
+                      className={`w-full text-left p-2 rounded-md hover:bg-muted flex items-center gap-2 ${selectedUser?._id === (u as any)._id ? "bg-muted" : ""}`}
+                    >
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={(u as any).image || undefined} />
+                        <AvatarFallback>{(u as any).name?.charAt(0) || "U"}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-sm font-medium">{(u as any).name || "Anonymous"}</div>
+                        {(u as any).bio && <div className="text-xs text-muted-foreground line-clamp-1">{(u as any).bio}</div>}
+                      </div>
+                    </button>
+                  ))}
+                  {searchResults && searchResults.length === 0 && (
+                    <div className="text-sm text-muted-foreground p-2">No users found</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">To</label>
+              <div className="flex items-center gap-2">
+                {selectedUser ? (
+                  <>
+                    <Avatar className="h-7 w-7">
+                      <AvatarImage src={selectedUser.image || undefined} />
+                      <AvatarFallback>{selectedUser.name?.charAt(0) || "U"}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{selectedUser.name || "Anonymous"}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>Change</Button>
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Select a user from search</span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Message</label>
+              <Input
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                placeholder="Type your message..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && messageBody.trim() && selectedUser) {
+                    handleSendDirect();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setOpenCompose(false)}>Cancel</Button>
+              <Button onClick={handleSendDirect} disabled={!selectedUser || !messageBody.trim()}>
+                <Send className="h-4 w-4 mr-2" />
+                Send
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
