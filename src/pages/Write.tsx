@@ -291,7 +291,9 @@ export default function Write() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 px-3 pb-2 relative z-10">
-                    <div className="text-lg font-bold tabular-nums leading-tight">{item.value}</div>
+                    <div className="text-lg font-bold tabular-nums leading-tight text-foreground">
+                      {Number(item.value ?? 0).toLocaleString()}
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
