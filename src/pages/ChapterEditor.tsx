@@ -22,11 +22,25 @@ export default function ChapterEditor() {
 
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
   // Load chapter when editing
   const existing = useQuery(
     api.chapters.getChapterById,
     chapterId ? { chapterId: chapterId as Id<"chapters"> } : "skip"
   );
+
+  // When creating a new chapter, fetch the story to know publish status
+  const storyForNew = useQuery(
+    api.stories.getStoryById,
+    !chapterId && storyId ? { storyId: storyId as Id<"stories"> } : "skip"
+  );
+
+  // Determine if publish is allowed (parent story must be published)
+  const canPublish = (() => {
+    if (chapterId && existing) return !!existing.story?.isPublished;
+    if (!chapterId && storyForNew) return !!storyForNew.isPublished;
+    return false;
+  })();
 
   useEffect(() => {
     // basic editor defaults
@@ -91,6 +105,11 @@ export default function ChapterEditor() {
       toast.error("Please add a title and content");
       return;
     }
+    // Prevent publishing if parent story isn't published
+    if (publish && !canPublish) {
+      toast.error("Publish the story first to publish chapters.");
+      return;
+    }
     setIsSaving(true);
     try {
       if (chapterId) {
@@ -113,7 +132,6 @@ export default function ChapterEditor() {
         });
         toast.success(publish ? "Chapter published!" : "Draft saved!");
       }
-      // After save, go back to manage page
       navigate(`/write/${storyId}/manage`);
     } catch {
       toast.error("Failed to save chapter");
@@ -126,16 +144,22 @@ export default function ChapterEditor() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-3 py-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold">New Chapter</h1>
+          <h1 className="text-2xl font-extrabold">{chapterId ? "Edit Chapter" : "New Chapter"}</h1>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => save(false)} disabled={isSaving}>
               <Save className="h-4 w-4 mr-2" /> Save Draft
             </Button>
-            <Button onClick={() => save(true)} disabled={isSaving}>
+            <Button onClick={() => save(true)} disabled={isSaving || !canPublish}>
               <Save className="h-4 w-4 mr-2" /> Publish
             </Button>
           </div>
         </div>
+
+        {!canPublish && (
+          <p className="text-xs text-muted-foreground -mt-2">
+            To publish this chapter, publish the story first. You can still save as draft.
+          </p>
+        )}
 
         <Card>
           <CardContent className="p-4 space-y-3">

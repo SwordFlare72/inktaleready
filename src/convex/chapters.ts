@@ -78,6 +78,11 @@ export const createChapter = mutation({
     const wordCount = args.content.split(/\s+/).length;
     const draft = args.isDraft ?? true;
 
+    // Guard: cannot publish chapter if parent story is not published
+    if (!draft && !story.isPublished) {
+      throw new Error("Publish the story first before publishing chapters.");
+    }
+
     const chapterId = await ctx.db.insert("chapters", {
       storyId: args.storyId,
       title: args.title,
@@ -156,6 +161,11 @@ export const updateChapter = mutation({
     const prevPublished = chapter.isPublished;
     const nextPublished =
       updates.isPublished !== undefined ? updates.isPublished : chapter.isPublished;
+
+    // Guard: cannot publish chapter if parent story is not published
+    if (!prevPublished && nextPublished && !story.isPublished) {
+      throw new Error("Publish the story first before publishing chapters.");
+    }
 
     await ctx.db.patch(args.chapterId, updates);
 
