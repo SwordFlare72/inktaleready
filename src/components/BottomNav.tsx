@@ -16,7 +16,7 @@ export default function BottomNav() {
     }`;
 
   return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 z-50">
+    <div className="fixed bottom-0 inset-x-0 z-50">
       <div className="mx-auto max-w-xl">
         <nav className="m-3 rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur border shadow-lg">
           <div className="grid grid-cols-6">
