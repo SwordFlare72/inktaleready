@@ -231,19 +231,11 @@ export default function Write() {
     >
       <div className="max-w-2xl mx-auto px-3 py-6 pb-28">
         {/* Header */}
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-start">
           <div>
             <h1 className="text-2xl font-extrabold">Writer Dashboard</h1>
             <p className="text-muted-foreground text-sm">Manage your stories and connect with readers</p>
           </div>
-          <Button
-            onClick={() => setShowCreateStory(true)}
-            className="bg-indigo-600 hover:bg-indigo-700"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Story
-          </Button>
         </div>
 
         {/* Stats */}
