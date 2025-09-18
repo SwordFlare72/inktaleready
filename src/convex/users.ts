@@ -286,8 +286,19 @@ export const getEmailForLogin = mutation({
   handler: async (ctx, args) => {
     const id = args.identifier.trim().toLowerCase();
     if (!id) throw new Error("Enter email or username");
-    if (id.includes("@")) return id;
 
+    // When an email is provided, verify the account exists first.
+    if (id.includes("@")) {
+      const existing = await ctx.db
+        .query("users")
+        .withIndex("email", (q) => q.eq("email", id))
+        .unique();
+
+      if (!existing?.email) throw new Error("User not found");
+      return existing.email;
+    }
+
+    // Username path: look up by username (stored normalized lowercase)
     const user = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", id))

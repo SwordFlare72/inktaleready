@@ -72,15 +72,24 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      const email = await getEmailForLogin({ identifier });
+      // First resolve identifier to a valid email and assert account exists.
+      let email: string;
+      try {
+        email = await getEmailForLogin({ identifier });
+      } catch {
+        setError("User not signed up");
+        return;
+      }
+
       const fd = new FormData();
       fd.set("email", email);
       fd.set("password", password);
       fd.set("flow", "signIn");
       await signIn("password", fd);
       navigate(redirectAfterAuth || "/");
-    } catch (err: any) {
-      setError(err?.message || "Login failed");
+    } catch {
+      // Any failure at credential verification stage -> wrong credentials.
+      setError("Wrong Username Or Password");
     } finally {
       setIsLoading(false);
     }
