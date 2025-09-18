@@ -290,21 +290,27 @@ export const setUsername = mutation({
 export const getEmailForLogin = mutation({
   args: { identifier: v.string() },
   handler: async (ctx, args) => {
-    const id = args.identifier.trim().toLowerCase();
-    if (!id) throw new Error("Enter email or username");
+    const raw = args.identifier.trim();
+    if (!raw) throw new Error("Enter email or username");
 
-    // When an email is provided, verify the account exists first.
-    if (id.includes("@")) {
-      const existing = await ctx.db
-        .query("users")
-        .withIndex("email", (q) => q.eq("email", id))
-        .unique();
+    if (raw.includes("@")) {
+      // Try exact match first (email may have case)
+      let existing =
+        await ctx.db.query("users").withIndex("email", (q) => q.eq("email", raw)).unique();
+
+      // Fallback to lowercased match if exact not found
+      if (!existing) {
+        const lower = raw.toLowerCase();
+        existing =
+          await ctx.db.query("users").withIndex("email", (q) => q.eq("email", lower)).unique();
+      }
 
       if (!existing?.email) throw new Error("User not found");
       return existing.email;
     }
 
-    // Username path: look up by username (stored normalized lowercase)
+    // Username path: stored normalized lowercase
+    const id = raw.toLowerCase();
     const user = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", id))
