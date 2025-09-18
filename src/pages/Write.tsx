@@ -435,7 +435,7 @@ export default function Write() {
 
         {/* Create Story Dialog (controlled) */}
         <Dialog open={showCreateStory} onOpenChange={setShowCreateStory}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto pb-2">
             <DialogHeader>
               <DialogTitle>Create New Story</DialogTitle>
             </DialogHeader>
@@ -472,14 +472,7 @@ export default function Write() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Tags</label>
-                <Input
-                  value={storyTags}
-                  onChange={(e) => setStoryTags(e.target.value)}
-                  placeholder="Enter tags separated by commas..."
-                />
-              </div>
+              {/* removed duplicate simple Tags field to avoid two inputs */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Cover Image</label>
                 <div className="flex items-center gap-3">
@@ -551,7 +544,7 @@ export default function Write() {
                 <Input
                   value={storyTags}
                   onChange={(e) => setStoryTags(e.target.value)}
-                  placeholder="amour, amourshipping, ash"
+                  placeholder="Enter tags separated by comma"
                 />
                 <div className="mt-2 flex flex-wrap gap-2">
                   {storyTags
@@ -577,7 +570,7 @@ export default function Write() {
         </Dialog>
 
         <Dialog open={showEditStory} onOpenChange={setShowEditStory}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto pb-2">
             <DialogHeader>
               <DialogTitle>Edit Story</DialogTitle>
             </DialogHeader>
@@ -681,7 +674,7 @@ export default function Write() {
                 <Input
                   value={editTags}
                   onChange={(e) => setEditTags(e.target.value)}
-                  placeholder="amour, amourshipping, ash"
+                  placeholder="Enter tags separated by comma"
                 />
                 <div className="mt-2 flex flex-wrap gap-2">
                   {editTags
