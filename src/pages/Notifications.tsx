@@ -68,6 +68,32 @@ export default function Notifications() {
     }
   };
 
+  const openNotification = async (n: any) => {
+    try {
+      if (!n.isRead) {
+        await markRead({ notificationId: n._id as any });
+      }
+    } catch {
+      // non-blocking
+    }
+    // Route by type
+    switch (n.type) {
+      case "new_chapter":
+      case "comment_reply":
+      case "comment_like":
+        if (n.relatedId) navigate(`/read/${n.relatedId}`);
+        break;
+      case "new_story":
+        if (n.relatedId) navigate(`/story/${n.relatedId}`);
+        break;
+      case "new_follower":
+        if (n.relatedId) navigate(`/profile/${n.relatedId}`);
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleSendDirect = async () => {
     if (!selectedUser || !messageBody.trim()) return;
     try {
@@ -124,7 +150,7 @@ export default function Notifications() {
                 <Card
                   key={notification._id}
                   className={`cursor-pointer transition-colors ${!notification.isRead ? "bg-muted/50" : ""}`}
-                  onClick={() => !notification.isRead && handleMarkRead(notification._id)}
+                  onClick={() => openNotification(notification)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
