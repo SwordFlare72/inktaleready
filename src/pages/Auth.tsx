@@ -56,16 +56,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Username dialog for Google first-time users
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
+  const [shouldPromptUsername, setShouldPromptUsername] = useState(false);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && me) {
+      // If username missing:
       if (!me.username) {
-        setShowUsernameDialog(true);
-      } else {
-        navigate(redirectAfterAuth || "/");
+        // Only open the dialog automatically for Google flow or explicit prompt
+        if (shouldPromptUsername) {
+          setShowUsernameDialog(true);
+        }
+        // Do not navigate away during signup flow; let the signup handler manage errors
+        return;
       }
+      // Username exists -> proceed
+      navigate(redirectAfterAuth || "/");
     }
-  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth]);
+  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername]);
 
   const doLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +112,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       }
       // 1) Create account
       const fd = new FormData();
-      // Normalize email: remove all whitespace and lowercase to prevent mismatches like "gmail. com"
       const normalizedEmail = suEmail.replace(/\s+/g, "").toLowerCase();
       fd.set("email", normalizedEmail);
       fd.set("password", suPassword);
@@ -121,11 +127,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           saved = true;
           break;
         } catch (err: any) {
-          // If auth not yet ready, wait briefly and retry
-          if (String(err?.message || "").toLowerCase().includes("authenticated")) {
+          const msg = String(err?.message || "").toLowerCase();
+          if (msg.includes("authenticated")) {
             await new Promise((r) => setTimeout(r, 250));
             continue;
           }
+          // Show inline error like "Username is already taken." and stop
           throw err;
         }
       }
@@ -139,9 +146,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       }
 
       toast.success("Account created");
-      // If username wasn't saved yet due to session warmup, open the dialog to finish it
       if (!saved) {
+        // Explicitly prompt username only if session warmup blocked saving
         setUsernameInput(desired);
+        setShouldPromptUsername(true);
         setShowUsernameDialog(true);
       } else {
         navigate(redirectAfterAuth || "/");
@@ -156,8 +164,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Handle Google button (if enabled)
   const handleGoogle = async () => {
     try {
+      // Mark that we should prompt for username after Google if missing
+      setShouldPromptUsername(true);
       await signIn("google");
-      // After Google, username dialog may open if missing due to effect
     } catch (e) {
       console.error(e);
       toast.error("Google sign-in failed");
@@ -174,6 +183,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await setUsername({ username: val });
       toast.success("Username saved!");
       setShowUsernameDialog(false);
+      setShouldPromptUsername(false);
       navigate("/");
     } catch (e: any) {
       toast.error(e?.message || "Failed to save username");
