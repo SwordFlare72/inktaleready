@@ -60,8 +60,13 @@ function GlobalRedirector() {
 
   // Only run once loading is finished
   useEffect(() => {
-    // If user is not fully authenticated (no user doc or anonymous), force /auth for all routes
-    const notFullyAuthed = !isAuthenticated || !user || (user as any)?.isAnonymous;
+    // Treat users without a username as not fully authenticated
+    const notFullyAuthed =
+      !isAuthenticated ||
+      !user ||
+      !(user as any)?.username ||
+      (user as any)?.isAnonymous;
+
     if (!isLoading && notFullyAuthed && location.pathname !== "/auth") {
       navigate("/auth", { replace: true });
     }
@@ -75,7 +80,13 @@ function ProtectedRoute({ children }: { children: any }) {
   const location = useLocation();
   if (isLoading) return null;
 
-  const notFullyAuthed = !isAuthenticated || !user || (user as any)?.isAnonymous;
+  // Require a real user with a username (and not anonymous)
+  const notFullyAuthed =
+    !isAuthenticated ||
+    !user ||
+    !(user as any)?.username ||
+    (user as any)?.isAnonymous;
+
   if (notFullyAuthed) {
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
@@ -87,7 +98,13 @@ function BottomNavGate() {
   const location = useLocation();
   if (isLoading) return null;
 
-  const notFullyAuthed = !isAuthenticated || !user || (user as any)?.isAnonymous;
+  // Hide nav on /auth and when not fully authed
+  const notFullyAuthed =
+    !isAuthenticated ||
+    !user ||
+    !(user as any)?.username ||
+    (user as any)?.isAnonymous;
+
   if (location.pathname === "/auth" || notFullyAuthed) return null;
 
   return <BottomNav />;
