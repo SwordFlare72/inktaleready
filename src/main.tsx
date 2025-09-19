@@ -6,7 +6,8 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router";
+import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router";
+import { useAuth } from "@/hooks/use-auth";
 import "./index.css";
 import Landing from "./pages/Landing.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -52,6 +53,16 @@ function RouteSyncer() {
   return null;
 }
 
+function ProtectedRoute({ children }: { children: any }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+  if (isLoading) return null;
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+  }
+  return children;
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <VlyToolbar />
@@ -62,25 +73,48 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/" />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute><Dashboard /></ProtectedRoute>
+            } />
             <Route path="/explore" element={<Explore />} />
             <Route path="/search" element={<Search />} />
             <Route path="/story/:id" element={<Story />} />
             <Route path="/read/:id" element={<Reader />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/write" element={<Write />} />
-            <Route path="/write/:storyId/chapter/new" element={<ChapterEditor />} />
-            <Route path="/write/:storyId/chapter/:chapterId/edit" element={<ChapterEditor />} />
-            <Route path="/write/:storyId/manage" element={<StoryChaptersManage />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/library" element={
+              <ProtectedRoute><Library /></ProtectedRoute>
+            } />
+            <Route path="/write" element={
+              <ProtectedRoute><Write /></ProtectedRoute>
+            } />
+            <Route path="/write/:storyId/chapter/new" element={
+              <ProtectedRoute><ChapterEditor /></ProtectedRoute>
+            } />
+            <Route path="/write/:storyId/chapter/:chapterId/edit" element={
+              <ProtectedRoute><ChapterEditor /></ProtectedRoute>
+            } />
+            <Route path="/write/:storyId/manage" element={
+              <ProtectedRoute><StoryChaptersManage /></ProtectedRoute>
+            } />
+            <Route path="/notifications" element={
+              <ProtectedRoute><Notifications /></ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute><Profile /></ProtectedRoute>
+            } />
             <Route path="/profile/:id" element={<Profile />} />
-            <Route path="/profile/edit" element={<EditProfile />} />
-            <Route path="/earnings" element={<Earnings />} />
-            <Route path="/messages" element={<Messages />} />
+            <Route path="/profile/edit" element={
+              <ProtectedRoute><EditProfile /></ProtectedRoute>
+            } />
+            <Route path="/earnings" element={
+              <ProtectedRoute><Earnings /></ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute><Messages /></ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <BottomNav />
+          {/* Hide BottomNav on auth page to prevent tabbing during login/signup */}
+          {window.location.pathname !== "/auth" ? <BottomNav /> : null}
         </BrowserRouter>
         <Toaster />
       </ConvexAuthProvider>
