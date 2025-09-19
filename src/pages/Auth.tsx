@@ -186,6 +186,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         setError("Passwords do not match");
       } else if (msg.toLowerCase().includes("failed to set username")) {
         setError("Could not set username. Please try again.");
+      } else if (
+        msg.toLowerCase().includes("already") ||
+        msg.toLowerCase().includes("exist") ||
+        msg.toLowerCase().includes("registered") ||
+        msg.toLowerCase().includes("in use")
+      ) {
+        // Common provider messages for duplicate emails
+        setError("User already signed up");
       } else {
         setError("Sign up failed");
       }
@@ -338,7 +346,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       type="email"
                       placeholder="name@example.com"
                       value={suEmail}
-                      onChange={(e) => setSuEmail(e.target.value)}
+                      onChange={(e) => {
+                        setSuEmail(e.target.value);
+                        if (error) setError(null);
+                      }}
                       disabled={isLoading}
                       required
                     />
