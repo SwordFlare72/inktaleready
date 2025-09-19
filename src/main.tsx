@@ -6,7 +6,7 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router";
+import { BrowserRouter, Route, Routes, useLocation, Navigate, useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import "./index.css";
 import Landing from "./pages/Landing.tsx";
@@ -53,14 +53,44 @@ function RouteSyncer() {
   return null;
 }
 
+function GlobalRedirector() {
+  const { isLoading, isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Only run once loading is finished
+  useEffect(() => {
+    // If user is not fully authenticated (no user doc or anonymous), force /auth for all routes
+    const notFullyAuthed = !isAuthenticated || !user || (user as any)?.isAnonymous;
+    if (!isLoading && notFullyAuthed && location.pathname !== "/auth") {
+      navigate("/auth", { replace: true });
+    }
+  }, [isLoading, isAuthenticated, user, location.pathname, navigate]);
+
+  return null;
+}
+
 function ProtectedRoute({ children }: { children: any }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   if (isLoading) return null;
-  if (!isAuthenticated) {
+
+  const notFullyAuthed = !isAuthenticated || !user || (user as any)?.isAnonymous;
+  if (notFullyAuthed) {
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
   return children;
+}
+
+function BottomNavGate() {
+  const { isLoading, isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  if (isLoading) return null;
+
+  const notFullyAuthed = !isAuthenticated || !user || (user as any)?.isAnonymous;
+  if (location.pathname === "/auth" || notFullyAuthed) return null;
+
+  return <BottomNav />;
 }
 
 createRoot(document.getElementById("root")!).render(
@@ -70,6 +100,7 @@ createRoot(document.getElementById("root")!).render(
       <ConvexAuthProvider client={convex}>
         <BrowserRouter>
           <RouteSyncer />
+          <GlobalRedirector />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/" />} />
@@ -113,8 +144,7 @@ createRoot(document.getElementById("root")!).render(
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          {/* Hide BottomNav on auth page to prevent tabbing during login/signup */}
-          {window.location.pathname !== "/auth" ? <BottomNav /> : null}
+          <BottomNavGate />
         </BrowserRouter>
         <Toaster />
       </ConvexAuthProvider>
