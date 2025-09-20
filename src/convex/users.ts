@@ -300,6 +300,7 @@ export const getEmailForLogin = mutation({
       const compact = rawInput.replace(/\s+/g, "");
       const lower = compact.toLowerCase();
 
+      // Try primary email first
       let existing =
         await ctx.db.query("users").withIndex("email", (q) => q.eq("email", compact)).unique();
 
@@ -308,33 +309,46 @@ export const getEmailForLogin = mutation({
           await ctx.db.query("users").withIndex("email", (q) => q.eq("email", lower)).unique();
       }
 
-      // Fallback: case-insensitive scan with normalization of stored emails (remove all whitespace)
+      // Then try provider authEmail
+      if (!existing) {
+        existing =
+          await ctx.db.query("users").withIndex("by_auth_email", (q) => q.eq("authEmail", compact)).unique()
+          ?? await ctx.db.query("users").withIndex("by_auth_email", (q) => q.eq("authEmail", lower)).unique();
+      }
+
+      // Fallback: scan and normalize both email and authEmail
       if (!existing) {
         const all = await ctx.db.query("users").collect();
         const found = all.find((u) => {
-          const normalizedStored = (u.email || "").replace(/\s+/g, "").toLowerCase();
-          return normalizedStored === lower;
+          const normalizedStoredEmail = (u.email || "").replace(/\s+/g, "").toLowerCase();
+          const normalizedStoredAuth = ((u as any).authEmail || "").replace(/\s+/g, "").toLowerCase();
+          return normalizedStoredEmail === lower || normalizedStoredAuth === lower;
         });
-        if (found?.email) {
-          // Return the compacted version to avoid passing whitespace to the provider
-          return (found.email || "").replace(/\s+/g, "");
+        if (found) {
+          // Prefer authEmail if present for login
+          const chosen = ((found as any).authEmail || found.email || "").replace(/\s+/g, "");
+          if (chosen) return chosen;
         }
       }
 
-      if (!existing?.email) throw new Error("User not found");
-      // Ensure we return an email without whitespace for downstream auth
-      return existing.email.replace(/\s+/g, "");
+      if (!existing) throw new Error("User not found");
+      // Prefer authEmail for login if present, otherwise email
+      const chosen = ((existing as any).authEmail || existing.email || "").replace(/\s+/g, "");
+      if (!chosen) throw new Error("User not found");
+      return chosen;
     }
 
-    // Username path: stored normalized lowercase
+    // Username path: return provider authEmail if available; else email
     const username = rawInput.toLowerCase();
     const user = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", username))
       .unique();
 
-    if (!user?.email) throw new Error("User not found");
-    return user.email;
+    if (!user) throw new Error("User not found");
+    const loginEmail = ((user as any).authEmail || user.email);
+    if (!loginEmail) throw new Error("User not found");
+    return loginEmail;
   },
 });
 
@@ -354,7 +368,8 @@ export const isUsernameAvailable = mutation({
   },
 });
 
-// Change account email (requires authentication). Validates format and uniqueness and updates the current user's email.
+// Change account email (profile email only). Validates format and uniqueness and updates the user's visible email.
+// authEmail remains unchanged so authentication continues to work with the provider.
 export const changeEmail = mutation({
   args: { newEmail: v.string() },
   handler: async (ctx, args) => {
@@ -364,12 +379,11 @@ export const changeEmail = mutation({
     const compact = args.newEmail.replace(/\s+/g, "");
     const lower = compact.toLowerCase();
 
-    // Very light email format check
     if (!/^\S+@\S+\.\S+$/.test(lower)) {
       throw new Error("Enter a valid email address");
     }
 
-    // Ensure email uniqueness
+    // Ensure visible email uniqueness
     const existing = await ctx.db
       .query("users")
       .withIndex("email", (q) => q.eq("email", lower))

@@ -73,10 +73,14 @@ const schema = defineSchema(
       gender: v.optional(v.string()),
       // Add: banner image for profile header
       bannerImage: v.optional(v.string()),
+      // Add: authEmail used by the Password provider for actual authentication
+      authEmail: v.optional(v.string()),
     })
       .index("email", ["email"]) // index for the email. do not remove or modify
       // Add: index for username uniqueness lookups
-      .index("by_username", ["username"]),
+      .index("by_username", ["username"])
+      // Add: index for provider auth email lookups
+      .index("by_auth_email", ["authEmail"]),
 
     // Stories table
     stories: defineTable({

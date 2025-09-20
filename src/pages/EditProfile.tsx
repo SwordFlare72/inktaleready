@@ -127,7 +127,7 @@ export default function EditProfile() {
       return;
     }
     // Prevent no-op changes (same email)
-    const currentEmailNormalized = ((me as any).email || "").replace(/\s+/g, "").toLowerCase();
+    const currentEmailNormalized = (((me as any).email || "") as string).replace(/\s+/g, "").toLowerCase();
     if (normalized === currentEmailNormalized) {
       toast.error("New email cannot be the same as your current email");
       return;
@@ -135,46 +135,19 @@ export default function EditProfile() {
 
     setEmailBusy(true);
     try {
-      // Re-auth by verifying current password against current email (normalized to avoid mismatch)
+      // Re-authenticate against the provider email (authEmail if present, else email)
+      const providerEmail = ((((me as any).authEmail || (me as any).email) || "") as string)
+        .replace(/\s+/g, "")
+        .toLowerCase();
+
       const fd = new FormData();
-      fd.set("email", currentEmailNormalized);
+      fd.set("email", providerEmail);
       fd.set("password", confirmPassword.trim());
       fd.set("flow", "signIn");
       await signIn("password", fd);
 
-      // Attempt change
+      // Update visible email only; provider auth email remains unchanged
       await changeEmail({ newEmail: normalized });
-
-      // Immediately verify new email works; sign out first so provider accepts a fresh sign-in.
-      await signOut();
-      try {
-        const fdNew = new FormData();
-        fdNew.set("email", normalized);
-        fdNew.set("password", confirmPassword.trim());
-        fdNew.set("flow", "signIn");
-        await signIn("password", fdNew);
-      } catch (reauthErr: any) {
-        // Rollback to previous email to keep account accessible
-        try {
-          await changeEmail({ newEmail: currentEmailNormalized });
-          // Restore session with previous email to avoid leaving the user signed out
-          const fdOld = new FormData();
-          fdOld.set("email", currentEmailNormalized);
-          fdOld.set("password", confirmPassword.trim());
-          fdOld.set("flow", "signIn");
-          await signIn("password", fdOld);
-        } catch {
-          // If rollback fails, surface a strong error; user remains signed in from prior session
-        }
-        const msg = String(reauthErr?.message || "").toLowerCase();
-        if (msg.includes("network") || msg.includes("failed to fetch")) {
-          toast.error("Network error after changing email. Your email was reverted.");
-        } else {
-          toast.error("Could not sign in with the new email. Your email was reverted.");
-        }
-        setEmailBusy(false);
-        return;
-      }
 
       toast.success("Email updated");
       setEmailDialogOpen(false);
