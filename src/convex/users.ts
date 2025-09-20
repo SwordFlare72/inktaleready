@@ -369,31 +369,67 @@ export const isUsernameAvailable = mutation({
 });
 
 // Change account email (profile email only). Validates format and uniqueness and updates the user's visible email.
-// authEmail remains unchanged so authentication continues to work with the provider.
+// authEmail is also updated and the corresponding authAccounts.providerAccountId is updated for Password provider.
 export const changeEmail = mutation({
   args: { newEmail: v.string() },
   handler: async (ctx, args) => {
     const me = await getCurrentUser(ctx);
     if (!me) throw new Error("Must be authenticated");
 
+    // Normalize
     const compact = args.newEmail.replace(/\s+/g, "");
     const lower = compact.toLowerCase();
-
     if (!/^\S+@\S+\.\S+$/.test(lower)) {
       throw new Error("Enter a valid email address");
     }
 
-    // Ensure visible email uniqueness
-    const existing = await ctx.db
+    // No-op guard
+    const currentVisible = (me.email || "").replace(/\s+/g, "").toLowerCase();
+    if (currentVisible === lower) {
+      // nothing to do
+      return true;
+    }
+
+    // Ensure visible email uniqueness in users
+    const existingUser = await ctx.db
       .query("users")
       .withIndex("email", (q) => q.eq("email", lower))
       .unique();
 
-    if (existing && existing._id !== me._id) {
+    if (existingUser && existingUser._id !== me._id) {
       throw new Error("Email already in use");
     }
 
-    await ctx.db.patch(me._id, { email: lower });
+    // Ensure provider account uniqueness in authAccounts
+    const allAuth = await ctx.db.query("authAccounts").collect();
+    const conflictingAuth = allAuth.find(
+      (a: any) =>
+        typeof a.providerAccountId === "string" &&
+        a.providerAccountId.replace(/\s+/g, "").toLowerCase() === lower &&
+        a.userId !== me._id
+    );
+    if (conflictingAuth) {
+      throw new Error("Email already in use");
+    }
+
+    // Find this user's Password auth account.
+    // Heuristic: choose the account for this user with providerAccountId that looks like an email (contains '@').
+    const myAuthAccounts = allAuth.filter((a: any) => String(a.userId) === String(me._id));
+    const passwordAccount = myAuthAccounts.find(
+      (a: any) =>
+        a &&
+        typeof a.providerAccountId === "string" &&
+        a.providerAccountId.includes("@")
+    );
+
+    // Apply updates atomically: update users.email, users.authEmail, and authAccounts.providerAccountId (if found)
+    const userUpdates: any = { email: lower, authEmail: lower };
+    await ctx.db.patch(me._id, userUpdates);
+
+    if (passwordAccount) {
+      await ctx.db.patch(passwordAccount._id, { providerAccountId: lower });
+    }
+
     return true;
   },
 });
