@@ -250,16 +250,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         <div className="w-full max-w-md">
           <Card className="w-full border shadow-md">
             <CardHeader className="text-center">
-              <div className="flex justify-center">
-                <img
-                  src="./logo.svg"
-                  alt="Logo"
-                  width={64}
-                  height={64}
-                  className="rounded-lg mb-4 mt-2 cursor-pointer"
-                  onClick={() => navigate("/")}
-                />
-              </div>
               <CardTitle className="text-xl">
                 {mode === "login" ? "Welcome Back" : "Create your account"}
               </CardTitle>
@@ -450,18 +440,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 </CardContent>
               </form>
             )}
-
-            <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
-              Secured by{" "}
-              <a
-                href="https://vly.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-primary transition-colors"
-              >
-                vly.ai
-              </a>
-            </div>
           </Card>
         </div>
       </div>

@@ -98,14 +98,14 @@ function BottomNavGate() {
   const location = useLocation();
   if (isLoading) return null;
 
-  // Hide nav on /auth and when not fully authed
+  // Hide nav on /auth (and any nested auth routes) and when not fully authed
   const notFullyAuthed =
     !isAuthenticated ||
     !user ||
     !(user as any)?.username ||
     (user as any)?.isAnonymous;
 
-  if (location.pathname === "/auth" || notFullyAuthed) return null;
+  if (location.pathname.startsWith("/auth") || notFullyAuthed) return null;
 
   return <BottomNav />;
 }
