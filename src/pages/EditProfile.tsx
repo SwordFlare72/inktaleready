@@ -370,6 +370,9 @@ export default function EditProfile() {
                 <div>
                   <div className="text-sm text-muted-foreground">Account password</div>
                   <div className="font-medium tracking-widest select-none">••••••••</div>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    The dots do not represent your actual password size.
+                  </p>
                 </div>
               </div>
             </div>
