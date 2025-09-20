@@ -142,7 +142,33 @@ export default function EditProfile() {
       fd.set("flow", "signIn");
       await signIn("password", fd);
 
+      // Attempt change
       await changeEmail({ newEmail: normalized });
+
+      // Immediately verify new email works; if not, roll back to old email to avoid lock-out
+      try {
+        const fdNew = new FormData();
+        fdNew.set("email", normalized);
+        fdNew.set("password", confirmPassword.trim());
+        fdNew.set("flow", "signIn");
+        await signIn("password", fdNew);
+      } catch (reauthErr: any) {
+        // Rollback to previous email to keep account accessible
+        try {
+          await changeEmail({ newEmail: currentEmailNormalized });
+        } catch {
+          // If rollback fails, surface a strong error; user remains signed in from prior session
+        }
+        const msg = String(reauthErr?.message || "").toLowerCase();
+        if (msg.includes("network") || msg.includes("failed to fetch")) {
+          toast.error("Network error after changing email. Your email was reverted.");
+        } else {
+          toast.error("Could not sign in with the new email. Your email was reverted.");
+        }
+        setEmailBusy(false);
+        return;
+      }
+
       toast.success("Email updated");
       setEmailDialogOpen(false);
       setNewEmail("");
