@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function EditProfile() {
   const me = useQuery(api.users.currentUser, {});
@@ -16,6 +18,8 @@ export default function EditProfile() {
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
+  const changeEmail = useMutation(api.users.changeEmail);
+  const { signIn } = useAuth();
 
   const navigate = useNavigate();
 
@@ -29,6 +33,10 @@ export default function EditProfile() {
 
   const [busy, setBusy] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
 
   useEffect(() => {
     if (me) {
@@ -108,6 +116,48 @@ export default function EditProfile() {
       toast.error("Failed to update profile");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleChangeEmail() {
+    if (!me) return;
+    const normalized = newEmail.replace(/\s+/g, "").toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(normalized)) {
+      toast.error("Enter a valid email");
+      return;
+    }
+    setEmailBusy(true);
+    try {
+      // Re-auth by verifying current password against current email
+      const fd = new FormData();
+      fd.set("email", (me as any).email || "");
+      fd.set("password", confirmPassword.trim());
+      fd.set("flow", "signIn");
+      await signIn("password", fd);
+
+      await changeEmail({ newEmail: normalized });
+      toast.success("Email updated");
+      setEmailDialogOpen(false);
+      setNewEmail("");
+      setConfirmPassword("");
+    } catch (e: any) {
+      const msg = String(e?.message || "").toLowerCase();
+      if (
+        msg.includes("invalid") ||
+        msg.includes("wrong") ||
+        msg.includes("password") ||
+        msg.includes("credentials")
+      ) {
+        toast.error("Incorrect password");
+      } else if (msg.includes("in use") || msg.includes("already")) {
+        toast.error("Email already in use");
+      } else if (msg.includes("network") || msg.includes("failed to fetch")) {
+        toast.error("Network error. Please try again.");
+      } else {
+        toast.error("Could not update email");
+      }
+    } finally {
+      setEmailBusy(false);
     }
   }
 
@@ -292,6 +342,38 @@ export default function EditProfile() {
               </div>
             </div>
 
+            <div className="border-t" />
+
+            <div className="space-y-4">
+              <div className="text-xl font-semibold">Account Settings</div>
+              <p className="text-sm text-muted-foreground">
+                The information you enter here will not be visible to other users.
+              </p>
+
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Email</div>
+                    <div className="font-medium break-all">{(me as any).email || "—"}</div>
+                  </div>
+                  <Button variant="outline" onClick={() => {
+                    setNewEmail("");
+                    setConfirmPassword("");
+                    setEmailDialogOpen(true);
+                  }}>
+                    Change
+                  </Button>
+                </div>
+
+                <div className="border-t" />
+
+                <div>
+                  <div className="text-sm text-muted-foreground">Password</div>
+                  <div className="font-medium tracking-widest select-none">••••••••</div>
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => navigate(-1)} disabled={busy}>
                 Cancel
@@ -303,6 +385,40 @@ export default function EditProfile() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change your email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label className="mb-1 block">New email</Label>
+            <Input
+              type="email"
+              placeholder="name@example.com"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              disabled={emailBusy}
+            />
+            <Label className="mt-3 mb-1 block">Confirm password</Label>
+            <Input
+              type="password"
+              placeholder="Enter your account password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={emailBusy}
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEmailDialogOpen(false)} disabled={emailBusy}>
+                Cancel
+              </Button>
+              <Button onClick={handleChangeEmail} disabled={emailBusy || !newEmail.trim() || !confirmPassword.trim()}>
+                {emailBusy ? "Updating..." : "Change"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

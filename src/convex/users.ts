@@ -353,3 +353,33 @@ export const isUsernameAvailable = mutation({
     return !existing;
   },
 });
+
+// Change account email (requires authentication). Validates format and uniqueness and updates the current user's email.
+export const changeEmail = mutation({
+  args: { newEmail: v.string() },
+  handler: async (ctx, args) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Must be authenticated");
+
+    const compact = args.newEmail.replace(/\s+/g, "");
+    const lower = compact.toLowerCase();
+
+    // Very light email format check
+    if (!/^\S+@\S+\.\S+$/.test(lower)) {
+      throw new Error("Enter a valid email address");
+    }
+
+    // Ensure email uniqueness
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", lower))
+      .unique();
+
+    if (existing && existing._id !== me._id) {
+      throw new Error("Email already in use");
+    }
+
+    await ctx.db.patch(me._id, { email: lower });
+    return true;
+  },
+});
