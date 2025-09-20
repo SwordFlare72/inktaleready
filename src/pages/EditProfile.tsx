@@ -129,7 +129,7 @@ export default function EditProfile() {
           <CardContent className="space-y-5">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label className="mb-1 block">Name</Label>
+                <Label className="mb-1 block">Display Name</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div>

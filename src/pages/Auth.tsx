@@ -42,6 +42,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [suUsernameError, setSuUsernameError] = useState<string | null>(null);
   const [suEmailError, setSuEmailError] = useState<string | null>(null);
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
+  // Add: display name (optional, free-form)
+  const [suDisplayName, setSuDisplayName] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +89,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const cleanIdentifier = identifier.trim();
       const cleanPassword = password.trim();
 
-      // First resolve identifier to a valid email and assert account exists.
+      // Enforce username login (not email)
+      if (cleanIdentifier.includes("@")) {
+        setError("Use your username to log in");
+        return;
+      }
+
+      // Resolve username -> email for provider
       let email: string;
       try {
         email = await getEmailForLogin({ identifier: cleanIdentifier });
@@ -101,7 +109,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("password", cleanPassword);
       fd.set("flow", "signIn");
       await signIn("password", fd);
-      // Do not navigate immediately; GlobalRedirector/useEffect will handle once fully authenticated
+      // Navigation handled by effect
     } catch (err: any) {
       const msg = String(err?.message || "").toLowerCase();
       if (msg.includes("network") || msg.includes("failed to fetch")) {
@@ -188,13 +196,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // 3) Optional gender
-      if (suGender && suGender.trim()) {
-        try {
-          await updateMe({ gender: suGender.trim() });
-        } catch {
-          // ignore warmup
+      // 3) Optional profile fields (Display Name and Gender)
+      try {
+        const payload: Record<string, string> = {};
+        if (suDisplayName.trim()) payload.name = suDisplayName.trim();
+        if (suGender && suGender.trim()) payload.gender = suGender.trim();
+        if (Object.keys(payload).length > 0) {
+          await updateMe(payload as any);
         }
+      } catch {
+        // ignore warmup
       }
 
       // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
@@ -284,9 +295,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               <form onSubmit={doLogin}>
                 <CardContent className="pt-2 space-y-3">
                   <div>
-                    <Label className="mb-1 block">Email or Username</Label>
+                    <Label className="mb-1 block">Username</Label>
                     <Input
-                      placeholder="Enter email or username"
+                      placeholder="Enter your username"
                       value={identifier}
                       onChange={(e) => {
                         setIdentifier(e.target.value);
@@ -350,6 +361,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               <form onSubmit={doSignup}>
                 <CardContent className="pt-2 space-y-3">
                   <div>
+                    <Label className="mb-1 block">Display Name</Label>
+                    <Input
+                      placeholder="How your name appears (e.g., Aura Master)"
+                      value={suDisplayName}
+                      onChange={(e) => {
+                        setSuDisplayName(e.target.value);
+                        if (error) setError(null);
+                      }}
+                      disabled={isLoading}
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Shown publicly. You can change this anytime.
+                    </p>
+                  </div>
+                  <div>
                     <Label className="mb-1 block">Username</Label>
                     <Input
                       placeholder="Enter your username"
@@ -363,7 +389,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       required
                     />
                     <p className="text-[11px] text-muted-foreground mt-1">
-                      3–20 chars. Letters, numbers, underscores only.
+                      3–20 chars. Letters, numbers, underscores only. Saved in lowercase.
                     </p>
                     {suUsernameError && (
                       <p className="text-sm text-red-500 mt-1">{suUsernameError}</p>
