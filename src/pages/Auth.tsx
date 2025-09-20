@@ -95,7 +95,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("password", password);
       fd.set("flow", "signIn");
       await signIn("password", fd);
-      navigate(redirectAfterAuth || "/");
+      // Do not navigate immediately; GlobalRedirector/useEffect will handle once fully authenticated
     } catch {
       // Any failure at credential verification stage -> wrong credentials.
       setError("Invalid Username Or Password");
