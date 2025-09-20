@@ -19,7 +19,7 @@ export default function EditProfile() {
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
   const changeEmail = useMutation(api.users.changeEmail);
-  const { signIn } = useAuth();
+  const { signIn, signOut } = useAuth();
 
   const navigate = useNavigate();
 
@@ -145,7 +145,8 @@ export default function EditProfile() {
       // Attempt change
       await changeEmail({ newEmail: normalized });
 
-      // Immediately verify new email works; if not, roll back to old email to avoid lock-out
+      // Immediately verify new email works; sign out first so provider accepts a fresh sign-in.
+      await signOut();
       try {
         const fdNew = new FormData();
         fdNew.set("email", normalized);
@@ -156,6 +157,12 @@ export default function EditProfile() {
         // Rollback to previous email to keep account accessible
         try {
           await changeEmail({ newEmail: currentEmailNormalized });
+          // Restore session with previous email to avoid leaving the user signed out
+          const fdOld = new FormData();
+          fdOld.set("email", currentEmailNormalized);
+          fdOld.set("password", confirmPassword.trim());
+          fdOld.set("flow", "signIn");
+          await signIn("password", fdOld);
         } catch {
           // If rollback fails, surface a strong error; user remains signed in from prior session
         }
