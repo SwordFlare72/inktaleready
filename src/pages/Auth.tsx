@@ -40,6 +40,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [suConfirm, setSuConfirm] = useState("");
   const [suGender, setSuGender] = useState<string | undefined>(undefined);
   const [suUsernameError, setSuUsernameError] = useState<string | null>(null);
+  const [suEmailError, setSuEmailError] = useState<string | null>(null);
+  const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +104,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // Do not navigate immediately; GlobalRedirector/useEffect will handle once fully authenticated
     } catch (err: any) {
       const msg = String(err?.message || "").toLowerCase();
-      if (
+      if (msg.includes("network") || msg.includes("failed to fetch")) {
+        setError("Network error. Please try again.");
+      } else if (
         msg.includes("not found") ||
         msg.includes("no account") ||
         msg.includes("no such user") ||
@@ -122,11 +126,26 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     setSuUsernameError(null);
+    setSuEmailError(null);
+    setSuPasswordError(null);
     try {
       // Basic client validation
       const desired = suUsername.trim();
       if (desired.length < 3 || desired.length > 20 || !/^[a-zA-Z0-9_]+$/.test(desired)) {
         setSuUsernameError("Invalid username format");
+        return;
+      }
+
+      // Email format validation
+      const normalizedEmail = suEmail.replace(/\s+/g, "").toLowerCase();
+      if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+        setSuEmailError("Enter a valid email address");
+        return;
+      }
+
+      // Password checks
+      if (suPassword.length < 8) {
+        setSuPasswordError("Password must be at least 8 characters");
         return;
       }
       if (suPassword !== suConfirm) {
@@ -143,7 +162,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       // 1) Create account
       const fd = new FormData();
-      const normalizedEmail = suEmail.replace(/\s+/g, "").toLowerCase();
       fd.set("email", normalizedEmail);
       fd.set("password", suPassword);
       fd.set("flow", "signUp");
@@ -205,8 +223,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         msg.toLowerCase().includes("registered") ||
         msg.toLowerCase().includes("in use")
       ) {
-        // Common provider messages for duplicate emails
         setError("User already signed up");
+      } else if (msg.toLowerCase().includes("network") || msg.toLowerCase().includes("failed to fetch")) {
+        setError("Network error. Please try again.");
       } else {
         setError("Sign up failed");
       }
@@ -269,7 +288,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Input
                       placeholder="Enter email or username"
                       value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
+                      onChange={(e) => {
+                        setIdentifier(e.target.value);
+                        if (error) setError(null);
+                      }}
                       disabled={isLoading}
                       required
                     />
@@ -280,7 +302,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       type="password"
                       placeholder="Enter your password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (error) setError(null);
+                      }}
                       disabled={isLoading}
                       required
                     />
@@ -332,6 +357,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       onChange={(e) => {
                         setSuUsername(e.target.value);
                         if (suUsernameError) setSuUsernameError(null);
+                        if (error) setError(null);
                       }}
                       disabled={isLoading}
                       required
@@ -351,11 +377,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       value={suEmail}
                       onChange={(e) => {
                         setSuEmail(e.target.value);
+                        if (suEmailError) setSuEmailError(null);
                         if (error) setError(null);
                       }}
                       disabled={isLoading}
                       required
                     />
+                    {suEmailError && (
+                      <p className="text-sm text-red-500 mt-1">{suEmailError}</p>
+                    )}
                   </div>
                   <div>
                     <Label className="mb-1 block">Gender (optional)</Label>
@@ -373,10 +403,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         type="password"
                         placeholder="Create a password"
                         value={suPassword}
-                        onChange={(e) => setSuPassword(e.target.value)}
+                        onChange={(e) => {
+                          setSuPassword(e.target.value);
+                          if (suPasswordError) setSuPasswordError(null);
+                          if (error) setError(null);
+                        }}
                         disabled={isLoading}
                         required
                       />
+                      {suPasswordError && (
+                        <p className="text-sm text-red-500 mt-1">{suPasswordError}</p>
+                      )}
                     </div>
                     <div>
                       <Label className="mb-1 block">Confirm Password</Label>
@@ -384,7 +421,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         type="password"
                         placeholder="Confirm password"
                         value={suConfirm}
-                        onChange={(e) => setSuConfirm(e.target.value)}
+                        onChange={(e) => {
+                          setSuConfirm(e.target.value);
+                          if (error) setError(null);
+                        }}
                         disabled={isLoading}
                         required
                       />
@@ -403,6 +443,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       !suUsername.trim() ||
                       !!suUsernameError ||
                       !suEmail.trim() ||
+                      !!suEmailError ||
+                      !!suPasswordError ||
                       !suPassword ||
                       !suConfirm ||
                       suPassword !== suConfirm
