@@ -368,7 +368,7 @@ export default function EditProfile() {
                 <div className="border-t" />
 
                 <div>
-                  <div className="text-sm text-muted-foreground">Password</div>
+                  <div className="text-sm text-muted-foreground">Account password</div>
                   <div className="font-medium tracking-widest select-none">••••••••</div>
                 </div>
               </div>
