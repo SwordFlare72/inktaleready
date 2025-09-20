@@ -81,10 +81,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
+      // Normalize inputs
+      const cleanIdentifier = identifier.trim();
+      const cleanPassword = password.trim();
+
       // First resolve identifier to a valid email and assert account exists.
       let email: string;
       try {
-        email = await getEmailForLogin({ identifier });
+        email = await getEmailForLogin({ identifier: cleanIdentifier });
       } catch {
         setError("User not signed up");
         return;
@@ -92,13 +96,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       const fd = new FormData();
       fd.set("email", email);
-      fd.set("password", password);
+      fd.set("password", cleanPassword);
       fd.set("flow", "signIn");
       await signIn("password", fd);
       // Do not navigate immediately; GlobalRedirector/useEffect will handle once fully authenticated
-    } catch {
-      // Any failure at credential verification stage -> wrong credentials.
-      setError("Invalid Username Or Password");
+    } catch (err: any) {
+      const msg = String(err?.message || "").toLowerCase();
+      if (
+        msg.includes("not found") ||
+        msg.includes("no account") ||
+        msg.includes("no such user") ||
+        msg.includes("user not signed up")
+      ) {
+        setError("User not signed up");
+      } else {
+        setError("Invalid Username Or Password");
+      }
     } finally {
       setIsLoading(false);
     }
