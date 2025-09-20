@@ -120,7 +120,7 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-6">
+    <div className="min-h-screen px-4 pt-6 pb-28">
       <div className="max-w-3xl mx-auto">
         <Card>
           <CardHeader>
