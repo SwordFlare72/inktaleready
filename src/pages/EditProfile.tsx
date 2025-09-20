@@ -126,11 +126,18 @@ export default function EditProfile() {
       toast.error("Enter a valid email");
       return;
     }
+    // Prevent no-op changes (same email)
+    const currentEmailNormalized = ((me as any).email || "").replace(/\s+/g, "").toLowerCase();
+    if (normalized === currentEmailNormalized) {
+      toast.error("New email cannot be the same as your current email");
+      return;
+    }
+
     setEmailBusy(true);
     try {
-      // Re-auth by verifying current password against current email
+      // Re-auth by verifying current password against current email (normalized to avoid mismatch)
       const fd = new FormData();
-      fd.set("email", (me as any).email || "");
+      fd.set("email", currentEmailNormalized);
       fd.set("password", confirmPassword.trim());
       fd.set("flow", "signIn");
       await signIn("password", fd);
