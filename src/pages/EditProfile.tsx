@@ -124,135 +124,171 @@ export default function EditProfile() {
       <div className="max-w-3xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>Edit Profile</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Profile & Account Settings
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label className="mb-1 block">Display Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
+
+          <CardContent className="space-y-6">
+            <div>
+              <div className="text-xl font-semibold">Profile</div>
+              <p className="text-sm text-muted-foreground mt-1">
+                The information you enter here will be visible to other users.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="Profile" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="text-xs text-muted-foreground">No image</div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">Profile picture</div>
+                  <div className="text-xs text-muted-foreground">Tap to change</div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      id="profile-file"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error("Max 5MB");
+                          return;
+                        }
+                        try {
+                          setBusy(true);
+                          const url = await uploadFileAndGetUrl(file);
+                          setImageUrl(url);
+                          toast.success("Profile image uploaded");
+                        } catch {
+                          toast.error("Upload failed");
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => document.getElementById("profile-file")?.click()}
+                      disabled={busy}
+                    >
+                      Choose Image
+                    </Button>
+                    {imageUrl && (
+                      <Button variant="ghost" onClick={() => setImageUrl("")} disabled={busy}>
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
+
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-32 rounded overflow-hidden bg-muted flex items-center justify-center">
+                  {bannerUrl ? (
+                    <img src={bannerUrl} alt="Banner" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="text-xs text-muted-foreground">No background</div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">Background picture</div>
+                  <div className="text-xs text-muted-foreground">Tap to change</div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      id="banner-file"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 8 * 1024 * 1024) {
+                          toast.error("Max 8MB");
+                          return;
+                        }
+                        try {
+                          setBusy(true);
+                          const url = await uploadFileAndGetUrl(file);
+                          setBannerUrl(url);
+                          toast.success("Background image uploaded");
+                        } catch {
+                          toast.error("Upload failed");
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => document.getElementById("banner-file")?.click()}
+                      disabled={busy}
+                    >
+                      Choose Image
+                    </Button>
+                    {bannerUrl && (
+                      <Button variant="ghost" onClick={() => setBannerUrl("")} disabled={busy}>
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t" />
+
+            <div className="space-y-4">
+              <div className="text-xl font-semibold">About</div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="mb-1 block">Username</Label>
+                  <Input
+                    value={username}
+                    onChange={(e) => {
+                      setUsernameInput(e.target.value);
+                      if (usernameError) setUsernameError(null);
+                    }}
+                    onBlur={handleUsernameBlur}
+                    placeholder="your_username"
+                  />
+                  {usernameError && (
+                    <div className="text-xs text-red-500 mt-1">{usernameError}</div>
+                  )}
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    3–20 chars. Letters, numbers, underscores only. Saved in lowercase.
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="mb-1 block">Display Name</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Shown publicly. Can include spaces and symbols.
+                  </p>
+                </div>
+              </div>
+
               <div>
-                <Label className="mb-1 block">Username</Label>
+                <Label className="mb-1 block">Bio</Label>
+                <Textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} />
+              </div>
+
+              <div>
+                <Label className="mb-1 block">Gender (optional)</Label>
                 <Input
-                  value={username}
-                  onChange={(e) => {
-                    setUsernameInput(e.target.value);
-                    if (usernameError) setUsernameError(null);
-                  }}
-                  onBlur={handleUsernameBlur}
-                  placeholder="your_username"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  placeholder="Male, Female, Non-binary"
                 />
-                {usernameError && (
-                  <div className="text-xs text-red-500 mt-1">{usernameError}</div>
-                )}
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  3–20 chars. Letters, numbers, underscores only.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-1 block">Bio</Label>
-              <Textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} />
-            </div>
-
-            <div>
-              <Label className="mb-1 block">Gender (optional)</Label>
-              <Input value={gender} onChange={(e) => setGender(e.target.value)} placeholder="Male, Female, Non-binary" />
-            </div>
-
-            {/* Profile image upload */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="block">Profile Image</Label>
-                {imageUrl && (
-                  <img src={imageUrl} alt="Profile" className="h-24 w-24 rounded-full object-cover" />
-                )}
-                <div className="flex items-center gap-2">
-                  <input
-                    id="profile-file"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (file.size > 5 * 1024 * 1024) {
-                        toast.error("Max 5MB");
-                        return;
-                      }
-                      try {
-                        setBusy(true);
-                        const url = await uploadFileAndGetUrl(file);
-                        setImageUrl(url);
-                        toast.success("Profile image uploaded");
-                      } catch {
-                        toast.error("Upload failed");
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById("profile-file")?.click()}
-                    disabled={busy}
-                  >
-                    Choose Image
-                  </Button>
-                  {imageUrl && (
-                    <Button variant="ghost" onClick={() => setImageUrl("")} disabled={busy}>
-                      Clear
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Banner upload */}
-              <div className="space-y-2">
-                <Label className="block">Background Image</Label>
-                {bannerUrl && (
-                  <img src={bannerUrl} alt="Banner" className="h-24 w-full rounded object-cover" />
-                )}
-                <div className="flex items-center gap-2">
-                  <input
-                    id="banner-file"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (file.size > 8 * 1024 * 1024) {
-                        toast.error("Max 8MB");
-                        return;
-                      }
-                      try {
-                        setBusy(true);
-                        const url = await uploadFileAndGetUrl(file);
-                        setBannerUrl(url);
-                        toast.success("Background image uploaded");
-                      } catch {
-                        toast.error("Upload failed");
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById("banner-file")?.click()}
-                    disabled={busy}
-                  >
-                    Choose Image
-                  </Button>
-                  {bannerUrl && (
-                    <Button variant="ghost" onClick={() => setBannerUrl("")} disabled={busy}>
-                      Clear
-                    </Button>
-                  )}
-                </div>
               </div>
             </div>
 
