@@ -23,6 +23,35 @@ export default function ChapterEditor() {
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  // Add: dynamic keyboard offset so the toolbar sits on top of the keyboard (not screen bottom)
+  const [kbOffset, setKbOffset] = useState(0);
+
+  useEffect(() => {
+    const updateKB = () => {
+      const vv = (window as any).visualViewport as VisualViewport | undefined;
+      if (!vv) {
+        setKbOffset(0);
+        return;
+      }
+      // How much of the viewport is covered by the keyboard (approx)
+      const overlap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKbOffset(overlap);
+    };
+    updateKB();
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    if (vv) {
+      vv.addEventListener("resize", updateKB);
+      vv.addEventListener("scroll", updateKB);
+    }
+    window.addEventListener("resize", updateKB);
+    return () => {
+      if (vv) {
+        vv.removeEventListener("resize", updateKB);
+        vv.removeEventListener("scroll", updateKB);
+      }
+      window.removeEventListener("resize", updateKB);
+    };
+  }, []);
 
   // Load chapter when editing
   const existing = useQuery(
@@ -180,62 +209,67 @@ export default function ChapterEditor() {
               onBlur={() => setIsFocused(false)}
             />
 
+            {/* Toolbar: fixed and positioned above the keyboard using visualViewport */}
             <div
-              className={`sticky bottom-0 left-0 right-0 z-30 transition-opacity ${isFocused ? "opacity-100" : "opacity-90"}`}
+              className={`fixed left-0 right-0 z-50 transition-opacity ${isFocused ? "opacity-100" : "opacity-90"}`}
+              style={{ bottom: Math.max(8, kbOffset + 8) }}
             >
               <div
-                className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
-                           flex flex-wrap items-center gap-2
-                           pb-[calc(env(safe-area-inset-bottom,0px)+8px)]"
+                className="mx-auto max-w-2xl px-3"
               >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                <div
+                  className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
+                             flex flex-wrap items-center gap-2"
                 >
-                  <Bold className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
-                >
-                  <Italic className="h-4 w-4" />
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                  >
+                    <Bold className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Button>
 
-                <span className="w-px h-6 bg-border" />
+                  <span className="w-px h-6 bg-border" />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
-                >
-                  <AlignLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
-                >
-                  <AlignCenter className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
-                >
-                  <AlignRight className="h-4 w-4" />
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
+                  >
+                    <AlignLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
+                  >
+                    <AlignCenter className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
+                  >
+                    <AlignRight className="h-4 w-4" />
+                  </Button>
 
-                <span className="w-px h-6 bg-border" />
+                  <span className="w-px h-6 bg-border" />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" /> Image
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" /> Image
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
