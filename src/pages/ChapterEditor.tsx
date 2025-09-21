@@ -25,6 +25,8 @@ export default function ChapterEditor() {
   const [isFocused, setIsFocused] = useState(false);
   // Add: dynamic keyboard offset so the toolbar sits on top of the keyboard (not screen bottom)
   const [kbOffset, setKbOffset] = useState(0);
+  // Add: track whether the main editor is empty to show a lightweight placeholder
+  const [contentEmpty, setContentEmpty] = useState(true);
 
   useEffect(() => {
     const updateKB = () => {
@@ -84,6 +86,9 @@ export default function ChapterEditor() {
       setTitle(existing.title);
       if (editorRef.current) {
         editorRef.current.innerHTML = existing.content || "";
+        // Update placeholder state based on loaded content
+        const txt = editorRef.current.textContent || "";
+        setContentEmpty(txt.trim().length === 0);
       }
     }
   }, [existing]);
@@ -172,109 +177,124 @@ export default function ChapterEditor() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-3 py-6 space-y-4">
+      {/* Slim header row with actions, keep minimal */}
+      <div className="max-w-2xl mx-auto px-3 pt-4 pb-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold">{chapterId ? "Edit Chapter" : "New Chapter"}</h1>
+          <h1 className="text-lg font-semibold"> {chapterId ? "Edit Chapter" : "New Chapter"} </h1>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => save(false)} disabled={isSaving}>
-              <Save className="h-4 w-4 mr-2" /> Save Draft
+            <Button variant="secondary" onClick={() => save(false)} disabled={isSaving} className="h-8 px-3">
+              <Save className="h-4 w-4 mr-1" /> Draft
             </Button>
-            <Button onClick={() => save(true)} disabled={isSaving || !canPublish}>
-              <Save className="h-4 w-4 mr-2" /> Publish
+            <Button onClick={() => save(true)} disabled={isSaving || !canPublish} className="h-8 px-3">
+              <Save className="h-4 w-4 mr-1" /> Publish
             </Button>
           </div>
         </div>
 
         {!canPublish && (
-          <p className="text-xs text-muted-foreground -mt-2">
-            To publish this chapter, publish the story first. You can still save as draft.
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Publish the story first to publish chapters. You can still save as draft.
           </p>
         )}
-
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <Input
-              placeholder="Chapter title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-
-            <div
-              ref={editorRef}
-              contentEditable
-              className="min-h-[50vh] rounded-md border p-4 focus:outline-none prose prose-gray dark:prose-invert max-w-none"
-              suppressContentEditableWarning
-              aria-label="Chapter editor"
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-            />
-
-            {/* Toolbar: fixed and positioned above the keyboard using visualViewport */}
-            {isFocused && (
-              <div
-                className="fixed left-0 right-0 z-50 transition-opacity opacity-100"
-                style={{ bottom: Math.max(8, kbOffset + 8) }}
-              >
-                <div className="mx-auto max-w-2xl px-3">
-                  <div
-                    className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
-                               flex flex-wrap items-center gap-2"
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
-                    >
-                      <Bold className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
-                    >
-                      <Italic className="h-4 w-4" />
-                    </Button>
-
-                    <span className="w-px h-6 bg-border" />
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
-                    >
-                      <AlignLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
-                    >
-                      <AlignCenter className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
-                    >
-                      <AlignRight className="h-4 w-4" />
-                    </Button>
-
-                    <span className="w-px h-6 bg-border" />
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
-                    >
-                      <ImageIcon className="h-4 w-4 mr-2" /> Image
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Plain editor surface */}
+      <div className="max-w-2xl mx-auto px-3 space-y-4">
+        {/* Title input: plain, centered, underline */}
+        <Input
+          placeholder="Title your Story Part"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full bg-transparent border-0 border-b rounded-none text-center text-2xl sm:text-3xl font-semibold focus-visible:ring-0 focus:outline-none"
+        />
+
+        {/* Content editor: plain surface with lightweight placeholder */}
+        <div className="relative">
+          {/* Placeholder */}
+          {contentEmpty && (
+            <span className="pointer-events-none absolute left-3 top-3 text-muted-foreground/70 select-none">
+              Tap here to start writing
+            </span>
+          )}
+          <div
+            ref={editorRef}
+            contentEditable
+            className="min-h-[55vh] rounded-md bg-transparent p-3 focus:outline-none text-base leading-7"
+            suppressContentEditableWarning
+            aria-label="Chapter editor"
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onInput={() => {
+              const txt = editorRef.current?.textContent || "";
+              setContentEmpty(txt.trim().length === 0);
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Floating tools: appear above keyboard only when body editor is focused */}
+      {isFocused && (
+        <div
+          className="fixed left-0 right-0 z-50 transition-opacity opacity-100"
+          style={{ bottom: Math.max(8, kbOffset + 8) }}
+        >
+          <div className="mx-auto max-w-2xl px-3">
+            <div
+              className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
+                         flex flex-wrap items-center gap-2"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+              >
+                <Bold className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+              >
+                <Italic className="h-4 w-4" />
+              </Button>
+
+              <span className="w-px h-6 bg-border" />
+
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
+              >
+                <AlignLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
+              >
+                <AlignCenter className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
+              >
+                <AlignRight className="h-4 w-4" />
+              </Button>
+
+              <span className="w-px h-6 bg-border" />
+
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
+              >
+                <ImageIcon className="h-4 w-4 mr-2" /> Image
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
