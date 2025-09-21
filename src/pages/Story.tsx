@@ -283,37 +283,37 @@ export default function Story() {
                   <motion.div
                     key={chapter._id}
                     whileHover={{ scale: 1.01 }}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors"
+                    className="grid grid-cols-[auto,1fr,auto] items-center gap-3 p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors"
                     onClick={() => handleChapterClick(chapter._id)}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-muted-foreground w-16">
-                        {chapter.chapterNumber}
-                      </span>
-                      <div>
-                        <h3 className="font-medium">{chapter.title}</h3>
-                        <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{chapter.wordCount} words</span>
-                          <span className="inline-flex items-center gap-1">
-                            <Eye className="w-3 h-3" />
-                            {chapter.views}
+                    <span className="text-sm font-medium text-muted-foreground w-8 text-center">
+                      {chapter.chapterNumber}
+                    </span>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium truncate">{chapter.title}</h3>
+                        {readingProgress?.lastChapterId === chapter._id && (
+                          <span className="shrink-0 px-2 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full">
+                            Last Read
                           </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Heart className="w-3 h-3" />
-                            {chapter.likes}
-                          </span>
-                        </div>
+                        )}
                       </div>
-                      {readingProgress?.lastChapterId === chapter._id && (
-                        <span className="ml-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                          Last Read
+                      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{chapter.wordCount} words</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          {chapter.views}
                         </span>
-                      )}
+                        <span className="inline-flex items-center gap-1">
+                          <Heart className="w-3 h-3" />
+                          {chapter.likes}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {chapter._creationTime
-                        ? new Date(chapter._creationTime).toDateString()
-                        : ""}
+
+                    <div className="hidden sm:block text-xs text-muted-foreground text-right">
+                      {chapter._creationTime ? new Date(chapter._creationTime).toDateString() : ""}
                     </div>
                   </motion.div>
                 ))}
