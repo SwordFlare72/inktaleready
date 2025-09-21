@@ -283,13 +283,9 @@ export default function Story() {
                   <motion.div
                     key={chapter._id}
                     whileHover={{ scale: 1.01 }}
-                    className="grid grid-cols-[auto,1fr,auto] items-center gap-3 p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors"
+                    className="grid grid-cols-[1fr,auto] items-center gap-3 p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors"
                     onClick={() => handleChapterClick(chapter._id)}
                   >
-                    <span className="text-sm font-medium text-muted-foreground w-8 text-center">
-                      {chapter.chapterNumber}
-                    </span>
-
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium truncate">{chapter.title}</h3>
