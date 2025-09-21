@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BookOpen, Heart, MessageCircle, Share2, Flag, Settings, ChevronLeft, Eye } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Heart, MessageCircle, Share2, Flag, Settings, ChevronLeft, Eye, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -41,6 +41,16 @@ export default function Reader() {
   const toggleLike = useMutation(api.chapters.toggleChapterLike);
   const setProgress = useMutation(api.readingProgress.setProgress);
   const createReport = useMutation(api.reports.createReport);
+  const comments = useQuery(
+    api.comments.getCommentsByChapter,
+    id ? { chapterId: id as Id<"chapters">, sortBy: "recent" } : "skip"
+  );
+  const createComment = useMutation(api.comments.createComment);
+  const reactToComment = useMutation(api.comments.reactToComment);
+  const deleteComment = useMutation(api.comments.deleteComment);
+  const [newComment, setNewComment] = useState("");
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   // Replace the effect that increments views and sets progress to be idempotent per chapter
   useEffect(() => {
@@ -106,6 +116,61 @@ export default function Reader() {
       setReportDetails("");
     } catch (error) {
       toast.error("Failed to submit report");
+    }
+  };
+
+  const handlePostComment = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to comment");
+      return;
+    }
+    const text = newComment.trim();
+    if (!text) {
+      toast.error("Write something first");
+      return;
+    }
+    try {
+      await createComment({ chapterId: id as Id<"chapters">, content: text });
+      setNewComment("");
+      toast.success("Comment posted");
+    } catch {
+      toast.error("Failed to post comment");
+    }
+  };
+
+  const handlePostReply = async (parentId: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to reply");
+      return;
+    }
+    const text = replyText.trim();
+    if (!text) {
+      toast.error("Write something first");
+      return;
+    }
+    try {
+      await createComment({
+        chapterId: id as Id<"chapters">,
+        content: text,
+        parentCommentId: parentId as Id<"comments">,
+      });
+      setReplyText("");
+      setReplyToId(null);
+      toast.success("Reply posted");
+    } catch {
+      toast.error("Failed to post reply");
+    }
+  };
+
+  const handleReact = async (commentId: string, isLike: boolean) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to react");
+      return;
+    }
+    try {
+      await reactToComment({ commentId: commentId as Id<"comments">, isLike });
+    } catch {
+      toast.error("Failed to react");
     }
   };
 
@@ -322,10 +387,116 @@ export default function Reader() {
               Comments ({chapter.comments})
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-8">
-              Comments feature coming soon...
-            </p>
+          <CardContent className="space-y-6">
+            {/* Composer */}
+            <div className="space-y-2">
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+              />
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handlePostComment}>
+                  Post
+                </Button>
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="space-y-5">
+              {(comments ?? []).map((c: any) => (
+                <div key={c._id} className="space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">
+                        {c.author?.name || "Anonymous"}
+                      </div>
+                      <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
+                        {c.content}
+                      </div>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                        <button
+                          onClick={() => handleReact(c._id, true)}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          <ThumbsUp className="h-4 w-4" /> {c.likes}
+                        </button>
+                        <button
+                          onClick={() => handleReact(c._id, false)}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          <ThumbsDown className="h-4 w-4" /> {c.dislikes}
+                        </button>
+                        <button
+                          onClick={() =>
+                            setReplyToId((prev) => (prev === c._id ? null : c._id))
+                          }
+                          className="hover:text-foreground"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reply composer */}
+                  {replyToId === c._id && (
+                    <div className="pl-4 border-l space-y-2">
+                      <Textarea
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Write a reply..."
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setReplyToId(null);
+                            setReplyText("");
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button size="sm" onClick={() => handlePostReply(c._id)}>
+                          Reply
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Replies */}
+                  {Array.isArray(c.replies) && c.replies.length > 0 && (
+                    <div className="pl-4 border-l space-y-3">
+                      {c.replies.map((r: any) => (
+                        <div key={r._id}>
+                          <div className="text-sm font-medium">
+                            {r.author?.name || "Anonymous"}
+                          </div>
+                          <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
+                            {r.content}
+                          </div>
+                          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                            <button
+                              onClick={() => handleReact(r._id, true)}
+                              className="inline-flex items-center gap-1 hover:text-foreground"
+                            >
+                              <ThumbsUp className="h-4 w-4" /> {r.likes}
+                            </button>
+                            <button
+                              onClick={() => handleReact(r._id, false)}
+                              className="inline-flex items-center gap-1 hover:text-foreground"
+                            >
+                              <ThumbsDown className="h-4 w-4" /> {r.dislikes}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
