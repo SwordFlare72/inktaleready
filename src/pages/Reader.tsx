@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BookOpen, Heart, MessageCircle, Share2, Flag, Settings, ChevronLeft, Eye, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Heart, MessageCircle, Share2, Flag, Settings, ChevronLeft, Eye, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -172,6 +172,26 @@ export default function Reader() {
       await reactToComment({ commentId: commentId as Id<"comments">, isLike });
     } catch {
       toast.error("Failed to react");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to delete comments");
+      return;
+    }
+    const confirmed = window.confirm("Delete this comment?");
+    if (!confirmed) return;
+    try {
+      await deleteComment({ commentId: commentId as Id<"comments"> });
+      // Clear reply composer if it was for this comment
+      if (replyToId === commentId) {
+        setReplyToId(null);
+        setReplyText("");
+      }
+      toast.success("Comment deleted");
+    } catch {
+      toast.error("Failed to delete comment");
     }
   };
 
@@ -443,6 +463,16 @@ export default function Reader() {
                         >
                           Reply
                         </button>
+                        {/* Add: Delete button for own comments */}
+                        {user && (user as any)._id === c.authorId && (
+                          <button
+                            onClick={() => handleDeleteComment(c._id)}
+                            className="inline-flex items-center gap-1 text-red-500 hover:text-red-600"
+                            title="Delete comment"
+                          >
+                            <Trash2 className="h-4 w-4" /> Delete
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -504,6 +534,16 @@ export default function Reader() {
                               >
                                 <ThumbsDown className="h-4 w-4" /> {r.dislikes}
                               </button>
+                              {/* Add: Delete button for own replies */}
+                              {user && (user as any)._id === r.authorId && (
+                                <button
+                                  onClick={() => handleDeleteComment(r._id)}
+                                  className="inline-flex items-center gap-1 text-red-500 hover:text-red-600"
+                                  title="Delete reply"
+                                >
+                                  <Trash2 className="h-4 w-4" /> Delete
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
