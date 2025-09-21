@@ -235,10 +235,11 @@ export default function ChapterEditor() {
       {/* Floating tools: appear above keyboard only when body editor is focused */}
       {isFocused && (
         <div
-          className="fixed left-0 right-0 z-50 transition-opacity opacity-100"
-          style={{ bottom: Math.max(8, kbOffset + 8) }}
+          // Position the toolbar directly above the keyboard using VisualViewport overlap + safe area inset
+          className="fixed left-0 right-0 z-50 transition-opacity pointer-events-none"
+          style={{ bottom: `calc(env(safe-area-inset-bottom) + ${Math.max(8, kbOffset + 8)}px)` }}
         >
-          <div className="mx-auto max-w-2xl px-3">
+          <div className="mx-auto max-w-2xl px-3 pointer-events-auto">
             <div
               className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
                          flex flex-wrap items-center gap-2"
