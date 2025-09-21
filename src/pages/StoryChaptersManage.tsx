@@ -9,10 +9,13 @@ import { useNavigate, useParams } from "react-router";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function StoryChaptersManage() {
   const { storyId } = useParams();
   const navigate = useNavigate();
+  const [confirmDeleteChapterId, setConfirmDeleteChapterId] = useState<Id<"chapters"> | null>(null);
 
   const chapters = useQuery(
     api.chapters.listForManage,
@@ -78,15 +81,7 @@ export default function StoryChaptersManage() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={async () => {
-                          if (!confirm("Delete this chapter? This cannot be undone.")) return;
-                          try {
-                            await deleteChapter({ chapterId: ch._id });
-                            toast.success("Chapter deleted");
-                          } catch {
-                            toast.error("Failed to delete chapter");
-                          }
-                        }}
+                        onClick={() => setConfirmDeleteChapterId(ch._id)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" /> Delete
                       </Button>
@@ -98,6 +93,37 @@ export default function StoryChaptersManage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!confirmDeleteChapterId} onOpenChange={(open) => { if (!open) setConfirmDeleteChapterId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete chapter</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this chapter? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDeleteChapterId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={async () => {
+                if (confirmDeleteChapterId) {
+                  try {
+                    await deleteChapter({ chapterId: confirmDeleteChapterId });
+                    toast.success("Chapter deleted");
+                    setConfirmDeleteChapterId(null);
+                  } catch {
+                    toast.error("Failed to delete chapter");
+                    setConfirmDeleteChapterId(null);
+                  }
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }
