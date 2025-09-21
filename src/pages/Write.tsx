@@ -14,6 +14,7 @@ import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const GENRES = [
   { value: "romance", label: "Romance" },
@@ -34,6 +35,7 @@ export default function Write() {
   
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<Id<"stories"> | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<Id<"stories"> | null>(null);
   
   // Story form state
   const [storyTitle, setStoryTitle] = useState("");
@@ -141,10 +143,6 @@ export default function Write() {
   };
 
   const handleDeleteStory = async (storyId: Id<"stories">) => {
-    if (!confirm("Are you sure you want to delete this story? This action cannot be undone.")) {
-      return;
-    }
-
     try {
       await deleteStory({ storyId });
       toast.success("Story deleted successfully");
@@ -400,7 +398,7 @@ export default function Write() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDeleteStory(story._id)}
+                    onClick={() => setConfirmDeleteId(story._id)}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
@@ -699,6 +697,31 @@ export default function Write() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!confirmDeleteId} onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete story</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this story? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmDeleteId(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 text-white hover:bg-red-700"
+                onClick={async () => {
+                  if (confirmDeleteId) {
+                    await handleDeleteStory(confirmDeleteId);
+                  }
+                  setConfirmDeleteId(null);
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </motion.div>
   );
