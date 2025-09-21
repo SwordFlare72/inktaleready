@@ -251,8 +251,7 @@ export default function Reader() {
                       className="w-full justify-start"
                       onClick={() => navigate(`/read/${ch._id}`)}
                     >
-                      <span className="font-medium">Ch. {ch.chapterNumber}</span>
-                      <span className="ml-2 truncate">{ch.title}</span>
+                      <span className="font-medium truncate">{ch.title}</span>
                     </Button>
                   ))}
                 </div>
@@ -295,7 +294,6 @@ export default function Reader() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{chapter.title}</h1>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Chapter {chapter.chapterNumber}</span>
             <span>{chapter.wordCount} words</span>
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4" />
