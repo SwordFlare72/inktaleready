@@ -280,16 +280,21 @@ export default function Reader() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
+        {/* Replace header layout: center title, show only views and likes below */}
+        <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">{chapter.title}</h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{chapter.wordCount} words</span>
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="inline-flex items-center gap-1">
               <Eye className="h-4 w-4" />
               {chapter.views}
             </div>
+            <div className="inline-flex items-center gap-1">
+              <Heart className="h-4 w-4" />
+              {chapter.likes}
+            </div>
           </div>
         </div>
+        {/* End header layout change */}
 
         <Card className="mb-8">
           <CardContent className="p-4 md:p-8">
