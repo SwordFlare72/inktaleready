@@ -437,12 +437,37 @@ export default function Reader() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">
-                        {c.author?.name || "Anonymous"}
+                      {/* Username row with right-aligned menu */}
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium truncate">
+                          {c.author?.name || "Anonymous"}
+                        </div>
+                        <div className="ml-auto">
+                          {user && (user as any)._id === c.authorId && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <EllipsisVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" sideOffset={4}>
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() => handleDeleteComment(c._id)}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </div>
+
                       <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
                         {c.content}
                       </div>
+
+                      {/* Actions row without menu */}
                       <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
                         <button
                           onClick={() => handleReact(c._id, true)}
@@ -464,25 +489,6 @@ export default function Reader() {
                         >
                           Reply
                         </button>
-                        <div className="ml-auto">
-                          {user && (user as any)._id === c.authorId && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <EllipsisVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" sideOffset={4}>
-                                <DropdownMenuItem
-                                  className="text-red-600"
-                                  onClick={() => handleDeleteComment(c._id)}
-                                >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -525,25 +531,11 @@ export default function Reader() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium">
-                              {r.author?.name || "Anonymous"}
-                            </div>
-                            <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
-                              {r.content}
-                            </div>
-                            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                              <button
-                                onClick={() => handleReact(r._id, true)}
-                                className="inline-flex items-center gap-1 hover:text-foreground"
-                              >
-                                <ThumbsUp className="h-4 w-4" /> {r.likes}
-                              </button>
-                              <button
-                                onClick={() => handleReact(r._id, false)}
-                                className="inline-flex items-center gap-1 hover:text-foreground"
-                              >
-                                <ThumbsDown className="h-4 w-4" /> {r.dislikes}
-                              </button>
+                            {/* Username row with right-aligned menu for replies */}
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium truncate">
+                                {r.author?.name || "Anonymous"}
+                              </div>
                               <div className="ml-auto">
                                 {user && (user as any)._id === r.authorId && (
                                   <DropdownMenu>
@@ -563,6 +555,24 @@ export default function Reader() {
                                   </DropdownMenu>
                                 )}
                               </div>
+                            </div>
+
+                            <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
+                              {r.content}
+                            </div>
+                            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                              <button
+                                onClick={() => handleReact(r._id, true)}
+                                className="inline-flex items-center gap-1 hover:text-foreground"
+                              >
+                                <ThumbsUp className="h-4 w-4" /> {r.likes}
+                              </button>
+                              <button
+                                onClick={() => handleReact(r._id, false)}
+                                className="inline-flex items-center gap-1 hover:text-foreground"
+                              >
+                                <ThumbsDown className="h-4 w-4" /> {r.dislikes}
+                              </button>
                             </div>
                           </div>
                         </div>
