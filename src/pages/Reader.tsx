@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function Reader() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ export default function Reader() {
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState<Id<"comments"> | null>(null);
 
   // Add: guard to avoid repeatedly incrementing views on reactive re-renders
   const incrementedForChapterRef = useRef<string | null>(null);
@@ -177,23 +179,8 @@ export default function Reader() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to delete comments");
-      return;
-    }
-    const confirmed = window.confirm("Delete this comment?");
-    if (!confirmed) return;
-    try {
-      await deleteComment({ commentId: commentId as Id<"comments"> });
-      // Clear reply composer if it was for this comment
-      if (replyToId === commentId) {
-        setReplyToId(null);
-        setReplyText("");
-      }
-      toast.success("Comment deleted");
-    } catch {
-      toast.error("Failed to delete comment");
-    }
+    // Open UI confirmation dialog instead of using window.confirm
+    setConfirmDeleteCommentId(commentId as Id<"comments">);
   };
 
   const fontSizeClasses = {
