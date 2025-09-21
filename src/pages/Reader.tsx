@@ -55,6 +55,8 @@ export default function Reader() {
   const [newComment, setNewComment] = useState("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  // Add: deletion loading state
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
 
   // Replace the effect that increments views and sets progress to be idempotent per chapter
   useEffect(() => {
@@ -570,6 +572,59 @@ export default function Reader() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Comment Confirmation */}
+      <AlertDialog
+        open={!!confirmDeleteCommentId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmDeleteCommentId(null);
+            setIsDeletingComment(false);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete comment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this comment? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setConfirmDeleteCommentId(null);
+                setIsDeletingComment(false);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700"
+              disabled={isDeletingComment}
+              onClick={async () => {
+                if (!confirmDeleteCommentId || isDeletingComment) return;
+                setIsDeletingComment(true);
+                try {
+                  await deleteComment({ commentId: confirmDeleteCommentId });
+                  toast.success("Comment deleted");
+                  setConfirmDeleteCommentId(null);
+                } catch (err: any) {
+                  const msg =
+                    typeof err?.message === "string"
+                      ? err.message
+                      : "Failed to delete comment";
+                  toast.error(msg);
+                } finally {
+                  setIsDeletingComment(false);
+                }
+              }}
+            >
+              {isDeletingComment ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }
