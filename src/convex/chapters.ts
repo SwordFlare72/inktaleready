@@ -212,11 +212,31 @@ export const incrementChapterViews = mutation({
     const chapter = await ctx.db.get(args.chapterId);
     if (!chapter) return;
 
+    // Unique count per authenticated user
+    const user = await getCurrentUser(ctx);
+    if (user) {
+      const existing = await ctx.db
+        .query("chapterViews")
+        .withIndex("by_user_and_chapter", (q) =>
+          q.eq("userId", user._id).eq("chapterId", args.chapterId)
+        )
+        .unique();
+
+      // If the user has already viewed this chapter, do not increment again
+      if (existing) return;
+
+      // Record the unique view for this user
+      await ctx.db.insert("chapterViews", {
+        userId: user._id,
+        chapterId: args.chapterId,
+      });
+    }
+
+    // Increment counts (for guests this will increment on each call; for authed users it's once)
     await ctx.db.patch(args.chapterId, {
       views: chapter.views + 1,
     });
 
-    // Also increment story views
     const story = await ctx.db.get(chapter.storyId);
     if (story) {
       await ctx.db.patch(chapter.storyId, {
@@ -345,6 +365,15 @@ export const deleteChapter = mutation({
 
     for (const like of likes) {
       await ctx.db.delete(like._id);
+    }
+
+    // Delete unique view records for this chapter (cleanup)
+    const viewRecs = await ctx.db
+      .query("chapterViews")
+      .withIndex("by_chapter", (q) => q.eq("chapterId", args.chapterId))
+      .collect();
+    for (const vrec of viewRecs) {
+      await ctx.db.delete(vrec._id);
     }
 
     // Delete comments

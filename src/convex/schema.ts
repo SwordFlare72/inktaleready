@@ -199,6 +199,15 @@ const schema = defineSchema(
       .index("by_chapter", ["chapterId"])
       .index("by_user_and_chapter", ["userId", "chapterId"]),
 
+    // Add: Chapter views (unique per user per chapter)
+    chapterViews: defineTable({
+      userId: v.id("users"),
+      chapterId: v.id("chapters"),
+    })
+      .index("by_user", ["userId"])
+      .index("by_chapter", ["chapterId"])
+      .index("by_user_and_chapter", ["userId", "chapterId"]),
+
     // Comment likes/dislikes
     commentReactions: defineTable({
       userId: v.id("users"),
