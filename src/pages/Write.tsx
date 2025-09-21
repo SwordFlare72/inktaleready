@@ -35,7 +35,8 @@ export default function Write() {
   
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<Id<"stories"> | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<Id<"stories"> | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDeletingStory, setIsDeletingStory] = useState(false);
   
   // Story form state
   const [storyTitle, setStoryTitle] = useState("");
@@ -142,17 +143,20 @@ export default function Write() {
     }
   };
 
-  const handleDeleteStory = async (storyId: Id<"stories">) => {
+  async function handleDeleteStory(storyId: string) {
+    if (isDeletingStory) return;
+    setIsDeletingStory(true);
     try {
-      await deleteStory({ storyId });
-      toast.success("Story deleted successfully");
-      if (selectedStoryId === storyId) {
-        setSelectedStoryId(null);
-      }
-    } catch (error) {
-      toast.error("Failed to delete story");
+      await deleteStory({ storyId: storyId as Id<"stories"> });
+      toast.success("Story deleted");
+      setConfirmDeleteId(null);
+    } catch (err: any) {
+      const msg = typeof err?.message === "string" ? err.message : "Failed to delete story";
+      toast.error(msg);
+    } finally {
+      setIsDeletingStory(false);
     }
-  };
+  }
 
   const resetStoryForm = () => {
     setStoryTitle("");
@@ -710,14 +714,13 @@ export default function Write() {
               <AlertDialogCancel onClick={() => setConfirmDeleteId(null)}>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-red-600 text-white hover:bg-red-700"
+                disabled={isDeletingStory}
                 onClick={async () => {
-                  if (confirmDeleteId) {
-                    await handleDeleteStory(confirmDeleteId);
-                  }
-                  setConfirmDeleteId(null);
+                  if (!confirmDeleteId || isDeletingStory) return;
+                  await handleDeleteStory(confirmDeleteId);
                 }}
               >
-                Delete
+                {isDeletingStory ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

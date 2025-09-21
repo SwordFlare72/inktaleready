@@ -16,6 +16,7 @@ export default function StoryChaptersManage() {
   const { storyId } = useParams();
   const navigate = useNavigate();
   const [confirmDeleteChapterId, setConfirmDeleteChapterId] = useState<Id<"chapters"> | null>(null);
+  const [isDeletingChapter, setIsDeletingChapter] = useState(false);
 
   const chapters = useQuery(
     api.chapters.listForManage,
@@ -106,20 +107,23 @@ export default function StoryChaptersManage() {
             <AlertDialogCancel onClick={() => setConfirmDeleteChapterId(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 text-white hover:bg-red-700"
+              disabled={isDeletingChapter}
               onClick={async () => {
-                if (confirmDeleteChapterId) {
-                  try {
-                    await deleteChapter({ chapterId: confirmDeleteChapterId });
-                    toast.success("Chapter deleted");
-                    setConfirmDeleteChapterId(null);
-                  } catch {
-                    toast.error("Failed to delete chapter");
-                    setConfirmDeleteChapterId(null);
-                  }
+                if (!confirmDeleteChapterId || isDeletingChapter) return;
+                setIsDeletingChapter(true);
+                try {
+                  await deleteChapter({ chapterId: confirmDeleteChapterId });
+                  toast.success("Chapter deleted");
+                  setConfirmDeleteChapterId(null);
+                } catch (err: any) {
+                  const msg = typeof err?.message === "string" ? err.message : "Failed to delete chapter";
+                  toast.error(msg);
+                } finally {
+                  setIsDeletingChapter(false);
                 }
               }}
             >
-              Delete
+              {isDeletingChapter ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
