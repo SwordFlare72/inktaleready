@@ -22,6 +22,7 @@ export default function ChapterEditor() {
 
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Load chapter when editing
   const existing = useQuery(
@@ -169,78 +170,74 @@ export default function ChapterEditor() {
               onChange={(e) => setTitle(e.target.value)}
             />
 
-            <div className="flex flex-wrap gap-2 border rounded-md p-2 bg-muted/40">
-              <Button
-                variant="outline"
-                size="sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  exec("bold");
-                }}
-              >
-                <Bold className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  exec("italic");
-                }}
-              >
-                <Italic className="h-4 w-4" />
-              </Button>
-              <span className="w-px h-6 bg-border" />
-              <Button
-                variant="outline"
-                size="sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  exec("justifyLeft");
-                }}
-              >
-                <AlignLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  exec("justifyCenter");
-                }}
-              >
-                <AlignCenter className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  exec("justifyRight");
-                }}
-              >
-                <AlignRight className="h-4 w-4" />
-              </Button>
-              <span className="w-px h-6 bg-border" />
-              <Button
-                variant="outline"
-                size="sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handlePickImage();
-                }}
-              >
-                <ImageIcon className="h-4 w-4 mr-2" /> Image
-              </Button>
-            </div>
-
             <div
               ref={editorRef}
               contentEditable
               className="min-h-[50vh] rounded-md border p-4 focus:outline-none prose prose-gray dark:prose-invert max-w-none"
               suppressContentEditableWarning
               aria-label="Chapter editor"
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
             />
+
+            <div
+              className={`sticky bottom-0 left-0 right-0 z-30 transition-opacity ${isFocused ? "opacity-100" : "opacity-90"}`}
+            >
+              <div
+                className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
+                           flex flex-wrap items-center gap-2
+                           pb-[calc(env(safe-area-inset-bottom,0px)+8px)]"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                >
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+                >
+                  <Italic className="h-4 w-4" />
+                </Button>
+
+                <span className="w-px h-6 bg-border" />
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
+                >
+                  <AlignLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
+                >
+                  <AlignCenter className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
+                >
+                  <AlignRight className="h-4 w-4" />
+                </Button>
+
+                <span className="w-px h-6 bg-border" />
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" /> Image
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
