@@ -105,10 +105,16 @@ function BottomNavGate() {
     !(user as any)?.username ||
     (user as any)?.isAnonymous;
 
+  // Hide nav specifically on chapter editor routes
+  const onChapterEditor =
+    location.pathname.startsWith("/write/") &&
+    location.pathname.includes("/chapter/");
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
-    notFullyAuthed
+    notFullyAuthed ||
+    onChapterEditor
   ) return null;
 
   return <BottomNav />;

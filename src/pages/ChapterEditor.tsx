@@ -210,68 +210,68 @@ export default function ChapterEditor() {
             />
 
             {/* Toolbar: fixed and positioned above the keyboard using visualViewport */}
-            <div
-              className={`fixed left-0 right-0 z-50 transition-opacity ${isFocused ? "opacity-100" : "opacity-90"}`}
-              style={{ bottom: Math.max(8, kbOffset + 8) }}
-            >
+            {isFocused && (
               <div
-                className="mx-auto max-w-2xl px-3"
+                className="fixed left-0 right-0 z-50 transition-opacity opacity-100"
+                style={{ bottom: Math.max(8, kbOffset + 8) }}
               >
-                <div
-                  className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
-                             flex flex-wrap items-center gap-2"
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                <div className="mx-auto max-w-2xl px-3">
+                  <div
+                    className="border rounded-xl bg-card/95 backdrop-blur px-2 py-2 shadow-md
+                               flex flex-wrap items-center gap-2"
                   >
-                    <Bold className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
-                  >
-                    <Italic className="h-4 w-4" />
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                    >
+                      <Bold className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+                    >
+                      <Italic className="h-4 w-4" />
+                    </Button>
 
-                  <span className="w-px h-6 bg-border" />
+                    <span className="w-px h-6 bg-border" />
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
-                  >
-                    <AlignLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
-                  >
-                    <AlignCenter className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
-                  >
-                    <AlignRight className="h-4 w-4" />
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
+                    >
+                      <AlignLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
+                    >
+                      <AlignCenter className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
+                    >
+                      <AlignRight className="h-4 w-4" />
+                    </Button>
 
-                  <span className="w-px h-6 bg-border" />
+                    <span className="w-px h-6 bg-border" />
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
-                  >
-                    <ImageIcon className="h-4 w-4 mr-2" /> Image
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
+                    >
+                      <ImageIcon className="h-4 w-4 mr-2" /> Image
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
