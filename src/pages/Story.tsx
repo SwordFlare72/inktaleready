@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
@@ -268,9 +268,9 @@ export default function Story() {
       <div className="container mx-auto px-4 pb-28">
         {/* Chapters List */}
         <Card className="mt-3" id="chapters-list">
-          <CardHeader>
-            <CardTitle>Chapters ({story.chapters?.length || 0})</CardTitle>
-          </CardHeader>
+          <div className="px-6 pt-6 pb-0 text-base font-semibold">
+            Chapters ({story.chapters?.length || 0})
+          </div>
           <CardContent>
             {!story.chapters || story.chapters.length === 0 ? (
               <div className="text-center py-8">
@@ -307,7 +307,6 @@ export default function Story() {
                         </span>
                       </div>
                     </div>
-
                     <div className="hidden sm:block text-xs text-muted-foreground text-right">
                       {chapter._creationTime ? new Date(chapter._creationTime).toDateString() : ""}
                     </div>
