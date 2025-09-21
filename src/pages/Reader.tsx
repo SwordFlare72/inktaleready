@@ -138,7 +138,7 @@ export default function Reader() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/story/${chapter.story._id}`)}
+            onClick={() => navigate(`/story/${chapter.story._id}`, { replace: true })}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back to Story
