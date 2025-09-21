@@ -110,11 +110,15 @@ function BottomNavGate() {
     location.pathname.startsWith("/write/") &&
     location.pathname.includes("/chapter/");
 
+  // Add: Hide nav while reading any chapter
+  const onReader = location.pathname.startsWith("/read/");
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
     notFullyAuthed ||
-    onChapterEditor
+    onChapterEditor ||
+    onReader
   ) return null;
 
   return <BottomNav />;
