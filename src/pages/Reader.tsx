@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, BookOpen, Heart, MessageCircle, Share2, Flag, Settings, ChevronLeft, Eye, ThumbsUp, ThumbsDown } from "lucide-react";
@@ -406,8 +407,15 @@ export default function Reader() {
             <div className="space-y-5">
               {(comments ?? []).map((c: any) => (
                 <div key={c._id} className="space-y-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                  {/* Comment row with avatar */}
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarImage src={c.author?.image || ""} />
+                      <AvatarFallback>
+                        {(c.author?.name?.[0] || "A").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium">
                         {c.author?.name || "Anonymous"}
                       </div>
@@ -441,7 +449,7 @@ export default function Reader() {
 
                   {/* Reply composer */}
                   {replyToId === c._id && (
-                    <div className="pl-4 border-l space-y-2">
+                    <div className="pl-11 border-l space-y-2">
                       <Textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
@@ -465,30 +473,38 @@ export default function Reader() {
                     </div>
                   )}
 
-                  {/* Replies */}
+                  {/* Replies with avatars */}
                   {Array.isArray(c.replies) && c.replies.length > 0 && (
-                    <div className="pl-4 border-l space-y-3">
+                    <div className="pl-11 space-y-3">
                       {c.replies.map((r: any) => (
-                        <div key={r._id}>
-                          <div className="text-sm font-medium">
-                            {r.author?.name || "Anonymous"}
-                          </div>
-                          <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
-                            {r.content}
-                          </div>
-                          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                            <button
-                              onClick={() => handleReact(r._id, true)}
-                              className="inline-flex items-center gap-1 hover:text-foreground"
-                            >
-                              <ThumbsUp className="h-4 w-4" /> {r.likes}
-                            </button>
-                            <button
-                              onClick={() => handleReact(r._id, false)}
-                              className="inline-flex items-center gap-1 hover:text-foreground"
-                            >
-                              <ThumbsDown className="h-4 w-4" /> {r.dislikes}
-                            </button>
+                        <div key={r._id} className="flex items-start gap-3">
+                          <Avatar className="h-7 w-7 shrink-0">
+                            <AvatarImage src={r.author?.image || ""} />
+                            <AvatarFallback>
+                              {(r.author?.name?.[0] || "A").toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium">
+                              {r.author?.name || "Anonymous"}
+                            </div>
+                            <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
+                              {r.content}
+                            </div>
+                            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                              <button
+                                onClick={() => handleReact(r._id, true)}
+                                className="inline-flex items-center gap-1 hover:text-foreground"
+                              >
+                                <ThumbsUp className="h-4 w-4" /> {r.likes}
+                              </button>
+                              <button
+                                onClick={() => handleReact(r._id, false)}
+                                className="inline-flex items-center gap-1 hover:text-foreground"
+                              >
+                                <ThumbsDown className="h-4 w-4" /> {r.dislikes}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
