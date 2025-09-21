@@ -296,14 +296,13 @@ export default function Reader() {
         </div>
         {/* End header layout change */}
 
-        <Card className="mb-8">
-          <CardContent className="p-4 md:p-8">
-            <div 
-              className={`prose prose-gray dark:prose-invert max-w-none ${fontSizeClasses[fontSize]}`}
-              dangerouslySetInnerHTML={{ __html: chapter.content.replace(/\n/g, '<br>') }}
-            />
-          </CardContent>
-        </Card>
+        {/* Replace Card wrapper with plain container to remove box outline */}
+        <div className="mb-8">
+          <div
+            className={`prose prose-gray dark:prose-invert max-w-none ${fontSizeClasses[fontSize]}`}
+            dangerouslySetInnerHTML={{ __html: chapter.content.replace(/\n/g, '<br>') }}
+          />
+        </div>
 
         {/* Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
