@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, ArrowLeft, Share2, Home } from "lucide-react";
+import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, Home } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -120,9 +120,6 @@ export default function Story() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
               <Home className="w-4 h-4 mr-1" /> Home
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back
             </Button>
           </div>
           <div className="flex items-center gap-2">
