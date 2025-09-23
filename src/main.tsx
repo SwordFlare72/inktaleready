@@ -27,6 +27,7 @@ import "./types/global.d.ts";
 import ChapterEditor from "./pages/ChapterEditor.tsx";
 import StoryChaptersManage from "./pages/StoryChaptersManage.tsx";
 import EditProfile from "./pages/EditProfile.tsx";
+import { motion } from "framer-motion";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -124,6 +125,30 @@ function BottomNavGate() {
   return <BottomNav />;
 }
 
+function SplashOverlay() {
+  const { isLoading } = useAuth();
+  if (!isLoading) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-background">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25 }}
+        className="flex flex-col items-center gap-3"
+      >
+        <img
+          src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
+          alt="InkTale"
+          width={120}
+          height={120}
+          className="rounded-2xl shadow-lg object-cover"
+        />
+      </motion.div>
+    </div>
+  );
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <VlyToolbar />
@@ -132,6 +157,7 @@ createRoot(document.getElementById("root")!).render(
         <BrowserRouter>
           <RouteSyncer />
           <GlobalRedirector />
+          <SplashOverlay />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/" />} />
