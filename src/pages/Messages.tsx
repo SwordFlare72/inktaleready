@@ -161,7 +161,7 @@ export default function Messages() {
 
             <CardContent className="p-0 flex flex-col h-[calc(100vh-56px-56px)] sm:h-[600px]">
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
                 {thread?.page.slice().reverse().map((message) => (
                   <div
                     key={message._id}
@@ -194,8 +194,8 @@ export default function Messages() {
                 ))}
               </div>
 
-              {/* Composer */}
-              <div className="border-t p-3 sm:p-4">
+              {/* Composer - make it always visible (sticky) */}
+              <div className="sticky bottom-0 z-10 border-t p-3 sm:p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="flex items-center gap-2">
                   <input
                     ref={fileInputRef}
