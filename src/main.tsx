@@ -125,6 +125,22 @@ function BottomNavGate() {
   return <BottomNav />;
 }
 
+function HomeGate() {
+  const { isLoading, isAuthenticated, user } = useAuth();
+  if (isLoading) return null;
+
+  const notFullyAuthed =
+    !isAuthenticated ||
+    !user ||
+    !(user as any)?.username ||
+    (user as any)?.isAnonymous;
+
+  if (notFullyAuthed) {
+    return <Navigate to="/auth" replace />;
+  }
+  return <Landing />;
+}
+
 function SplashOverlay() {
   const { isLoading } = useAuth();
   if (!isLoading) return null;
@@ -159,7 +175,7 @@ createRoot(document.getElementById("root")!).render(
           <GlobalRedirector />
           <SplashOverlay />
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<HomeGate />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/" />} />
             <Route path="/dashboard" element={
               <ProtectedRoute><Dashboard /></ProtectedRoute>
