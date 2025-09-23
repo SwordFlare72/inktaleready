@@ -146,7 +146,7 @@ function SplashOverlay() {
   if (!isLoading) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-background">
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-black">
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
