@@ -114,12 +114,20 @@ function BottomNavGate() {
   // Add: Hide nav while reading any chapter
   const onReader = location.pathname.startsWith("/read/");
 
+  // Add: Hide nav when viewing someone else's profile (/profile/:id where id !== current user id)
+  const profileMatch = location.pathname.match(/^\/profile\/([^/]+)/);
+  const otherUsersProfile =
+    !!profileMatch &&
+    !!user &&
+    String((user as any)._id) !== String(profileMatch[1]);
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
     notFullyAuthed ||
     onChapterEditor ||
-    onReader
+    onReader ||
+    otherUsersProfile
   ) return null;
 
   return <BottomNav />;

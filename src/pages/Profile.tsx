@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Edit, Users, BookOpen, Eye, Heart } from "lucide-react";
+import { Edit, Users, BookOpen, Eye, Heart, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -177,6 +177,17 @@ export default function Profile() {
               </div>
             )}
           </div>
+
+          {/* Add: Back button when viewing another user's profile */}
+          {!isOwnProfile && (
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+              className="absolute top-3 left-3 inline-flex items-center justify-center h-9 w-9 rounded-full border bg-background/80 backdrop-blur hover:bg-background"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
 
           {/* Avatar + name row */}
           <div className="px-4 sm:px-6 -mt-10 sm:-mt-12 relative">
