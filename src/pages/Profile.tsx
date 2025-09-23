@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Edit, Users, BookOpen, Eye, Heart, ArrowLeft } from "lucide-react";
+import { Edit, Users, BookOpen, Eye, Heart, ArrowLeft, MoreVertical, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -180,13 +180,41 @@ export default function Profile() {
 
           {/* Add: Back button when viewing another user's profile */}
           {!isOwnProfile && (
-            <button
-              onClick={() => navigate(-1)}
-              aria-label="Go back"
-              className="absolute top-3 left-3 inline-flex items-center justify-center h-9 w-9 rounded-full border bg-background/80 backdrop-blur hover:bg-background"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
+            <>
+              <button
+                onClick={() => navigate(-1)}
+                aria-label="Go back"
+                className="absolute top-3 left-3 inline-flex items-center justify-center h-9 w-9 rounded-full border bg-background/80 backdrop-blur hover:bg-background"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+
+              {/* Add: Triple-dot menu on top-left with Direct Message option */}
+              <div className="absolute top-3 left-14">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="More options"
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-full border bg-background/80 backdrop-blur hover:bg-background"
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (!targetUserId) return;
+                        navigate("/messages", { state: { partnerId: targetUserId } });
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      {`Message (${profileUser?.username ? `@${profileUser.username}` : (profileUser?.name || "User")})`}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </>
           )}
 
           {/* Avatar + name row */}
