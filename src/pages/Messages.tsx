@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { MessageCircle, Send, Plus } from "lucide-react";
+import { MessageCircle, Send, Plus, ArrowLeft } from "lucide-react";
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -65,6 +65,10 @@ export default function Messages() {
     );
   }
 
+  // Derive selected partner display
+  const selectedConversation = conversations?.find(c => c.partnerId === selectedPartnerId);
+  const selectedPartnerName = selectedConversation?.partner?.name || "Chat";
+
   const handlePickImage = () => {
     fileInputRef.current?.click();
   };
@@ -117,22 +121,122 @@ export default function Messages() {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-background"
     >
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Messages</h1>
-          <p className="text-muted-foreground">
-            Connect with other writers and readers
-          </p>
-        </div>
+      <div className="max-w-3xl mx-auto px-0 sm:px-4 py-0 sm:py-8">
+        {/* Header + subtitle only when NOT in a thread */}
+        {!selectedPartnerId && (
+          <div className="px-4 sm:px-0 mb-4 sm:mb-8 pt-6 sm:pt-0">
+            <h1 className="text-3xl font-bold mb-2">Messages</h1>
+            <p className="text-muted-foreground">
+              Connect with other writers and readers
+            </p>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
-          {/* Conversations List */}
+        {/* Thread view (full-screen style) */}
+        {selectedPartnerId ? (
+          <Card className="sm:rounded-lg rounded-none border-0 sm:border">
+            {/* Compact chat header with Back + partner info */}
+            <CardHeader className="py-3 px-3 sm:px-6 border-b">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSelectedPartnerId(null)}
+                  aria-label="Go back"
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-full border hover:bg-muted"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={selectedConversation?.partner?.image} />
+                    <AvatarFallback>
+                      {selectedConversation?.partner?.name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <CardTitle className="text-base font-semibold">
+                    {selectedPartnerName}
+                  </CardTitle>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-0 flex flex-col h-[calc(100vh-56px-56px)] sm:h-[600px]">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {thread?.page.slice().reverse().map((message) => (
+                  <div
+                    key={message._id}
+                    className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] px-3 py-2 rounded-lg ${
+                        message.senderId === user?._id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      {message.body && message.body.trim().length > 0 && (
+                        <p className="text-sm">{message.body}</p>
+                      )}
+                      {message.imageUrl && (
+                        <div className="mt-1">
+                          <img
+                            src={message.imageUrl}
+                            alt="attachment"
+                            className="rounded-lg max-h-64 w-auto object-cover"
+                          />
+                        </div>
+                      )}
+                      <p className="text-xs opacity-70 mt-1">
+                        {new Date(message._creationTime).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Composer */}
+              <div className="border-t p-3 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelected}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePickImage}
+                    disabled={!selectedPartnerId || isUploading}
+                    aria-label="Add image"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder="Message..."
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  />
+                  <Button onClick={handleSendMessage} disabled={!messageText.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+                {isUploading && (
+                  <div className="text-xs text-muted-foreground mt-2">Uploading image...</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          // Conversations list view
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle>Conversations</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="space-y-1 max-h-[500px] overflow-y-auto">
+              <div className="space-y-1 max-h-[70vh] overflow-y-auto">
                 {conversations?.map((conversation) => (
                   <div
                     key={conversation.partnerId}
@@ -170,101 +274,7 @@ export default function Messages() {
               )}
             </CardContent>
           </Card>
-
-          {/* Chat Area */}
-          <Card className="lg:col-span-2">
-            {selectedPartnerId ? (
-              <>
-                <CardHeader>
-                  <CardTitle>
-                    {conversations?.find(c => c.partnerId === selectedPartnerId)?.partner?.name || "Chat"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 flex flex-col h-[500px]">
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {thread?.page.slice().reverse().map((message) => (
-                      <div
-                        key={message._id}
-                        className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                            message.senderId === user?._id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
-                        >
-                          {/* Text body (if any) */}
-                          {message.body && message.body.trim().length > 0 && (
-                            <p className="text-sm">{message.body}</p>
-                          )}
-
-                          {/* Image attachment (if any) */}
-                          {message.imageUrl && (
-                            <div className="mt-1">
-                              <img
-                                src={message.imageUrl}
-                                alt="attachment"
-                                className="rounded-lg max-h-64 w-auto object-cover"
-                              />
-                            </div>
-                          )}
-
-                          <p className="text-xs opacity-70 mt-1">
-                            {new Date(message._creationTime).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Message Input */}
-                  <div className="border-t p-4">
-                    <div className="flex items-center gap-2">
-                      {/* Hidden file input for image uploads */}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageSelected}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handlePickImage}
-                        disabled={!selectedPartnerId || isUploading}
-                        aria-label="Add image"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Input
-                        value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
-                        placeholder="Type a message..."
-                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      />
-                      <Button onClick={handleSendMessage} disabled={!messageText.trim()}>
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {isUploading && (
-                      <div className="text-xs text-muted-foreground mt-2">Uploading image...</div>
-                    )}
-                  </div>
-                </CardContent>
-              </>
-            ) : (
-              <CardContent className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">Select a conversation to start messaging</p>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-        </div>
+        )}
       </div>
     </motion.div>
   );

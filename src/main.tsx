@@ -121,13 +121,17 @@ function BottomNavGate() {
     !!user &&
     String((user as any)._id) !== String(profileMatch[1]);
 
+  // Add: Hide nav on messaging page
+  const onMessages = location.pathname.startsWith("/messages");
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
     notFullyAuthed ||
     onChapterEditor ||
     onReader ||
-    otherUsersProfile
+    otherUsersProfile ||
+    onMessages
   ) return null;
 
   return <BottomNav />;
