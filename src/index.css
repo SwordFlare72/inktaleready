@@ -117,7 +117,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Force global black background to prevent white flash between screens */
+    @apply bg-black text-foreground;
+    background-color: #000;
   }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
