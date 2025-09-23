@@ -137,16 +137,16 @@ export default function Messages() {
           <Card className="sm:rounded-lg rounded-none border-0 sm:border">
             {/* Compact chat header with Back + partner info */}
             <CardHeader className="py-3 px-3 sm:px-6 border-b">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setSelectedPartnerId(null)}
                   aria-label="Go back"
-                  className="inline-flex items-center justify-center h-9 w-9 rounded-full border hover:bg-muted"
+                  className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-muted/60 hover:bg-muted"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  <ArrowLeft className="h-4 w-4" />
                 </button>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-9 w-9 ring-1 ring-border">
                     <AvatarImage src={selectedConversation?.partner?.image} />
                     <AvatarFallback>
                       {selectedConversation?.partner?.name?.charAt(0) || "U"}
