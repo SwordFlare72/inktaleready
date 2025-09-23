@@ -139,7 +139,8 @@ export default function Messages() {
             <CardHeader className="py-3 px-3 sm:px-6 border-b">
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setSelectedPartnerId(null)}
+                  // Redirect to Alerts page (Messages tab) instead of returning to Messages list
+                  onClick={() => navigate("/notifications", { state: { tab: "messages" } })}
                   aria-label="Go back"
                   className="inline-flex items-center justify-center h-8 w-8 rounded-full border-[0.5px] border-muted/60 hover:bg-muted"
                 >
