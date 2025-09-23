@@ -94,8 +94,8 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-              <img src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937" alt="FanFic" width={28} height={28} className="rounded-md" />
-              <span className="text-xl font-black tracking-tight">InkTale</span>
+              <img src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937" alt="FanFic" width={36} height={36} className="rounded-md" />
+              <span className="text-2xl font-black tracking-tight">InkTale</span>
             </div>
             {!isLoading && isAuthenticated && (
               <span className="hidden sm:block text-sm text-muted-foreground">
