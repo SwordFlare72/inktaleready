@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, Search as SearchIcon } from "lucide-react";
+import { BookOpen, Eye, Heart, Search as SearchIcon, Users as UsersIcon } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Switch } from "@/components/ui/switch";
@@ -29,6 +30,8 @@ export default function Search() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [genre, setGenre] = useState("all");
+  // Add: toggle between stories and users
+  const [mode, setMode] = useState<"stories" | "users">("stories");
 
   // Add: advanced filter state
   const [sortBy, setSortBy] = useState<"recent" | "popular" | "views">("recent");
@@ -44,17 +47,24 @@ export default function Search() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const searchResults = useQuery(
+  // Rename: stories search results and add users search results
+  const searchResultsStories = useQuery(
     api.stories.searchStories,
-    debouncedSearchTerm.trim().length > 0
+    debouncedSearchTerm.trim().length > 0 && mode === "stories"
       ? {
           searchTerm: debouncedSearchTerm.trim(),
           genre: genre !== "all" ? genre : undefined,
-          // Pass advanced filters
           sortBy,
           hasCover: hasCover ? true : undefined,
           minChapters: minChapters.trim() ? Number(minChapters) : undefined,
         }
+      : "skip"
+  );
+
+  const userResults = useQuery(
+    api.users.searchUsers,
+    debouncedSearchTerm.trim().length > 0 && mode === "users"
+      ? { q: debouncedSearchTerm.trim() }
       : "skip"
   );
 
@@ -82,81 +92,98 @@ export default function Search() {
           <div className="relative flex-1">
             <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search for stories..."
+              placeholder="Search for stories or users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
             />
           </div>
-          <Select value={genre} onValueChange={setGenre}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filter by genre" />
+
+          {/* Add: Mode selector (Stories | Users) */}
+          <Select value={mode} onValueChange={(v: "stories" | "users") => setMode(v)}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Search type" />
             </SelectTrigger>
             <SelectContent>
-              {GENRES.map((g) => (
-                <SelectItem key={g.value} value={g.value}>
-                  {g.label}
-                </SelectItem>
-              ))}
+              <SelectItem value="stories">Stories</SelectItem>
+              <SelectItem value="users">Users</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Hide genre when searching users */}
+          {mode === "stories" && (
+            <Select value={genre} onValueChange={setGenre}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filter by genre" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENRES.map((g) => (
+                  <SelectItem key={g.value} value={g.value}>
+                    {g.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
-        {/* Advanced Filters */}
-        <div className="mb-6 space-y-4">
-          <div>
-            <label className="text-sm font-medium block mb-2">Sort By</label>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={sortBy === "recent" ? "default" : "outline"}
-                onClick={() => setSortBy("recent")}
-                className={sortBy === "recent" ? "bg-purple-600 text-white" : ""}
-                size="sm"
-              >
-                Recently Updated
-              </Button>
-              <Button
-                variant={sortBy === "popular" ? "default" : "outline"}
-                onClick={() => setSortBy("popular")}
-                className={sortBy === "popular" ? "bg-purple-600 text-white" : ""}
-                size="sm"
-              >
-                Most Popular
-              </Button>
-              <Button
-                variant={sortBy === "views" ? "default" : "outline"}
-                onClick={() => setSortBy("views")}
-                className={sortBy === "views" ? "bg-purple-600 text-white" : ""}
-                size="sm"
-              >
-                Most Views
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-            <div className="flex items-center justify-between sm:justify-start sm:gap-3 border rounded-md px-3 py-2">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium block">With Cover Only</label>
-                <p className="text-xs text-muted-foreground">Hide stories without a cover</p>
-              </div>
-              <Switch checked={hasCover} onCheckedChange={setHasCover} />
-            </div>
-
+        {/* Advanced Filters - only for Stories */}
+        {mode === "stories" && (
+          <div className="mb-6 space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Min Chapters</label>
-              <Input
-                type="number"
-                min={0}
-                placeholder="e.g. 5"
-                value={minChapters}
-                onChange={(e) => setMinChapters(e.target.value)}
-              />
+              <label className="text-sm font-medium block mb-2">Sort By</label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={sortBy === "recent" ? "default" : "outline"}
+                  onClick={() => setSortBy("recent")}
+                  className={sortBy === "recent" ? "bg-purple-600 text-white" : ""}
+                  size="sm"
+                >
+                  Recently Updated
+                </Button>
+                <Button
+                  variant={sortBy === "popular" ? "default" : "outline"}
+                  onClick={() => setSortBy("popular")}
+                  className={sortBy === "popular" ? "bg-purple-600 text-white" : ""}
+                  size="sm"
+                >
+                  Most Popular
+                </Button>
+                <Button
+                  variant={sortBy === "views" ? "default" : "outline"}
+                  onClick={() => setSortBy("views")}
+                  className={sortBy === "views" ? "bg-purple-600 text-white" : ""}
+                  size="sm"
+                >
+                  Most Views
+                </Button>
+              </div>
             </div>
 
-            <div className="hidden sm:block" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+              <div className="flex items-center justify-between sm:justify-start sm:gap-3 border rounded-md px-3 py-2">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium block">With Cover Only</label>
+                  <p className="text-xs text-muted-foreground">Hide stories without a cover</p>
+                </div>
+                <Switch checked={hasCover} onCheckedChange={setHasCover} />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Min Chapters</label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="e.g. 5"
+                  value={minChapters}
+                  onChange={(e) => setMinChapters(e.target.value)}
+                />
+              </div>
+
+              <div className="hidden sm:block" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Results */}
         {debouncedSearchTerm.trim().length === 0 ? (
@@ -164,106 +191,181 @@ export default function Search() {
             <SearchIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">Start searching</h3>
             <p className="text-muted-foreground">
-              Enter a search term to find stories by title, description, or tags
+              Enter a search term to find {mode === "stories" ? "stories by title, description, or tags" : "users by name"}
             </p>
-          </div>
-        ) : searchResults === undefined ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden animate-pulse">
-                <div className="aspect-[3/4] bg-muted" />
-                <CardContent className="p-4">
-                  <div className="h-4 bg-muted rounded mb-2" />
-                  <div className="h-3 bg-muted rounded mb-3" />
-                  <div className="flex justify-between">
-                    <div className="h-3 bg-muted rounded w-16" />
-                    <div className="h-3 bg-muted rounded w-12" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : searchResults.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No stories found</h3>
-            <p className="text-muted-foreground">
-              Try different keywords or check your spelling
-            </p>
-            <Button
-              onClick={() => navigate("/explore")}
-              className="mt-4"
-              variant="outline"
-            >
-              Browse All Stories
-            </Button>
           </div>
         ) : (
           <>
-            <div className="mb-4">
-              <p className="text-muted-foreground">
-                Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{debouncedSearchTerm}"
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {searchResults.map((story) => (
-                <motion.div
-                  key={story._id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Card 
-                    className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => handleStoryClick(story._id)}
-                  >
-                    <div className="aspect-[3/4] relative">
-                      {story.coverImage ? (
-                        <img
-                          src={story.coverImage}
-                          alt={story.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
-                          <BookOpen className="w-12 h-12 text-white" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <span className="px-2 py-1 bg-black/70 text-white text-xs rounded-full capitalize">
-                          {story.genre}
-                        </span>
-                      </div>
+            {/* Branch by mode to determine loading/empty/results */}
+            {mode === "stories" ? (
+              <>
+                {searchResultsStories === undefined ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Card key={i} className="overflow-hidden animate-pulse">
+                        <div className="aspect-[3/4] bg-muted" />
+                        <CardContent className="p-4">
+                          <div className="h-4 bg-muted rounded mb-2" />
+                          <div className="h-3 bg-muted rounded mb-3" />
+                          <div className="flex justify-between">
+                            <div className="h-3 bg-muted rounded w-16" />
+                            <div className="h-3 bg-muted rounded w-12" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : searchResultsStories.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No stories found</h3>
+                    <p className="text-muted-foreground">
+                      Try different keywords or check your spelling
+                    </p>
+                    <Button
+                      onClick={() => navigate("/explore")}
+                      className="mt-4"
+                      variant="outline"
+                    >
+                      Browse All Stories
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4">
+                      <p className="text-muted-foreground">
+                        Found {searchResultsStories.length} result{searchResultsStories.length !== 1 ? "s" : ""} for "{debouncedSearchTerm}"
+                      </p>
                     </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold mb-1 line-clamp-2">{story.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        by {story.author?.name || "Anonymous"}
-                      </p>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {story.description}
-                      </p>
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            {story.totalViews}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {searchResultsStories.map((story) => (
+                        <motion.div
+                          key={story._id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          whileHover={{ scale: 1.02 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Card
+                            className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                            onClick={() => handleStoryClick(story._id)}
+                          >
+                            <div className="aspect-[3/4] relative">
+                              {story.coverImage ? (
+                                <img
+                                  src={story.coverImage}
+                                  alt={story.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+                                  <BookOpen className="w-12 h-12 text-white" />
+                                </div>
+                              )}
+                              <div className="absolute top-2 right-2">
+                                <span className="px-2 py-1 bg-black/70 text-white text-xs rounded-full capitalize">
+                                  {story.genre}
+                                </span>
+                              </div>
+                            </div>
+                            <CardContent className="p-4">
+                              <h3 className="font-semibold mb-1 line-clamp-2">{story.title}</h3>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                by {story.author?.name || "Anonymous"}
+                              </p>
+                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                {story.description}
+                              </p>
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1">
+                                    <Eye className="w-4 h-4" />
+                                    {story.totalViews}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Heart className="w-4 h-4" />
+                                    {story.totalLikes}
+                                  </div>
+                                </div>
+                                <span className="text-muted-foreground">
+                                  {story.totalChapters} ch
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              // Users mode
+              <>
+                {userResults === undefined ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Card key={i} className="overflow-hidden animate-pulse">
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-full bg-muted" />
+                          <div className="flex-1">
+                            <div className="h-4 bg-muted rounded mb-2 w-1/2" />
+                            <div className="h-3 bg-muted rounded w-3/4" />
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Heart className="w-4 h-4" />
-                            {story.totalLikes}
-                          </div>
-                        </div>
-                        <span className="text-muted-foreground">
-                          {story.totalChapters} ch
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : userResults.length === 0 ? (
+                  <div className="text-center py-12">
+                    <UsersIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No users found</h3>
+                    <p className="text-muted-foreground">
+                      Try a different name
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4">
+                      <p className="text-muted-foreground">
+                        Found {userResults.length} user{userResults.length !== 1 ? "s" : ""} for "{debouncedSearchTerm}"
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {userResults.map((u) => (
+                        <motion.div
+                          key={u._id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          whileHover={{ scale: 1.02 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Card
+                            className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                            onClick={() => navigate(`/profile/${u._id}`)}
+                          >
+                            <CardContent className="p-4 flex items-center gap-3">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={u.image || ""} />
+                                <AvatarFallback>
+                                  {(u.name?.[0] || "U").toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <h3 className="font-semibold truncate">{u.name || "Anonymous"}</h3>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                  {u.bio || "—"}
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </>
         )}
       </div>
