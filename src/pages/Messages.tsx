@@ -146,13 +146,13 @@ export default function Messages() {
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={selectedConversation?.partner?.image} />
                     <AvatarFallback>
                       {selectedConversation?.partner?.name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <CardTitle className="text-base font-semibold">
+                  <CardTitle className="text-lg md:text-xl font-semibold">
                     {selectedPartnerName}
                   </CardTitle>
                 </div>
