@@ -189,8 +189,8 @@ export default function Profile() {
                 <ArrowLeft className="h-5 w-5" />
               </button>
 
-              {/* Add: Triple-dot menu on top-left with Direct Message option */}
-              <div className="absolute top-3 left-14">
+              {/* Add: Triple-dot menu on top-right with Direct Message option */}
+              <div className="absolute top-3 right-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -200,7 +200,7 @@ export default function Profile() {
                       <MoreVertical className="h-5 w-5" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem
                       onClick={() => {
                         if (!targetUserId) return;
@@ -209,7 +209,7 @@ export default function Profile() {
                       className="cursor-pointer"
                     >
                       <MessageSquare className="h-4 w-4 mr-2" />
-                      {`Message (${profileUser?.username ? `@${profileUser.username}` : (profileUser?.name || "User")})`}
+                      {`Message ${profileUser?.name || "User"}`}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
