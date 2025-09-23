@@ -8,6 +8,7 @@ export const sendMessage = mutation({
   args: {
     recipientId: v.id("users"),
     body: v.string(),
+    imageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -18,6 +19,7 @@ export const sendMessage = mutation({
       recipientId: args.recipientId,
       body: args.body,
       isRead: false,
+      imageStorageId: args.imageStorageId,
     });
   },
 });
@@ -29,7 +31,6 @@ export const listConversations = query({
     const user = await getCurrentUser(ctx);
     if (!user) return [];
 
-    // Get all messages where user is sender or recipient
     const sentMessages = await ctx.db
       .query("messages")
       .withIndex("by_sender", (q) => q.eq("senderId", user._id))
@@ -41,8 +42,7 @@ export const listConversations = query({
       .collect();
 
     const allMessages = [...sentMessages, ...receivedMessages];
-    
-    // Group by conversation partner
+
     const conversationMap: Map<
       Id<"users">,
       {
@@ -52,39 +52,45 @@ export const listConversations = query({
         isLastMessageFromMe: boolean;
       }
     > = new Map();
-    
+
     for (const message of allMessages) {
-      const partnerId = message.senderId === user._id ? message.recipientId : message.senderId;
-      
-      // Fix: guard against undefined when reading from the map
+      const partnerId =
+        message.senderId === user._id ? message.recipientId : message.senderId;
+
+      const preview =
+        (message.body && message.body.trim().length > 0)
+          ? message.body
+          : "[Image]";
+
       const existing = conversationMap.get(partnerId);
       if (!existing || message._creationTime > existing.lastMessageTime) {
         conversationMap.set(partnerId, {
           partnerId,
-          lastMessage: message.body,
+          lastMessage: preview,
           lastMessageTime: message._creationTime,
           isLastMessageFromMe: message.senderId === user._id,
         });
       }
     }
 
-    // Get partner details
     const conversations = await Promise.all(
       Array.from(conversationMap.values()).map(async (conv) => {
         const partner = await ctx.db.get(conv.partnerId);
         return {
           ...conv,
-          partner: partner ? {
-            _id: partner._id,
-            name: partner.name,
-            image: partner.image,
-          } : null,
+          partner: partner
+            ? {
+                _id: partner._id,
+                name: partner.name,
+                image: partner.image,
+              }
+            : null,
         };
       })
     );
 
     return conversations
-      .filter(conv => conv.partner)
+      .filter((conv) => conv.partner)
       .sort((a, b) => b.lastMessageTime - a.lastMessageTime);
   },
 });
@@ -102,21 +108,21 @@ export const listThread = query({
     const user = await getCurrentUser(ctx);
     if (!user) return { page: [], isDone: true, continueCursor: null };
 
-    // Get messages between user and partner
     const allMessages = await ctx.db.query("messages").collect();
-    
-    const threadMessages = allMessages.filter(msg => 
-      (msg.senderId === user._id && msg.recipientId === args.partnerId) ||
-      (msg.senderId === args.partnerId && msg.recipientId === user._id)
+
+    const threadMessages = allMessages.filter(
+      (msg) =>
+        (msg.senderId === user._id && msg.recipientId === args.partnerId) ||
+        (msg.senderId === args.partnerId && msg.recipientId === user._id)
     );
 
     threadMessages.sort((a, b) => b._creationTime - a._creationTime);
 
-    // Simple pagination
-    const startIndex = args.paginationOpts.cursor ? 
-      parseInt(args.paginationOpts.cursor) : 0;
+    const startIndex = args.paginationOpts.cursor
+      ? parseInt(args.paginationOpts.cursor)
+      : 0;
     const endIndex = startIndex + args.paginationOpts.numItems;
-    
+
     const page = threadMessages.slice(startIndex, endIndex);
     const isDone = endIndex >= threadMessages.length;
     const continueCursor = isDone ? null : endIndex.toString();
@@ -124,13 +130,20 @@ export const listThread = query({
     const messagesWithSender = await Promise.all(
       page.map(async (message) => {
         const sender = await ctx.db.get(message.senderId);
+        const imageUrl = message.imageStorageId
+          ? await ctx.storage.getUrl(message.imageStorageId)
+          : null;
+
         return {
           ...message,
-          sender: sender ? {
-            _id: sender._id,
-            name: sender.name,
-            image: sender.image,
-          } : null,
+          imageUrl,
+          sender: sender
+            ? {
+                _id: sender._id,
+                name: sender.name,
+                image: sender.image,
+              }
+            : null,
         };
       })
     );

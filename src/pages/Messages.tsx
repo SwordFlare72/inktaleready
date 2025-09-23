@@ -7,19 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { MessageCircle, Send } from "lucide-react";
-import { useState } from "react";
+import { MessageCircle, Send, Plus } from "lucide-react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useLocation } from "react-router";
+import { useAction } from "convex/react";
+import { api as convexApi } from "@/convex/_generated/api";
 
 export default function Messages() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const location = useLocation() as { state?: { partnerId?: Id<"users"> } };
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedPartnerId, setSelectedPartnerId] = useState<Id<"users"> | null>(null);
   const [messageText, setMessageText] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Add: initialize selected partner from navigation state
   // This lets Alerts > Messages tab open a specific thread
@@ -31,6 +35,8 @@ export default function Messages() {
     }
     return null;
   });
+
+  const getUploadUrl = useAction(convexApi.files.getUploadUrl);
 
   const conversations = useQuery(api.messages.listConversations, isAuthenticated ? {} : "skip");
   const thread = useQuery(api.messages.listThread,
@@ -58,6 +64,37 @@ export default function Messages() {
       </div>
     );
   }
+
+  const handlePickImage = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedPartnerId) return;
+    try {
+      setIsUploading(true);
+      const url = await getUploadUrl({});
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await res.json();
+
+      await sendMessage({
+        recipientId: selectedPartnerId,
+        body: "", // image-only message
+        imageStorageId: storageId,
+      });
+      toast.success("Image sent!");
+    } catch (err) {
+      toast.error("Failed to send image");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!selectedPartnerId || !messageText.trim()) return;
@@ -152,13 +189,28 @@ export default function Messages() {
                         className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
                             message.senderId === user?._id
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted'
                           }`}
                         >
-                          <p className="text-sm">{message.body}</p>
+                          {/* Text body (if any) */}
+                          {message.body && message.body.trim().length > 0 && (
+                            <p className="text-sm">{message.body}</p>
+                          )}
+
+                          {/* Image attachment (if any) */}
+                          {message.imageUrl && (
+                            <div className="mt-1">
+                              <img
+                                src={message.imageUrl}
+                                alt="attachment"
+                                className="rounded-lg max-h-64 w-auto object-cover"
+                              />
+                            </div>
+                          )}
+
                           <p className="text-xs opacity-70 mt-1">
                             {new Date(message._creationTime).toLocaleTimeString()}
                           </p>
@@ -169,7 +221,24 @@ export default function Messages() {
 
                   {/* Message Input */}
                   <div className="border-t p-4">
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      {/* Hidden file input for image uploads */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageSelected}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePickImage}
+                        disabled={!selectedPartnerId || isUploading}
+                        aria-label="Add image"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                       <Input
                         value={messageText}
                         onChange={(e) => setMessageText(e.target.value)}
@@ -180,6 +249,9 @@ export default function Messages() {
                         <Send className="h-4 w-4" />
                       </Button>
                     </div>
+                    {isUploading && (
+                      <div className="text-xs text-muted-foreground mt-2">Uploading image...</div>
+                    )}
                   </div>
                 </CardContent>
               </>

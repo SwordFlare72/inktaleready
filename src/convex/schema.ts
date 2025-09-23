@@ -237,6 +237,8 @@ const schema = defineSchema(
       recipientId: v.id("users"),
       body: v.string(),
       isRead: v.boolean(),
+      // Add: optional image attachment stored in Convex Storage
+      imageStorageId: v.optional(v.id("_storage")),
     })
       .index("by_sender", ["senderId"])
       .index("by_recipient", ["recipientId"])
