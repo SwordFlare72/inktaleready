@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, Search as SearchIcon, Users as UsersIcon } from "lucide-react";
+import { BookOpen, Eye, Heart, Search as SearchIcon, Users as UsersIcon, Filter } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
@@ -33,6 +33,15 @@ export default function Search() {
   // Add: toggle between stories and users
   const [mode, setMode] = useState<"stories" | "users">("stories");
 
+  // Add: show/hide filters and tags filter
+  const [showFilters, setShowFilters] = useState(false);
+  const [tagsInput, setTagsInput] = useState<string>("");
+  const parsedTags = tagsInput
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 5);
+
   // Add: advanced filter state
   const [sortBy, setSortBy] = useState<"recent" | "popular" | "views">("recent");
   const [hasCover, setHasCover] = useState(false);
@@ -50,13 +59,15 @@ export default function Search() {
   // Rename: stories search results and add users search results
   const searchResultsStories = useQuery(
     api.stories.searchStories,
-    debouncedSearchTerm.trim().length > 0 && mode === "stories"
+    mode === "stories" && (debouncedSearchTerm.trim().length > 0 || parsedTags.length > 0)
       ? {
           searchTerm: debouncedSearchTerm.trim(),
           genre: genre !== "all" ? genre : undefined,
           sortBy,
           hasCover: hasCover ? true : undefined,
           minChapters: minChapters.trim() ? Number(minChapters) : undefined,
+          // Add: pass tags filter if present
+          tagsAny: parsedTags.length > 0 ? parsedTags : undefined,
         }
       : "skip"
   );
@@ -88,7 +99,7 @@ export default function Search() {
         </div>
 
         {/* Search Form */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <div className="relative flex-1">
             <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -99,8 +110,8 @@ export default function Search() {
             />
           </div>
 
-          {/* Add: Mode selector (Stories | Users) */}
-          <Select value={mode} onValueChange={(v: "stories" | "users") => setMode(v)}>
+          {/* Mode selector (Stories | Users) */}
+          <Select value={mode} onValueChange={(v: "stories" | "users") => { setMode(v); }}>
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Search type" />
             </SelectTrigger>
@@ -110,26 +121,37 @@ export default function Search() {
             </SelectContent>
           </Select>
 
-          {/* Hide genre when searching users */}
+          {/* Filters toggle - only meaningful for Stories */}
           {mode === "stories" && (
-            <Select value={genre} onValueChange={setGenre}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filter by genre" />
-              </SelectTrigger>
-              <SelectContent>
-                {GENRES.map((g) => (
-                  <SelectItem key={g.value} value={g.value}>
-                    {g.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Button
+              variant={showFilters ? "default" : "outline"}
+              onClick={() => setShowFilters((s) => !s)}
+              className="w-full sm:w-32"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
           )}
         </div>
 
-        {/* Advanced Filters - only for Stories */}
-        {mode === "stories" && (
+        {/* Advanced Filters - only for Stories and when toggled */}
+        {mode === "stories" && showFilters && (
           <div className="mb-6 space-y-4">
+            <div>
+              <Select value={genre} onValueChange={setGenre}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filter by genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENRES.map((g) => (
+                    <SelectItem key={g.value} value={g.value}>
+                      {g.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="text-sm font-medium block mb-2">Sort By</label>
               <div className="flex flex-wrap gap-2">
@@ -181,6 +203,26 @@ export default function Search() {
               </div>
 
               <div className="hidden sm:block" />
+            </div>
+
+            {/* Tags filter */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Tags (comma separated, up to 5)</label>
+              <Input
+                placeholder="e.g. romance, fantasy, villain"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                {parsedTags.map((t) => (
+                  <span key={t} className="px-2 py-1 text-xs rounded-full bg-muted">
+                    #{t}
+                  </span>
+                ))}
+                {parsedTags.length >= 5 && (
+                  <span className="text-xs text-muted-foreground">Max 5 tags</span>
+                )}
+              </div>
             </div>
           </div>
         )}

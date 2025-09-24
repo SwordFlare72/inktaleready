@@ -254,6 +254,8 @@ export const searchStories = query({
     sortBy: v.optional(v.union(v.literal("popular"), v.literal("recent"), v.literal("views"))),
     minChapters: v.optional(v.number()),
     hasCover: v.optional(v.boolean()),
+    // Add: tag filter (match any of up to 5 tags)
+    tagsAny: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     // Simple text search - in production you'd want full-text search
@@ -262,22 +264,41 @@ export const searchStories = query({
       .filter((q) => q.eq(q.field("isPublished"), true))
       .collect();
 
-    let filtered = stories.filter(story => 
-      story.title.toLowerCase().includes(args.searchTerm.toLowerCase()) ||
-      story.description.toLowerCase().includes(args.searchTerm.toLowerCase()) ||
-      story.tags.some(tag => tag.toLowerCase().includes(args.searchTerm.toLowerCase()))
-    );
+    // Start with all, then apply filters incrementally
+    let filtered = stories;
+
+    const term = args.searchTerm.trim().toLowerCase();
+    if (term.length > 0) {
+      filtered = filtered.filter(
+        (story) =>
+          story.title.toLowerCase().includes(term) ||
+          story.description.toLowerCase().includes(term) ||
+          story.tags.some((tag) => tag.toLowerCase().includes(term))
+      );
+    }
+
+    if (args.tagsAny && args.tagsAny.length > 0) {
+      const want = args.tagsAny
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean)
+        .slice(0, 5);
+      if (want.length > 0) {
+        filtered = filtered.filter((story) =>
+          story.tags.some((tag) => want.includes(tag.toLowerCase()))
+        );
+      }
+    }
 
     if (args.genre) {
-      filtered = filtered.filter(story => story.genre === args.genre);
+      filtered = filtered.filter((story) => story.genre === args.genre);
     }
 
     // Apply additional filters
     if (args.minChapters !== undefined) {
-      filtered = filtered.filter(story => story.totalChapters >= args.minChapters!);
+      filtered = filtered.filter((story) => story.totalChapters >= args.minChapters!);
     }
     if (args.hasCover) {
-      filtered = filtered.filter(story => !!story.coverImage && story.coverImage.length > 0);
+      filtered = filtered.filter((story) => !!story.coverImage && story.coverImage.length > 0);
     }
 
     // Apply sorting
