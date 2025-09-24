@@ -274,7 +274,7 @@ export default function Profile() {
             </div>
 
             {/* Compact stats row */}
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-6 text-center sm:text-left">
+            <div className="mt-4 grid grid-cols-3 gap-6 text-center items-center">
               <div className="px-2">
                 <div className="text-xl font-semibold">{storiesToShow.length}</div>
                 <div className="text-xs text-muted-foreground">Stories</div>
@@ -283,7 +283,7 @@ export default function Profile() {
                 <div className="text-xl font-semibold">{readingListCount}</div>
                 <div className="text-xs text-muted-foreground">Reading Lists</div>
               </div>
-              <button className="px-2 text-left" onClick={() => setOpenFollowers(true)}>
+              <button className="px-2 text-center w-full" onClick={() => setOpenFollowers(true)}>
                 <div className="text-xl font-semibold">{followerCount}</div>
                 <div className="text-xs text-muted-foreground">Followers</div>
               </button>
