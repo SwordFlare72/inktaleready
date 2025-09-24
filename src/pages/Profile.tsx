@@ -148,6 +148,8 @@ export default function Profile() {
 
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
+  // Add: per-announcement replies expanded state
+  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
 
   // Read tab and target announcement from URL
   const searchParams = new URLSearchParams(location.search);
@@ -608,11 +610,32 @@ export default function Profile() {
                         {a.body}
                       </div>
 
-                      {/* Replies list with header and per-reply delete controls */}
-                      <AnnouncementReplies
-                        announcementId={a._id as Id<"announcements">}
-                        announcementAuthorId={a.authorId as Id<"users">}
-                      />
+                      {/* View Replies toggle */}
+                      <div className="flex justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={(a.replyCount || 0) === 0}
+                          onClick={() =>
+                            setExpandedReplies((s) => ({
+                              ...s,
+                              [String(a._id)]: !s[String(a._id)],
+                            }))
+                          }
+                        >
+                          {expandedReplies[String(a._id)]
+                            ? "Hide Replies"
+                            : `View Replies (${a.replyCount || 0})`}
+                        </Button>
+                      </div>
+
+                      {/* Replies list (only when expanded) */}
+                      {expandedReplies[String(a._id)] && (
+                        <AnnouncementReplies
+                          announcementId={a._id as Id<"announcements">}
+                          announcementAuthorId={a.authorId as Id<"users">}
+                        />
+                      )}
 
                       {/* Reply composer */}
                       {isAuthenticated && (
