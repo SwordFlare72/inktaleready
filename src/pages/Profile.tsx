@@ -294,17 +294,16 @@ export default function Profile() {
         {/* About / Bio */}
         <div className="px-4 sm:px-6 mt-6">
           {displayUser.bio ? (
-            <Card className="mb-8">
-              <CardContent className="py-4">
-                <div className="text-sm text-foreground whitespace-pre-wrap">{displayUser.bio}</div>
-              </CardContent>
-            </Card>
+            <div className="mb-8">
+              <div className="text-lg font-semibold mb-2">About</div>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {displayUser.bio}
+              </p>
+            </div>
           ) : isOwnProfile ? (
-            <Card className="mb-8">
-              <CardContent className="py-6 text-center text-sm text-muted-foreground">
-                Tap Settings → Profile Settings to add a description about yourself.
-              </CardContent>
-            </Card>
+            <div className="mb-8 text-center text-sm text-muted-foreground">
+              Tap Settings → Profile Settings to add a description about yourself.
+            </div>
           ) : null}
         </div>
 
