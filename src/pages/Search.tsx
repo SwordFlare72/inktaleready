@@ -228,7 +228,7 @@ export default function Search() {
         )}
 
         {/* Results */}
-        {debouncedSearchTerm.trim().length === 0 ? (
+        {(debouncedSearchTerm.trim().length === 0 && parsedTags.length === 0) ? (
           <div className="text-center py-12">
             <SearchIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">Start searching</h3>
