@@ -155,3 +155,21 @@ export const listThread = query({
     };
   },
 });
+
+// Delete a message (sender-only)
+export const deleteMessage = mutation({
+  args: { _id: v.id("messages") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Must be authenticated");
+
+    const msg = await ctx.db.get(args._id);
+    if (!msg) throw new Error("Message not found");
+
+    // Only the sender can delete their message
+    if (msg.senderId !== user._id) throw new Error("Not authorized");
+
+    await ctx.db.delete(args._id);
+    return null;
+  },
+});

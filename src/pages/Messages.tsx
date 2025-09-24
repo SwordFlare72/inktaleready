@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { MessageCircle, Send, Plus, ArrowLeft } from "lucide-react";
+import { MessageCircle, Send, Plus, ArrowLeft, MoreVertical, Trash } from "lucide-react";
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useLocation } from "react-router";
 import { useAction } from "convex/react";
 import { api as convexApi } from "@/convex/_generated/api";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function Messages() {
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ export default function Messages() {
   const [selectedPartnerId, setSelectedPartnerId] = useState<Id<"users"> | null>(null);
   const [messageText, setMessageText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false); // Add: delete confirm dialog
+  const [deleteId, setDeleteId] = useState<Id<"messages"> | null>(null); // Add: which message to delete
 
   // Add: initialize selected partner from navigation state
   // This lets Alerts > Messages tab open a specific thread
@@ -47,6 +51,7 @@ export default function Messages() {
   );
 
   const sendMessage = useMutation(api.messages.sendMessage);
+  const deleteMessageMut = useMutation(api.messages.deleteMessage);
 
   if (!isAuthenticated) {
     return (
@@ -168,32 +173,95 @@ export default function Messages() {
                     key={message._id}
                     className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div
-                      className={`max-w-[80%] px-3 py-2 rounded-lg ${
-                        message.senderId === user?._id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
-                    >
-                      {message.body && message.body.trim().length > 0 && (
-                        <p className="text-sm">{message.body}</p>
-                      )}
-                      {message.imageUrl && (
-                        <div className="mt-1">
-                          <img
-                            src={message.imageUrl}
-                            alt="attachment"
-                            className="rounded-lg max-h-64 w-auto object-cover"
-                          />
+                    <div className="flex items-center gap-2">
+                      {/* Bubble */}
+                      <div
+                        className={`max-w-[80%] px-3 py-2 rounded-lg ${
+                          message.senderId === user?._id
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        {message.body && message.body.trim().length > 0 && (
+                          <p className="text-sm">{message.body}</p>
+                        )}
+                        {message.imageUrl && (
+                          <div className="mt-1">
+                            <img
+                              src={message.imageUrl}
+                              alt="attachment"
+                              className="rounded-lg max-h-64 w-auto object-cover"
+                            />
+                          </div>
+                        )}
+                        <p className="text-xs opacity-70 mt-1">
+                          {new Date(message._creationTime).toLocaleTimeString()}
+                        </p>
+                      </div>
+
+                      {/* Actions: three-dot on the right side for own messages */}
+                      {message.senderId === user?._id && (
+                        <div className="self-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                aria-label="Message options"
+                                className="inline-flex items-center justify-center h-8 w-8 rounded-full border-[0.5px] border-muted/60 hover:bg-muted"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                                onClick={() => {
+                                  setDeleteId(message._id as Id<"messages">);
+                                  setDeleteOpen(true);
+                                }}
+                              >
+                                <Trash className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       )}
-                      <p className="text-xs opacity-70 mt-1">
-                        {new Date(message._creationTime).toLocaleTimeString()}
-                      </p>
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/* Delete confirmation dialog */}
+              <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete message?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-600 text-white hover:bg-red-700"
+                      onClick={async () => {
+                        try {
+                          if (deleteId) {
+                            await deleteMessageMut({ _id: deleteId });
+                          }
+                        } catch {
+                          // non-blocking; errors surfaced via failed promise if needed
+                        } finally {
+                          setDeleteOpen(false);
+                          setDeleteId(null);
+                        }
+                      }}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
               {/* Composer - make it always visible (sticky) */}
               <div className="sticky bottom-0 z-10 border-t p-3 sm:p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
