@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { Edit, Users, BookOpen, Eye, Heart, ArrowLeft, MoreVertical, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useLocation } from "react-router";
 import { toast } from "sonner";
 import { DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -24,6 +25,7 @@ import { useEffect } from "react";
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user: currentUser, signOut } = useAuth();
   
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -143,6 +145,12 @@ export default function Profile() {
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
 
+  // Read tab and target announcement from URL
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = (searchParams.get("tab") === "announcements" ? "announcements" : "about") as "about" | "announcements";
+  const targetAnnouncementId = searchParams.get("aid");
+  const [activeTab, setActiveTab] = useState<"about" | "announcements">(initialTab);
+
   if (!isAuthenticated && isOwnProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -170,6 +178,17 @@ export default function Profile() {
       </div>
     );
   }
+
+  useEffect(() => {
+    if (targetAnnouncementId) {
+      setActiveTab("announcements");
+      const t = setTimeout(() => {
+        const el = document.getElementById(`ann-${targetAnnouncementId}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [targetAnnouncementId, announcements?.page?.length]);
 
   return (
     <motion.div
@@ -310,7 +329,7 @@ export default function Profile() {
 
         {/* Tabs: About + Announcements */}
         <div className="px-4 sm:px-6 mt-6">
-          <Tabs defaultValue="about" className="w-full">
+          <Tabs value={activeTab} onValueChange={(v:any)=>setActiveTab(v)} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="announcements">Announcements</TabsTrigger>
@@ -538,7 +557,7 @@ export default function Profile() {
                 <div className="text-sm text-muted-foreground">No announcements yet</div>
               ) : (
                 announcements.page.map((a: any) => (
-                  <Card key={a._id} className="border-muted/60 shadow-sm">
+                  <Card key={a._id} id={`ann-${String(a._id)}`} className="border-muted/60 shadow-sm">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -752,6 +771,8 @@ export default function Profile() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+
+      {/* Effect moved to component body (auto-open Announcements tab and scroll to the target announcement) */}
     </motion.div>
   );
 }

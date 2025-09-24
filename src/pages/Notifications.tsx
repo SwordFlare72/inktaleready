@@ -89,6 +89,22 @@ export default function Notifications() {
       case "new_follower":
         if (n.relatedId) navigate(`/profile/${n.relatedId}`);
         break;
+      // Add: announcements deep link handling
+      case "announcement":
+      case "announcement_reply": {
+        try {
+          if (n.relatedId) {
+            const payload = JSON.parse(n.relatedId);
+            if (payload?.authorId && payload?.announcementId) {
+              navigate(`/profile/${payload.authorId}?tab=announcements&aid=${payload.announcementId}`);
+              break;
+            }
+          }
+        } catch {
+          // Fallback: no-op if older notifications without payload
+        }
+        break;
+      }
       default:
         break;
     }

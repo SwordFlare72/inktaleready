@@ -83,7 +83,8 @@ export const create = mutation({
           title: `${me.name || "An author you follow"} posted an announcement`,
           message: trimmed.slice(0, 140),
           isRead: false,
-          relatedId: String(id),
+          // Include authorId + announcementId for deep link navigation
+          relatedId: JSON.stringify({ authorId: String(me._id), announcementId: String(id) }),
         })
       )
     );
@@ -120,7 +121,8 @@ export const reply = mutation({
         title: "New reply to your announcement",
         message: trimmed.slice(0, 140),
         isRead: false,
-        relatedId: String(args.announcementId),
+        // Add deep link payload (author is the announcement author)
+        relatedId: JSON.stringify({ authorId: String(ann.authorId), announcementId: String(args.announcementId) }),
       });
     }
 
