@@ -161,6 +161,10 @@ export const updateStory = mutation({
     if (!story) throw new Error("Story not found");
     if (story.authorId !== user._id) throw new Error("Not authorized");
 
+    // Detect publish transition BEFORE patching
+    const becomingPublished =
+      args.isPublished === true && story.isPublished === false;
+
     const updates: any = {};
     if (args.title !== undefined) updates.title = args.title;
     if (args.description !== undefined) updates.description = args.description;
@@ -183,6 +187,29 @@ export const updateStory = mutation({
     updates.lastUpdated = Date.now();
 
     await ctx.db.patch(args.storyId, updates);
+
+    // If just published, notify all followers of this author
+    if (becomingPublished) {
+      const followers = await ctx.db
+        .query("follows")
+        .withIndex("by_following", (q) => q.eq("followingId", user._id))
+        .collect();
+
+      // Insert notifications for each follower
+      await Promise.all(
+        followers.map((f) =>
+          ctx.db.insert("notifications", {
+            userId: f.followerId,
+            type: "new_story",
+            title: "New story published",
+            message: `${user.name || "An author you follow"} published “${updates.title ?? story.title}”`,
+            isRead: false,
+            relatedId: String(args.storyId),
+          })
+        )
+      );
+    }
+
     return args.storyId;
   },
 });
