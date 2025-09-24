@@ -416,16 +416,16 @@ export default function Profile() {
                 )}
               </div>
 
-              {/* Followers grid (preview) */}
+              {/* Following grid (preview) */}
               <div className="px-4 sm:px-6 mt-10 mb-8">
-                <h2 className="text-2xl font-bold mb-4">Followers</h2>
-                {followersList === undefined ? (
+                <h2 className="text-2xl font-bold mb-4">Following</h2>
+                {followingList === undefined ? (
                   <div className="text-sm text-muted-foreground">Loading...</div>
-                ) : followersList.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No followers yet</div>
+                ) : followingList.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">Not following anyone</div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
-                    {followersList.slice(0, 12).map((u: any) => (
+                    {followingList.slice(0, 12).map((u: any) => (
                       <div
                         key={u._id}
                         className="flex flex-col items-center gap-2 cursor-pointer"
