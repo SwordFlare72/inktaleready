@@ -182,7 +182,10 @@ const schema = defineSchema(
         v.literal("new_story"),
         v.literal("comment_reply"),
         v.literal("comment_like"),
-        v.literal("new_follower")
+        v.literal("new_follower"),
+        // Add: announcements related
+        v.literal("announcement"),
+        v.literal("announcement_reply"),
       ),
       title: v.string(),
       message: v.string(),
@@ -243,6 +246,22 @@ const schema = defineSchema(
       .index("by_sender", ["senderId"])
       .index("by_recipient", ["recipientId"])
       .index("by_user_pair", ["senderId", "recipientId"]),
+
+    // Add: announcements tables
+    announcements: defineTable({
+      authorId: v.id("users"),
+      body: v.string(),
+      replyCount: v.number(),
+    })
+      .index("by_author", ["authorId"]),
+
+    announcementReplies: defineTable({
+      announcementId: v.id("announcements"),
+      authorId: v.id("users"),
+      body: v.string(),
+    })
+      .index("by_announcement", ["announcementId"])
+      .index("by_author", ["authorId"]),
   },
   {
     schemaValidation: false,

@@ -18,6 +18,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Settings as SettingsIcon, LogOut } from "lucide-react";
 import { Image as ImageIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect } from "react";
 
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
@@ -126,6 +128,20 @@ export default function Profile() {
 
   const readingListCount = Array.isArray(publicLists) ? publicLists.length : 0;
   const followerCount = typeof displayUser?.totalFollowers === "number" ? displayUser.totalFollowers : 0;
+
+  // Announcements data and actions
+  const announcements = useQuery(
+    api.announcements.listByUser,
+    (isOwnProfile && currentUser)
+      ? { userId: currentUser._id as Id<"users">, paginationOpts: { numItems: 10, cursor: null } }
+      : (targetUserId ? { userId: targetUserId, paginationOpts: { numItems: 10, cursor: null } } : "skip")
+  );
+  const listReplies = useQuery; // alias to satisfy TS where used inline via useQuery
+  const createAnnouncement = useMutation(api.announcements.create);
+  const replyToAnnouncement = useMutation(api.announcements.reply);
+
+  const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
 
   if (!isAuthenticated && isOwnProfile) {
     return (
@@ -291,183 +307,287 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* About / Bio */}
+        {/* Tabs: About + Announcements */}
         <div className="px-4 sm:px-6 mt-6">
-          {displayUser.bio ? (
-            <div className="mb-8">
-              <div className="text-lg font-semibold mb-2">About</div>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {displayUser.bio}
-              </p>
-            </div>
-          ) : isOwnProfile ? (
-            <div className="mb-8 text-center text-sm text-muted-foreground">
-              Tap Settings → Profile Settings to add a description about yourself.
-            </div>
-          ) : null}
-        </div>
+          <Tabs defaultValue="about" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="about">About</TabsTrigger>
+              <TabsTrigger value="announcements">Announcements</TabsTrigger>
+            </TabsList>
 
-        {/* Stories */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">
-            {isOwnProfile ? "My Stories" : "Stories"}
-          </h2>
-
-          {/* Horizontal scroller like Home */}
-          {storiesToShow.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x px-1">
-              {storiesToShow.map((story: any, idx: number) => (
-                <button
-                  key={story._id}
-                  onClick={() => navigate(`/story/${story._id}`)}
-                  className="w-32 flex-shrink-0 snap-start text-left"
-                >
-                  <div className="relative">
-                    <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
-                      {story.coverImage ? (
-                        <img
-                          src={story.coverImage}
-                          alt={story.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full grid place-items-center">
-                          <BookOpen className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
-                      {idx + 1}
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="text-sm font-semibold line-clamp-2">{story.title}</div>
-                    <div className="text-[11px] text-muted-foreground line-clamp-1">
-                      {story.author?.name || "Anonymous"}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                {isOwnProfile ? "You haven't published any stories yet" : "No published stories"}
-              </p>
-              {isOwnProfile && (
-                <Button className="mt-4" onClick={() => navigate("/write")}>
-                  Start Writing
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Followers grid (preview) */}
-        <div className="px-4 sm:px-6 mt-10 mb-8">
-          <h2 className="text-2xl font-bold mb-4">Followers</h2>
-          {followersList === undefined ? (
-            <div className="text-sm text-muted-foreground">Loading...</div>
-          ) : followersList.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No followers yet</div>
-          ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
-              {followersList.slice(0, 12).map((u: any) => (
-                <div
-                  key={u._id}
-                  className="flex flex-col items-center gap-2 cursor-pointer"
-                  onClick={() => navigate(`/profile/${u._id}`)}
-                >
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={u.image} />
-                    <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-xs line-clamp-1">{u.name || "User"}</div>
+            {/* ABOUT TAB */}
+            <TabsContent value="about" className="mt-4">
+              {/* About / Bio */}
+              {displayUser.bio ? (
+                <div className="mb-8">
+                  <div className="text-lg font-semibold mb-2">About</div>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {displayUser.bio}
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              ) : isOwnProfile ? (
+                <div className="mb-8 text-center text-sm text-muted-foreground">
+                  Tap Settings → Profile Settings to add a description about yourself.
+                </div>
+              ) : null}
 
-        {/* Public Reading Lists */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">
-            {isOwnProfile ? "My Public Reading Lists" : "Public Reading Lists"}
-          </h2>
+              {/* Stories */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-6">
+                  {isOwnProfile ? "My Stories" : "Stories"}
+                </h2>
 
-          {publicLists === undefined ? (
-            <div className="text-sm text-muted-foreground">Loading reading lists...</div>
-          ) : publicLists.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                {isOwnProfile
-                  ? "You have no public reading lists yet"
-                  : "No public reading lists"}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {publicLists.map((list: any) => (
-                <Card key={list._id}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      <span>{list.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
-                      </span>
-                    </CardTitle>
-                    {list.description && (
-                      <p className="text-sm text-muted-foreground">{list.description}</p>
+                {/* Horizontal scroller like Home */}
+                {storiesToShow.length > 0 ? (
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x px-1">
+                    {storiesToShow.map((story: any, idx: number) => (
+                      <button
+                        key={story._id}
+                        onClick={() => navigate(`/story/${story._id}`)}
+                        className="w-32 flex-shrink-0 snap-start text-left"
+                      >
+                        <div className="relative">
+                          <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
+                            {story.coverImage ? (
+                              <img
+                                src={story.coverImage}
+                                alt={story.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full grid place-items-center">
+                                <BookOpen className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
+                            {idx + 1}
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <div className="text-sm font-semibold line-clamp-2">{story.title}</div>
+                          <div className="text-[11px] text-muted-foreground line-clamp-1">
+                            {story.author?.name || "Anonymous"}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      {isOwnProfile ? "You haven't published any stories yet" : "No published stories"}
+                    </p>
+                    {isOwnProfile && (
+                      <Button className="mt-4" onClick={() => navigate("/write")}>
+                        Start Writing
+                      </Button>
                     )}
-                  </CardHeader>
-                  <CardContent>
-                    {list.stories && list.stories.length > 0 ? (
-                      <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
-                        {list.stories.map((story: any, idx: number) => (
-                          <button
-                            key={story._id}
-                            onClick={() => navigate(`/story/${story._id}`)}
-                            className="w-32 flex-shrink-0 snap-start text-left"
-                          >
-                            <div className="relative">
-                              <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
-                                {story.coverImage ? (
-                                  <img
-                                    src={story.coverImage}
-                                    alt={story.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full grid place-items-center">
-                                    <BookOpen className="h-6 w-6 text-muted-foreground" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
-                                {idx + 1}
-                              </div>
-                            </div>
-                            <div className="mt-2">
-                              <div className="text-sm font-semibold line-clamp-2">
-                                {story.title}
-                              </div>
-                              <div className="text-[11px] text-muted-foreground line-clamp-1">
-                                {story.author?.name ?? "Anonymous"}
-                              </div>
-                            </div>
-                          </button>
-                        ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Followers grid (preview) */}
+              <div className="px-4 sm:px-6 mt-10 mb-8">
+                <h2 className="text-2xl font-bold mb-4">Followers</h2>
+                {followersList === undefined ? (
+                  <div className="text-sm text-muted-foreground">Loading...</div>
+                ) : followersList.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No followers yet</div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+                    {followersList.slice(0, 12).map((u: any) => (
+                      <div
+                        key={u._id}
+                        className="flex flex-col items-center gap-2 cursor-pointer"
+                        onClick={() => navigate(`/profile/${u._id}`)}
+                      >
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={u.image} />
+                          <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                        </Avatar>
+                        <div className="text-xs line-clamp-1">{u.name || "User"}</div>
                       </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">No stories yet</div>
-                    )}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Public Reading Lists */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-6">
+                  {isOwnProfile ? "My Public Reading Lists" : "Public Reading Lists"}
+                </h2>
+
+                {publicLists === undefined ? (
+                  <div className="text-sm text-muted-foreground">Loading reading lists...</div>
+                ) : publicLists.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      {isOwnProfile
+                        ? "You have no public reading lists yet"
+                        : "No public reading lists"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {publicLists.map((list: any) => (
+                      <Card key={list._id}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg flex items-center justify-between">
+                            <span>{list.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
+                            </span>
+                          </CardTitle>
+                          {list.description && (
+                            <p className="text-sm text-muted-foreground">{list.description}</p>
+                          )}
+                        </CardHeader>
+                        <CardContent>
+                          {list.stories && list.stories.length > 0 ? (
+                            <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                              {list.stories.map((story: any, idx: number) => (
+                                <button
+                                  key={story._id}
+                                  onClick={() => navigate(`/story/${story._id}`)}
+                                  className="w-32 flex-shrink-0 snap-start text-left"
+                                >
+                                  <div className="relative">
+                                    <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
+                                      {story.coverImage ? (
+                                        <img
+                                          src={story.coverImage}
+                                          alt={story.title}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full grid place-items-center">
+                                          <BookOpen className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
+                                      {idx + 1}
+                                    </div>
+                                  </div>
+                                  <div className="mt-2">
+                                    <div className="text-sm font-semibold line-clamp-2">
+                                      {story.title}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground line-clamp-1">
+                                      {story.author?.name ?? "Anonymous"}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">No stories yet</div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* ANNOUNCEMENTS TAB */}
+            <TabsContent value="announcements" className="mt-4 space-y-4">
+              {/* Compose (only owner) */}
+              {isOwnProfile && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-sm mb-2">Post an announcement</div>
+                    <Textarea
+                      placeholder="Share an update..."
+                      value={newAnnouncement}
+                      onChange={(e) => setNewAnnouncement(e.target.value)}
+                      rows={3}
+                    />
+                    <div className="flex justify-end mt-3">
+                      <Button
+                        disabled={!newAnnouncement.trim()}
+                        onClick={async () => {
+                          try {
+                            await createAnnouncement({ body: newAnnouncement.trim() });
+                            setNewAnnouncement("");
+                            toast.success("Announcement posted");
+                          } catch (e: any) {
+                            toast.error(e?.message || "Failed to post");
+                          }
+                        }}
+                      >
+                        Post
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+              )}
+
+              {/* List announcements */}
+              {announcements === undefined ? (
+                <div className="text-sm text-muted-foreground">Loading announcements...</div>
+              ) : (announcements.page?.length ?? 0) === 0 ? (
+                <div className="text-sm text-muted-foreground">No announcements yet</div>
+              ) : (
+                announcements.page.map((a: any) => (
+                  <Card key={a._id}>
+                    <CardContent className="pt-6 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={a.author?.image} />
+                          <AvatarFallback>{a.author?.name?.charAt(0) || "U"}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold">{a.author?.name || "User"}</div>
+                          <div className="text-xs text-muted-foreground">Announcement</div>
+                        </div>
+                      </div>
+                      <div className="text-sm whitespace-pre-wrap">{a.body}</div>
+
+                      {/* Replies */}
+                      <AnnouncementReplies announcementId={a._id as Id<"announcements">} />
+
+                      {/* Reply composer */}
+                      {isAuthenticated && (
+                        <div className="flex items-start gap-2 pt-2">
+                          <Textarea
+                            placeholder="Write a reply..."
+                            rows={2}
+                            value={replyInputs[String(a._id)] || ""}
+                            onChange={(e) =>
+                              setReplyInputs((s) => ({ ...s, [String(a._id)]: e.target.value }))
+                            }
+                          />
+                          <Button
+                            className="self-end"
+                            disabled={!(replyInputs[String(a._id)] || "").trim()}
+                            onClick={async () => {
+                              try {
+                                await replyToAnnouncement({
+                                  announcementId: a._id as Id<"announcements">,
+                                  body: (replyInputs[String(a._id)] || "").trim(),
+                                });
+                                setReplyInputs((s) => ({ ...s, [String(a._id)]: "" }));
+                              } catch (e: any) {
+                                toast.error(e?.message || "Failed to reply");
+                              }
+                            }}
+                          >
+                            Reply
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Edit Profile Dialog */}
@@ -618,5 +738,30 @@ export default function Profile() {
         </AlertDialog>
       </div>
     </motion.div>
+  );
+}
+
+// Helper subcomponent for replies list
+function AnnouncementReplies({ announcementId }: { announcementId: Id<"announcements"> }) {
+  const replies = useQuery(api.announcements.listReplies, { announcementId });
+  if (replies === undefined) {
+    return <div className="text-xs text-muted-foreground">Loading replies...</div>;
+  }
+  if (replies.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      {replies.map((r: any) => (
+        <div key={r._id} className="flex items-start gap-2">
+          <Avatar className="h-7 w-7">
+            <AvatarImage src={r.author?.image} />
+            <AvatarFallback>{r.author?.name?.charAt(0) || "U"}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <div className="text-xs font-medium">{r.author?.name || "User"}</div>
+            <div className="text-sm whitespace-pre-wrap">{r.body}</div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
