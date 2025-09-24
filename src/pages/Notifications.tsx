@@ -14,6 +14,104 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { MessageCircle, Send } from "lucide-react";
 
+// Add: Rich notification item with author avatar and cover thumbnail
+function NotificationItem({
+  n,
+  onOpen,
+  onMarkRead,
+}: {
+  n: any;
+  onOpen: (n: any) => void;
+  onMarkRead: (id: string) => void;
+}) {
+  // Fetch related data to enrich UI
+  const isChapter = n.type === "new_chapter" || n.type === "comment_reply" || n.type === "comment_like";
+  const isStory = n.type === "new_story";
+
+  const chapter = useQuery(
+    api.chapters.getChapterById,
+    isChapter && n.relatedId ? { chapterId: n.relatedId as any } : "skip"
+  );
+  const story = useQuery(
+    api.stories.getStoryById,
+    isStory && n.relatedId ? { storyId: n.relatedId as any } : "skip"
+  );
+
+  const authorImage =
+    (chapter as any)?.story?.author?.image ||
+    (story as any)?.author?.image ||
+    undefined;
+
+  const coverImage =
+    (chapter as any)?.coverImage ||
+    (story as any)?.coverImage ||
+    undefined;
+
+  return (
+    <Card
+      className={`cursor-pointer transition-colors ${!n.isRead ? "bg-muted/50" : ""}`}
+      onClick={() => onOpen(n)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          {/* Left: Author avatar or type icon */}
+          <div className="flex-shrink-0">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={authorImage} />
+              <AvatarFallback>
+                {/* Fallback by type */}
+                {n.type === "new_chapter" ? "C" : n.type === "new_story" ? "S" : "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+
+          {/* Middle: Text */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2">
+              <h3 className="font-semibold leading-snug flex-1">{n.title}</h3>
+              {!n.isRead && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkRead(n._id);
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2">{n.message}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {new Date(n._creationTime).toLocaleString()}
+            </p>
+          </div>
+
+          {/* Right: Cover thumbnail if available */}
+          {coverImage ? (
+            <div className="flex-shrink-0">
+              <div className="h-12 w-9 overflow-hidden rounded-md border bg-muted">
+                <img
+                  src={coverImage}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const el = e.currentTarget as HTMLImageElement;
+                    el.style.display = "none";
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Notifications() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -163,42 +261,12 @@ export default function Notifications() {
           <TabsContent value="notifications" className="mt-6">
             <div className="space-y-4">
               {notifications?.page.map((notification) => (
-                <Card
+                <NotificationItem
                   key={notification._id}
-                  className={`cursor-pointer transition-colors ${!notification.isRead ? "bg-muted/50" : ""}`}
-                  onClick={() => openNotification(notification)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
-                        {notification.type === "new_chapter" && <Bell className="h-5 w-5 text-blue-500" />}
-                        {notification.type === "comment_reply" && <Bell className="h-5 w-5 text-green-500" />}
-                        {notification.type === "new_follower" && <Bell className="h-5 w-5 text-purple-500" />}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-1">{notification.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(notification._creationTime).toLocaleString()}
-                        </p>
-                      </div>
-                      {!notification.isRead && (
-                        <div className="flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMarkRead(notification._id);
-                            }}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                  n={notification}
+                  onOpen={openNotification}
+                  onMarkRead={handleMarkRead}
+                />
               ))}
             </div>
 
