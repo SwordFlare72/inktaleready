@@ -20,7 +20,7 @@ import {
   Sun,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 export default function Landing() {
   const { isLoading, isAuthenticated, user } = useAuth();
@@ -64,15 +64,102 @@ export default function Landing() {
   // Add: Only query Convex when the URL is configured
   const canQuery = typeof import.meta.env.VITE_CONVEX_URL === "string" && import.meta.env.VITE_CONVEX_URL.length > 0;
 
-  // Get some featured stories for the homepage
-  const featuredStories = useQuery(api.stories.getPublishedStories, 
-    canQuery
-      ? {
-          paginationOpts: { numItems: 6, cursor: null },
-          sortBy: "popular",
-        }
-      : "skip"
-  );
+  // New: homepage data sources (10 each)
+  const history = useQuery(api.library.listHistory, canQuery ? { paginationOpts: { numItems: 10, cursor: null } } : "skip");
+  const trending = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, sortBy: "views" } : "skip");
+  const mostPopular = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, sortBy: "popular" } : "skip");
+  const recent = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, sortBy: "recent" } : "skip");
+
+  // Pick a few common genres to showcase
+  const GENRES = useMemo(() => (["romance","fantasy","mystery","sci-fi","horror","adventure"] as const), []);
+  const genrePages = GENRES.map((g) => ({
+    genre: g,
+    data: useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, genre: g, sortBy: "recent" } : "skip")
+  }));
+
+  const handleViewAllExplore = (params: Record<string,string | undefined>) => {
+    const search = new URLSearchParams();
+    if (params.genre) search.set("genre", params.genre);
+    if (params.sort) search.set("sort", params.sort);
+    navigate(`/explore?${search.toString()}`);
+  };
+
+  const handleViewAllHistory = () => {
+    navigate("/library");
+  };
+
+  // Small, reusable horizontal scroller section
+  const Section = ({
+    title,
+    items,
+    onViewAll,
+    showViewAll = true,
+  }: {
+    title: string;
+    items: Array<any> | undefined | null;
+    onViewAll: () => void;
+    showViewAll?: boolean;
+  }) => {
+    return (
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold">{title}</h2>
+          {showViewAll && (items && (items as any[]).length >= 10) && (
+            <Button variant="outline" size="sm" onClick={onViewAll}>
+              View All
+            </Button>
+          )}
+        </div>
+        {items === undefined ? (
+          <div className="h-36 flex gap-3 overflow-hidden">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="w-28 flex-shrink-0">
+                <div className="aspect-[3/4] rounded-md bg-muted animate-pulse" />
+                <div className="h-3 mt-2 rounded bg-muted animate-pulse" />
+              </div>
+            ))}
+          </div>
+        ) : (items?.length ?? 0) === 0 ? (
+          <div className="text-sm text-muted-foreground">Nothing here yet.</div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+            {(items as any[]).map((story, idx) => (
+              <button
+                key={story._id ?? idx}
+                onClick={() => navigate(`/story/${story._id}`)}
+                className="w-32 flex-shrink-0 snap-start text-left"
+              >
+                <div className="relative">
+                  <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
+                    {story.coverImage ? (
+                      <img
+                        src={story.coverImage}
+                        alt={story.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full grid place-items-center">
+                        <BookOpen className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
+                    {idx + 1}
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-sm font-semibold line-clamp-2">{story.title}</div>
+                  <div className="text-[11px] text-muted-foreground line-clamp-1">
+                    {story.author?.name || "Anonymous"}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -120,71 +207,45 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Trending Now */}
+      {/* Sections */}
       <section className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Trending Now</h2>
-          <Button variant="ghost" onClick={() => navigate("/explore")} className="text-purple-600">
-            See All
-          </Button>
-        </div>
+        {/* Reading History */}
+        <Section
+          title="Reading History"
+          items={history?.page}
+          onViewAll={handleViewAllHistory}
+        />
 
-        {featuredStories && featuredStories.page.length > 0 ? (
-          <div className="space-y-4">
-            {featuredStories.page.slice(0, 6).map((story) => (
-              <div
-                key={story._id}
-                className="rounded-2xl border bg-card hover:shadow-sm transition cursor-pointer p-4"
-                onClick={() => navigate(`/story/${story._id}`)}
-              >
-                <div className="flex gap-4">
-                  <div className="w-16 h-20 rounded-md overflow-hidden flex-shrink-0 bg-muted flex items-center justify-center">
-                    {story.coverImage ? (
-                      <img
-                        src={story.coverImage}
-                        alt={story.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <BookOpen className="h-6 w-6 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-lg truncate">{story.title}</h3>
-                    </div>
-                    <div className="text-sm text-muted-foreground mb-1">
-                      {story.author?.name || "Anonymous"}
-                    </div>
-                    <div className="mb-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 capitalize">
-                        {story.genre}
-                      </span>
-                    </div>
-                    {story.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {story.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <Eye className="h-4 w-4" /> {story.totalViews}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Heart className="h-4 w-4" /> {story.totalLikes}
-                      </span>
-                      <span>{story.totalChapters} chapters</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            No trending stories yet.
-          </div>
-        )}
+        {/* Trending Now */}
+        <Section
+          title="Trending Now"
+          items={trending?.page}
+          onViewAll={() => handleViewAllExplore({ sort: "views" })}
+        />
+
+        {/* Most Popular */}
+        <Section
+          title="Most Popular"
+          items={mostPopular?.page}
+          onViewAll={() => handleViewAllExplore({ sort: "popular" })}
+        />
+
+        {/* Recently Added */}
+        <Section
+          title="Recently Added"
+          items={recent?.page}
+          onViewAll={() => handleViewAllExplore({ sort: "recent" })}
+        />
+
+        {/* Genre rows */}
+        {genrePages.map(({ genre, data }) => (
+          <Section
+            key={genre}
+            title={genre.charAt(0).toUpperCase() + genre.slice(1)}
+            items={data?.page}
+            onViewAll={() => handleViewAllExplore({ genre, sort: "recent" })}
+          />
+        ))}
       </section>
     </motion.div>
   );

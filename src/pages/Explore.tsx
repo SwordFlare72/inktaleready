@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Eye, Heart, Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useLocation } from "react-router";
 
 const GENRES = [
   { value: "all", label: "All Genres" },
@@ -32,8 +33,18 @@ const SORT_OPTIONS = [
 export default function Explore() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [genre, setGenre] = useState("all");
-  const [sortBy, setSortBy] = useState("recent");
+  const location = useLocation();
+
+  // Initialize from URL params once
+  const initialParams = (() => {
+    const sp = new URLSearchParams(location.search);
+    const g = sp.get("genre") || "all";
+    const s = sp.get("sort") || "recent";
+    return { g, s };
+  })();
+
+  const [genre, setGenre] = useState(initialParams.g);
+  const [sortBy, setSortBy] = useState(initialParams.s);
   const [cursor, setCursor] = useState<string | null>(null);
 
   const stories = useQuery(api.stories.listExplore, {
