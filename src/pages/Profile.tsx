@@ -500,7 +500,7 @@ export default function Profile() {
             <TabsContent value="announcements" className="mt-4 space-y-4">
               {/* Compose (only owner) */}
               {isOwnProfile && (
-                <Card>
+                <Card className="border-muted/60 shadow-sm">
                   <CardContent className="pt-6">
                     <div className="text-sm mb-2 font-semibold">Post an announcement</div>
                     <Textarea
@@ -508,10 +508,11 @@ export default function Profile() {
                       value={newAnnouncement}
                       onChange={(e) => setNewAnnouncement(e.target.value)}
                       rows={3}
-                      className="rounded-lg"
+                      className="rounded-lg bg-muted/30 focus-visible:ring-1 focus-visible:ring-ring"
                     />
                     <div className="flex justify-end mt-3">
                       <Button
+                        size="sm"
                         disabled={!newAnnouncement.trim()}
                         onClick={async () => {
                           try {
@@ -537,7 +538,7 @@ export default function Profile() {
                 <div className="text-sm text-muted-foreground">No announcements yet</div>
               ) : (
                 announcements.page.map((a: any) => (
-                  <Card key={a._id}>
+                  <Card key={a._id} className="border-muted/60 shadow-sm">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -545,14 +546,21 @@ export default function Profile() {
                           <AvatarFallback>{a.author?.name?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold leading-tight">{a.author?.name || "User"}</div>
-                          <div className="text-[11px] text-muted-foreground">Announcement • {new Date(a._creationTime).toLocaleString()}</div>
+                          <div className="text-sm font-semibold leading-tight">
+                            {a.author?.name || "User"}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            Announcement • {new Date(a._creationTime).toLocaleString()}
+                          </div>
                         </div>
                       </div>
 
                       <div className="h-px bg-border" />
 
-                      <div className="text-base leading-relaxed whitespace-pre-wrap">{a.body}</div>
+                      {/* Body with subtle background */}
+                      <div className="rounded-md bg-muted/30 p-3 text-base leading-relaxed whitespace-pre-wrap">
+                        {a.body}
+                      </div>
 
                       {/* Replies */}
                       <AnnouncementReplies announcementId={a._id as Id<"announcements">} />
@@ -567,9 +575,10 @@ export default function Profile() {
                             onChange={(e) =>
                               setReplyInputs((s) => ({ ...s, [String(a._id)]: e.target.value }))
                             }
-                            className="rounded-lg"
+                            className="rounded-lg bg-muted/30 focus-visible:ring-1 focus-visible:ring-ring"
                           />
                           <Button
+                            size="sm"
                             className="self-end"
                             disabled={!(replyInputs[String(a._id)] || "").trim()}
                             onClick={async () => {
@@ -756,7 +765,9 @@ function AnnouncementReplies({ announcementId }: { announcementId: Id<"announcem
   if (replies.length === 0) return null;
   return (
     <div className="space-y-3">
-      <div className="text-sm font-semibold text-muted-foreground">Replies</div>
+      <div className="pt-2 mt-1 border-t border-border text-xs font-semibold text-muted-foreground tracking-wide uppercase">
+        Replies
+      </div>
       {replies.map((r: any) => (
         <div key={r._id} className="flex items-start gap-2">
           <Avatar className="h-7 w-7">
