@@ -177,7 +177,8 @@ export default function Profile() {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-background"
     >
-      <div className="max-w-6xl mx-auto px-0 sm:px-4 pb-8">
+      {/* Increase bottom padding so content isn't hidden behind BottomNav and full scrolling works */}
+      <div className="max-w-6xl mx-auto px-0 sm:px-4 pb-28">
         {/* Profile Header with Banner */}
         <div className="w-full relative">
           <div className="h-40 sm:h-56 w-full bg-muted overflow-hidden">
