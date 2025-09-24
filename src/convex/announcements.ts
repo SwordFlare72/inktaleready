@@ -129,3 +129,52 @@ export const reply = mutation({
     return replyId;
   },
 });
+
+export const deleteAnnouncement = mutation({
+  args: { announcementId: v.id("announcements") },
+  handler: async (ctx, args) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Must be authenticated");
+
+    const ann = await ctx.db.get(args.announcementId);
+    if (!ann) throw new Error("Announcement not found");
+    if (ann.authorId !== me._id) throw new Error("Not authorized");
+
+    // Delete all replies for this announcement
+    const replies = await ctx.db
+      .query("announcementReplies")
+      .withIndex("by_announcement", (q) => q.eq("announcementId", args.announcementId))
+      .collect();
+    for (const r of replies) {
+      await ctx.db.delete(r._id);
+    }
+
+    await ctx.db.delete(args.announcementId);
+    return true;
+  },
+});
+
+export const deleteReply = mutation({
+  args: { replyId: v.id("announcementReplies") },
+  handler: async (ctx, args) => {
+    const me = await getCurrentUser(ctx);
+    if (!me) throw new Error("Must be authenticated");
+
+    const reply = await ctx.db.get(args.replyId);
+    if (!reply) throw new Error("Reply not found");
+
+    const ann = await ctx.db.get(reply.announcementId);
+    if (!ann) throw new Error("Announcement not found");
+
+    const isReplyAuthor = reply.authorId === me._id;
+    const isAnnouncementAuthor = ann.authorId === me._id;
+    if (!isReplyAuthor && !isAnnouncementAuthor) throw new Error("Not authorized");
+
+    await ctx.db.delete(args.replyId);
+    // Decrement replyCount on parent announcement (guard against negatives)
+    const newCount = Math.max(0, (ann.replyCount || 0) - 1);
+    await ctx.db.patch(ann._id, { replyCount: newCount });
+
+    return true;
+  },
+});

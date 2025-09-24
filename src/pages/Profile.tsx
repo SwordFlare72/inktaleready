@@ -107,6 +107,10 @@ export default function Profile() {
 
   const updateMe = useMutation(api.users.updateMe);
   const toggleUserFollow = useMutation(api.users.toggleUserFollow);
+  const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
+
+  const [confirmDeleteAnnId, setConfirmDeleteAnnId] = useState<string | null>(null);
+  const [isDeletingAnn, setIsDeletingAnn] = useState(false);
 
   const isFollowing = useQuery(
     api.users.isFollowingUser,
@@ -559,7 +563,7 @@ export default function Profile() {
                 <div className="text-sm text-muted-foreground">No announcements yet</div>
               ) : (
                 announcements.page.map((a: any) => (
-                  <Card key={a._id} id={`ann-${String(a._id)}`} className="border-muted/60 shadow-sm">
+                  <Card key={a._id} id={`ann-${String(a._id)}`} className="border-muted/60 shadow-sm relative">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -574,6 +578,19 @@ export default function Profile() {
                             Announcement • {new Date(a._creationTime).toLocaleString()}
                           </div>
                         </div>
+
+                        {/* Delete button for announcement owner */}
+                        {isOwnProfile && (
+                          <div className="ml-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setConfirmDeleteAnnId(String(a._id))}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="h-px bg-border" />
@@ -583,8 +600,11 @@ export default function Profile() {
                         {a.body}
                       </div>
 
-                      {/* Replies */}
-                      <AnnouncementReplies announcementId={a._id as Id<"announcements">} />
+                      {/* Replies list with header and per-reply delete controls */}
+                      <AnnouncementReplies
+                        announcementId={a._id as Id<"announcements">}
+                        announcementAuthorId={a.authorId as Id<"users">}
+                      />
 
                       {/* Reply composer */}
                       {isAuthenticated && (
@@ -619,6 +639,39 @@ export default function Profile() {
                         </div>
                       )}
                     </CardContent>
+
+                    {/* Confirm delete announcement dialog */}
+                    <AlertDialog open={confirmDeleteAnnId === String(a._id)} onOpenChange={(o) => !o && setConfirmDeleteAnnId(null)}>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this announcement?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this announcement? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={isDeletingAnn} onClick={() => setConfirmDeleteAnnId(null)}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-red-600 text-white hover:bg-red-700"
+                            disabled={isDeletingAnn}
+                            onClick={async () => {
+                              setIsDeletingAnn(true);
+                              try {
+                                await deleteAnnouncement({ announcementId: a._id as any });
+                                toast.success("Announcement deleted");
+                                setConfirmDeleteAnnId(null);
+                              } catch (e: any) {
+                                toast.error(e?.message || "Failed to delete");
+                              } finally {
+                                setIsDeletingAnn(false);
+                              }
+                            }}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </Card>
                 ))
               )}
@@ -780,8 +833,13 @@ export default function Profile() {
 }
 
 // Helper subcomponent for replies list
-function AnnouncementReplies({ announcementId }: { announcementId: Id<"announcements"> }) {
+function AnnouncementReplies({ announcementId, announcementAuthorId }: { announcementId: Id<"announcements">, announcementAuthorId: Id<"users"> }) {
+  const { user: currentUser } = useAuth();
   const replies = useQuery(api.announcements.listReplies, { announcementId });
+  const deleteReply = useMutation(api.announcements.deleteReply);
+  const [confirmReplyId, setConfirmReplyId] = useState<string | null>(null);
+  const [isDeletingReply, setIsDeletingReply] = useState(false);
+
   if (replies === undefined) {
     return <div className="text-xs text-muted-foreground">Loading replies...</div>;
   }
@@ -791,18 +849,61 @@ function AnnouncementReplies({ announcementId }: { announcementId: Id<"announcem
       <div className="pt-2 mt-1 border-t border-border text-xs font-semibold text-muted-foreground tracking-wide uppercase">
         Replies
       </div>
-      {replies.map((r: any) => (
-        <div key={r._id} className="flex items-start gap-2">
-          <Avatar className="h-7 w-7">
-            <AvatarImage src={r.author?.image} />
-            <AvatarFallback>{r.author?.name?.charAt(0) || "U"}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <div className="text-xs font-medium">{r.author?.name || "User"}</div>
-            <div className="text-sm whitespace-pre-wrap leading-relaxed">{r.body}</div>
+      {replies.map((r: any) => {
+        const canDelete = currentUser && (currentUser._id === r.authorId || currentUser._id === announcementAuthorId);
+        return (
+          <div key={r._id} className="flex items-start gap-2">
+            <Avatar className="h-7 w-7">
+              <AvatarImage src={r.author?.image} />
+              <AvatarFallback>{r.author?.name?.charAt(0) || "U"}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-medium">{r.author?.name || "User"}</div>
+                {canDelete && (
+                  <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setConfirmReplyId(String(r._id))}>
+                    Delete
+                  </Button>
+                )}
+              </div>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">{r.body}</div>
+            </div>
+
+            {/* Confirm delete reply dialog */}
+            <AlertDialog open={confirmReplyId === String(r._id)} onOpenChange={(o) => !o && setConfirmReplyId(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this reply?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this reply? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeletingReply} onClick={() => setConfirmReplyId(null)}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 text-white hover:bg-red-700"
+                    disabled={isDeletingReply}
+                    onClick={async () => {
+                      setIsDeletingReply(true);
+                      try {
+                        await deleteReply({ replyId: r._id as any });
+                        toast.success("Reply deleted");
+                        setConfirmReplyId(null);
+                      } catch (e: any) {
+                        toast.error(e?.message || "Failed to delete reply");
+                      } finally {
+                        setIsDeletingReply(false);
+                      }
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
