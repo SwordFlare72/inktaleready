@@ -424,20 +424,33 @@ export default function Profile() {
                 ) : followingList.length === 0 ? (
                   <div className="text-sm text-muted-foreground">Not following anyone</div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
-                    {followingList.slice(0, 12).map((u: any) => (
-                      <div
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x px-1">
+                    {followingList.slice(0, 10).map((u: any) => (
+                      <button
                         key={u._id}
-                        className="flex flex-col items-center gap-2 cursor-pointer"
+                        className="w-24 flex-shrink-0 snap-start text-center"
                         onClick={() => navigate(`/profile/${u._id}`)}
                       >
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={u.image} />
-                          <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
-                        </Avatar>
-                        <div className="text-xs line-clamp-1">{u.name || "User"}</div>
-                      </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={u.image} />
+                            <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                          </Avatar>
+                          <div className="text-xs line-clamp-1">{u.name || "User"}</div>
+                        </div>
+                      </button>
                     ))}
+                    {followingList.length > 10 && (
+                      <button
+                        onClick={() => setOpenFollowing(true)}
+                        className="w-24 flex-shrink-0 snap-start text-center"
+                      >
+                        <div className="h-12 w-12 rounded-full border grid place-items-center text-xs">
+                          View All
+                        </div>
+                        <div className="text-xs mt-2 text-muted-foreground">+{followingList.length - 10} more</div>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
