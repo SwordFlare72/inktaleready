@@ -582,13 +582,21 @@ export default function Profile() {
                         {/* Delete button for announcement owner */}
                         {isOwnProfile && (
                           <div className="ml-auto">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setConfirmDeleteAnnId(String(a._id))}
-                            >
-                              Delete
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="More options">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => setConfirmDeleteAnnId(String(a._id))}
+                                  className="text-red-600 focus:text-red-600 cursor-pointer"
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         )}
                       </div>
@@ -861,9 +869,21 @@ function AnnouncementReplies({ announcementId, announcementAuthorId }: { announc
               <div className="flex items-center justify-between">
                 <div className="text-xs font-medium">{r.author?.name || "User"}</div>
                 {canDelete && (
-                  <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setConfirmReplyId(String(r._id))}>
-                    Delete
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="More options">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() => setConfirmReplyId(String(r._id))}
+                        className="text-red-600 focus:text-red-600 cursor-pointer"
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
               <div className="text-sm whitespace-pre-wrap leading-relaxed">{r.body}</div>
