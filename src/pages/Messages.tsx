@@ -28,6 +28,7 @@ export default function Messages() {
   const [isUploading, setIsUploading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false); // Add: delete confirm dialog
   const [deleteId, setDeleteId] = useState<Id<"messages"> | null>(null); // Add: which message to delete
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Add: hold picked images
 
   // Add: initialize selected partner from navigation state
   // This lets Alerts > Messages tab open a specific thread
@@ -78,45 +79,54 @@ export default function Messages() {
     fileInputRef.current?.click();
   };
 
+  // Change: only select files; send on pressing Send
   const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedPartnerId) return;
-    try {
-      setIsUploading(true);
-      const url = await getUploadUrl({});
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      const { storageId } = await res.json();
-
-      await sendMessage({
-        recipientId: selectedPartnerId,
-        body: "", // image-only message
-        imageStorageId: storageId,
-      });
-      toast.success("Image sent!");
-    } catch (err) {
-      toast.error("Failed to send image");
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) {
+      setSelectedFiles(files);
     }
   };
 
   const handleSendMessage = async () => {
-    if (!selectedPartnerId || !messageText.trim()) return;
+    if (!selectedPartnerId) return;
+    if (!messageText.trim() && selectedFiles.length === 0) return;
 
     try {
-      await sendMessage({
-        recipientId: selectedPartnerId,
-        body: messageText.trim(),
-      });
+      setIsUploading(true);
+
+      // Send all selected images first (each as its own message)
+      for (const file of selectedFiles) {
+        const url = await getUploadUrl({});
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        const { storageId } = await res.json();
+
+        await sendMessage({
+          recipientId: selectedPartnerId,
+          body: "",
+          imageStorageId: storageId,
+        });
+      }
+
+      // Then send text (if any)
+      if (messageText.trim()) {
+        await sendMessage({
+          recipientId: selectedPartnerId,
+          body: messageText.trim(),
+        });
+      }
+
       setMessageText("");
-      toast.success("Message sent!");
+      setSelectedFiles([]);
+      toast.success("Sent!");
     } catch (error) {
-      toast.error("Failed to send message");
+      toast.error("Failed to send");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -270,6 +280,7 @@ export default function Messages() {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     onChange={handleImageSelected}
                   />
@@ -288,12 +299,17 @@ export default function Messages() {
                     placeholder="Message..."
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   />
-                  <Button onClick={handleSendMessage} disabled={!messageText.trim()}>
+                  <Button onClick={handleSendMessage} disabled={!messageText.trim() && selectedFiles.length === 0 || isUploading}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
                 {isUploading && (
-                  <div className="text-xs text-muted-foreground mt-2">Uploading image...</div>
+                  <div className="text-xs text-muted-foreground mt-2">Uploading...</div>
+                )}
+                {!isUploading && selectedFiles.length > 0 && (
+                  <div className="text-xs text-muted-foreground mt-2">
+                    {selectedFiles.length} {selectedFiles.length === 1 ? "image selected" : "images selected"}
+                  </div>
                 )}
               </div>
             </CardContent>
