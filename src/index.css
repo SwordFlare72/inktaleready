@@ -112,6 +112,21 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Force a persistent black backdrop across the entire document to avoid any white flash between screens. */
+html,
+body,
+#root {
+  background-color: #000 !important; /* prevent browser default white paint */
+  min-height: 100vh;                 /* ensure full-viewport coverage */
+}
+
+/* On dark theme, also ensure background stays black even if variables change */
+.dark html,
+.dark body,
+.dark #root {
+  background-color: #000 !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
