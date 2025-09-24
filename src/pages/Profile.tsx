@@ -502,12 +502,13 @@ export default function Profile() {
               {isOwnProfile && (
                 <Card>
                   <CardContent className="pt-6">
-                    <div className="text-sm mb-2">Post an announcement</div>
+                    <div className="text-sm mb-2 font-semibold">Post an announcement</div>
                     <Textarea
                       placeholder="Share an update..."
                       value={newAnnouncement}
                       onChange={(e) => setNewAnnouncement(e.target.value)}
                       rows={3}
+                      className="rounded-lg"
                     />
                     <div className="flex justify-end mt-3">
                       <Button
@@ -537,18 +538,21 @@ export default function Profile() {
               ) : (
                 announcements.page.map((a: any) => (
                   <Card key={a._id}>
-                    <CardContent className="pt-6 space-y-3">
+                    <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
+                        <Avatar className="h-10 w-10">
                           <AvatarImage src={a.author?.image} />
                           <AvatarFallback>{a.author?.name?.charAt(0) || "U"}</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold">{a.author?.name || "User"}</div>
-                          <div className="text-xs text-muted-foreground">Announcement</div>
+                          <div className="text-sm font-semibold leading-tight">{a.author?.name || "User"}</div>
+                          <div className="text-[11px] text-muted-foreground">Announcement • {new Date(a._creationTime).toLocaleString()}</div>
                         </div>
                       </div>
-                      <div className="text-sm whitespace-pre-wrap">{a.body}</div>
+
+                      <div className="h-px bg-border" />
+
+                      <div className="text-base leading-relaxed whitespace-pre-wrap">{a.body}</div>
 
                       {/* Replies */}
                       <AnnouncementReplies announcementId={a._id as Id<"announcements">} />
@@ -563,6 +567,7 @@ export default function Profile() {
                             onChange={(e) =>
                               setReplyInputs((s) => ({ ...s, [String(a._id)]: e.target.value }))
                             }
+                            className="rounded-lg"
                           />
                           <Button
                             className="self-end"
@@ -751,6 +756,7 @@ function AnnouncementReplies({ announcementId }: { announcementId: Id<"announcem
   if (replies.length === 0) return null;
   return (
     <div className="space-y-3">
+      <div className="text-sm font-semibold text-muted-foreground">Replies</div>
       {replies.map((r: any) => (
         <div key={r._id} className="flex items-start gap-2">
           <Avatar className="h-7 w-7">
@@ -759,7 +765,7 @@ function AnnouncementReplies({ announcementId }: { announcementId: Id<"announcem
           </Avatar>
           <div className="min-w-0">
             <div className="text-xs font-medium">{r.author?.name || "User"}</div>
-            <div className="text-sm whitespace-pre-wrap">{r.body}</div>
+            <div className="text-sm whitespace-pre-wrap leading-relaxed">{r.body}</div>
           </div>
         </div>
       ))}
