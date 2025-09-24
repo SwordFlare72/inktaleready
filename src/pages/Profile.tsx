@@ -151,6 +151,17 @@ export default function Profile() {
   const targetAnnouncementId = searchParams.get("aid");
   const [activeTab, setActiveTab] = useState<"about" | "announcements">(initialTab);
 
+  // Move the deep-link effect ABOVE any early returns to preserve hook order
+  useEffect(() => {
+    if (!targetAnnouncementId) return;
+    setActiveTab("announcements");
+    const t = setTimeout(() => {
+      const el = document.getElementById(`ann-${targetAnnouncementId}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [targetAnnouncementId, announcements?.page?.length]);
+
   if (!isAuthenticated && isOwnProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -179,16 +190,7 @@ export default function Profile() {
     );
   }
 
-  useEffect(() => {
-    if (targetAnnouncementId) {
-      setActiveTab("announcements");
-      const t = setTimeout(() => {
-        const el = document.getElementById(`ann-${targetAnnouncementId}`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 300);
-      return () => clearTimeout(t);
-    }
-  }, [targetAnnouncementId, announcements?.page?.length]);
+  // Effect moved above early returns to preserve hook order.
 
   return (
     <motion.div
