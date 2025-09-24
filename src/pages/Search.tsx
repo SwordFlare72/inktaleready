@@ -47,6 +47,23 @@ export default function Search() {
   const [hasCover, setHasCover] = useState(false);
   const [minChapters, setMinChapters] = useState<string>("");
 
+  // Add: simple relative time formatter for "Uploaded X ago"
+  const relTime = (ts?: number) => {
+    if (!ts) return "";
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months} month${months === 1 ? "" : "s"} ago`;
+    const years = Math.floor(months / 12);
+    return `${years} year${years === 1 ? "" : "s"} ago`;
+  };
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -276,62 +293,79 @@ export default function Search() {
                   <>
                     <div className="mb-4">
                       <p className="text-muted-foreground">
-                        Found {searchResultsStories.length} result{searchResultsStories.length !== 1 ? "s" : ""} for "{debouncedSearchTerm}"
+                        Found {searchResultsStories.length} result{searchResultsStories.length !== 1 ? "s" : ""} for "{debouncedSearchTerm || (parsedTags.join(", ") || "filters")}"
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* List-style results */}
+                    <div className="space-y-4">
                       {searchResultsStories.map((story) => (
                         <motion.div
                           key={story._id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          whileHover={{ scale: 1.02 }}
-                          transition={{ duration: 0.2 }}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          whileHover={{ scale: 1.01 }}
+                          transition={{ duration: 0.15 }}
                         >
                           <Card
-                            className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                            className="cursor-pointer hover:bg-muted/60 transition-colors"
                             onClick={() => handleStoryClick(story._id)}
                           >
-                            <div className="aspect-[3/4] relative">
-                              {story.coverImage ? (
-                                <img
-                                  src={story.coverImage}
-                                  alt={story.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
-                                  <BookOpen className="w-12 h-12 text-white" />
-                                </div>
-                              )}
-                              <div className="absolute top-2 right-2">
-                                <span className="px-2 py-1 bg-black/70 text-white text-xs rounded-full capitalize">
-                                  {story.genre}
-                                </span>
-                              </div>
-                            </div>
                             <CardContent className="p-4">
-                              <h3 className="font-semibold mb-1 line-clamp-2">{story.title}</h3>
-                              <p className="text-sm text-muted-foreground mb-2">
-                                by {story.author?.name || "Anonymous"}
-                              </p>
-                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                {story.description}
-                              </p>
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex items-center gap-1">
-                                    <Eye className="w-4 h-4" />
-                                    {story.totalViews}
+                              <div className="flex items-start gap-4">
+                                {/* Thumbnail */}
+                                <div className="h-20 w-16 overflow-hidden rounded-md border bg-muted flex-shrink-0">
+                                  {story.coverImage ? (
+                                    <img
+                                      src={story.coverImage}
+                                      alt={story.title}
+                                      className="h-full w-full object-cover"
+                                      crossOrigin="anonymous"
+                                      referrerPolicy="no-referrer"
+                                      onError={(e) => {
+                                        const el = e.currentTarget as HTMLImageElement;
+                                        el.style.display = "none";
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="h-full w-full grid place-items-center bg-gradient-to-br from-purple-400 to-pink-400">
+                                      <BookOpen className="h-6 w-6 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Details */}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <h3 className="font-semibold text-base leading-snug line-clamp-1">
+                                      {story.title}
+                                    </h3>
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/60 capitalize whitespace-nowrap">
+                                      {story.genre}
+                                    </span>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <Heart className="w-4 h-4" />
-                                    {story.totalLikes}
+
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                    by {story.author?.name || "Anonymous"}
+                                  </p>
+
+                                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                                    {story.description}
+                                  </p>
+
+                                  <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <span>{story.totalChapters} chapter{story.totalChapters === 1 ? "" : "s"}</span>
+                                    <span>•</span>
+                                    <span>Uploaded {relTime(story.lastUpdated)}</span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      <Eye className="h-3.5 w-3.5" /> {story.totalViews}
+                                    </span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      <Heart className="h-3.5 w-3.5" /> {story.totalLikes}
+                                    </span>
                                   </div>
                                 </div>
-                                <span className="text-muted-foreground">
-                                  {story.totalChapters} ch
-                                </span>
                               </div>
                             </CardContent>
                           </Card>
