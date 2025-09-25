@@ -375,7 +375,7 @@ export default function Library() {
                 <Card
                   key={list._id}
                   className="cursor-pointer transition-all hover:shadow-lg border-2 rounded-2xl"
-                  onClick={() => setOpenListId(list._id as string)}
+                  onClick={() => navigate(`/library/list/${list._id}`)}
                 >
                   <CardHeader className="flex flex-row items-start justify-between space-y-0">
                     <CardTitle className="flex items-center gap-2">
@@ -400,7 +400,7 @@ export default function Library() {
                         <DropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOpenListId(list._id as string);
+                            navigate(`/library/list/${list._id}`);
                           }}
                         >
                           Open

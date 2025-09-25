@@ -272,3 +272,34 @@ export const deleteList = mutation({
     await ctx.db.delete(args.listId);
   },
 });
+
+// Get a single reading list by id with populated stories (owner-guarded)
+export const getListById = query({
+  args: { listId: v.id("readingLists") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.userId !== user._id) return null;
+
+    const stories = await Promise.all(
+      list.storyIds.map(async (storyId) => {
+        const story = await ctx.db.get(storyId);
+        if (!story) return null;
+        const author = await ctx.db.get(story.authorId);
+        return {
+          ...story,
+          author: author ? { name: author.name, image: author.image } : null,
+        };
+      }),
+    );
+
+    const validStories = stories.filter(Boolean);
+    return {
+      ...list,
+      stories: validStories,
+      storyCount: validStories.length,
+    };
+  },
+});

@@ -27,6 +27,7 @@ import "./types/global.d.ts";
 import ChapterEditor from "./pages/ChapterEditor.tsx";
 import StoryChaptersManage from "./pages/StoryChaptersManage.tsx";
 import EditProfile from "./pages/EditProfile.tsx";
+import ReadingListView from "./pages/ReadingListView.tsx";
 import { motion } from "framer-motion";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -124,6 +125,9 @@ function BottomNavGate() {
   // Add: Hide nav on messaging page
   const onMessages = location.pathname.startsWith("/messages");
 
+  // Add: Hide nav on a dedicated reading list page
+  const onReadingListView = location.pathname.startsWith("/library/list/");
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
@@ -131,7 +135,8 @@ function BottomNavGate() {
     onChapterEditor ||
     onReader ||
     otherUsersProfile ||
-    onMessages
+    onMessages ||
+    onReadingListView
   ) return null;
 
   return <BottomNav />;
@@ -198,6 +203,9 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/read/:id" element={<Reader />} />
             <Route path="/library" element={
               <ProtectedRoute><Library /></ProtectedRoute>
+            } />
+            <Route path="/library/list/:id" element={
+              <ProtectedRoute><ReadingListView /></ProtectedRoute>
             } />
             <Route path="/write" element={
               <ProtectedRoute><Write /></ProtectedRoute>
