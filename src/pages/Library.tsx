@@ -188,7 +188,7 @@ export default function Library() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-background"
+      className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900"
     >
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
