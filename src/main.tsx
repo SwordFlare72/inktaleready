@@ -173,18 +173,35 @@ function SplashOverlay() {
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black">
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25 }}
-        className="flex flex-col items-center gap-3"
+        className="w-[280px] sm:w-[360px]"
       >
-        <img
-          src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
-          alt="InkTale"
-          width={120}
-          height={120}
-          className="rounded-2xl shadow-lg object-cover"
-        />
+        <div className="relative h-28 sm:h-32">
+          {/* Logo: appear centered then slide left */}
+          <motion.img
+            src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
+            alt="InkTale"
+            width={120}
+            height={120}
+            className="rounded-2xl shadow-lg object-cover absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            initial={{ scale: 0.9, x: 0 }}
+            animate={{ scale: 1, x: -80 }}
+            transition={{ duration: 2.2, ease: [0.25, 0.1, 0.25, 1] }}
+          />
+
+          {/* Name: fade and slide in after logo starts moving */}
+          <motion.span
+            className="absolute left-1/2 top-1/2 -translate-y-1/2 text-4xl sm:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-fuchsia-400"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.7, duration: 1.2, ease: 'easeOut' }}
+            style={{ marginLeft: 10 }}
+          >
+            InkTale
+          </motion.span>
+        </div>
       </motion.div>
     </div>
   );
