@@ -113,15 +113,39 @@ function StoryRow({
 function StoryTile({
   story,
   onClick,
+  fetchProgress = true,
 }: {
   story: any;
   onClick: (id: string) => void;
+  fetchProgress?: boolean; // new: allow per-usage control
 }) {
-  // Normalize a progress percentage if available on the story object (0–100)
-  const progress: number =
-    typeof (story as any)?.progress === "number"
-      ? Math.max(0, Math.min(100, (story as any).progress))
-      : 0;
+  // Fetch progress per story if requested; safe to skip if unauthenticated or not needed
+  const progressData = fetchProgress
+    ? useQuery(api.readingProgress.getProgress as any, story?._id ? { storyId: story._id } : "skip" as any)
+    : undefined;
+
+  // Compute a progress percentage (0–100)
+  let progress = 0;
+  if (typeof (story as any)?.progress === "number") {
+    progress = Math.max(0, Math.min(100, (story as any).progress));
+  } else if (progressData) {
+    const pd: any = progressData;
+    // Prefer explicit percent if backend provides it
+    if (typeof pd.percent === "number") {
+      progress = Math.max(0, Math.min(100, pd.percent));
+    } else {
+      // Fallback: derive from indexes/counts if available
+      const lastIndex: number | undefined =
+        typeof pd.lastReadIndex === "number" ? pd.lastReadIndex : undefined;
+      const total: number | undefined =
+        typeof story?.totalChapters === "number" ? story.totalChapters : undefined;
+
+      if (typeof lastIndex === "number" && typeof total === "number" && total > 0) {
+        // lastIndex is zero-based; add 1 to represent chapters completed
+        progress = Math.max(0, Math.min(100, Math.round(((lastIndex + 1) / total) * 100)));
+      }
+    }
+  }
 
   return (
     <button
@@ -386,6 +410,7 @@ export default function Library() {
                       key={story._id}
                       story={story}
                       onClick={(id) => navigate(`/story/${id}`)}
+                      fetchProgress={true} // new: ensure progress fetched for grid tiles
                     />
                   );
                 })}
@@ -454,6 +479,7 @@ export default function Library() {
                       key={story._id}
                       story={story}
                       onClick={(id) => navigate(`/story/${id}`)}
+                      fetchProgress={true} // new
                     />
                   );
                 })}
