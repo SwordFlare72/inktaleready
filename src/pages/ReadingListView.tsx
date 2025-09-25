@@ -1,6 +1,5 @@
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
 import { ChevronLeft, BookOpen, Eye, Star, List as ListIcon, MoreVertical } from "lucide-react";
@@ -78,9 +77,7 @@ function StoryRow({
             </DropdownMenu>
           </div>
 
-          <div className="mt-1 text-xs text-muted-foreground line-clamp-1">
-            by {story.author?.name || "Anonymous"}
-          </div>
+          {/* Removed author line per request */}
 
           <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-4">
             <span className="inline-flex items-center gap-1">
@@ -97,7 +94,7 @@ function StoryRow({
             </span>
           </div>
 
-          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+          <p className="font-semibold text-base leading-snug mt-2 line-clamp-2">
             {story.description}
           </p>
 
@@ -198,30 +195,27 @@ export default function ReadingListView() {
       </div>
 
       <div className="container mx-auto px-4 py-6 pb-28">
-        <Card>
-          <div className="px-6 pt-6 pb-0 text-base font-semibold">
-            {list.storyCount} {list.storyCount === 1 ? "story" : "stories"} · {list.isPublic ? "Public" : "Private"}
+        {/* Borderless header + list content (removed Card) */}
+        <div className="px-1 pt-1 pb-2 text-base font-semibold">
+          {list.storyCount} {list.storyCount === 1 ? "story" : "stories"} · {list.isPublic ? "Public" : "Private"}
+        </div>
+        {list.stories?.length > 0 ? (
+          <div className="divide-y divide-border">
+            {list.stories.map((story: any) => (
+              <StoryRow
+                key={story._id}
+                story={story}
+                onClick={handleStoryClick}
+                relTimeFn={relTime}
+                onRemove={handleRemoveFromThisList}
+              />
+            ))}
           </div>
-          <CardContent>
-            {list.stories?.length > 0 ? (
-              <div className="divide-y divide-border">
-                {list.stories.map((story: any) => (
-                  <StoryRow
-                    key={story._id}
-                    story={story}
-                    onClick={handleStoryClick}
-                    relTimeFn={relTime}
-                    onRemove={handleRemoveFromThisList}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground py-8 text-center">
-                No stories in this list yet
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        ) : (
+          <div className="text-sm text-muted-foreground py-8 text-center">
+            No stories in this list yet
+          </div>
+        )}
       </div>
     </motion.div>
   );
