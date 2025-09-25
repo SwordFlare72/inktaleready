@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { BookOpen, Clock, Plus, List } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -108,11 +109,50 @@ function StoryRow({
   );
 }
 
+// Add: Simple grid tile card for stories (cover + title only)
+function StoryTile({
+  story,
+  onClick,
+}: {
+  story: any;
+  onClick: (id: string) => void;
+}) {
+  return (
+    <button
+      className="text-left"
+      onClick={() => onClick(story._id)}
+      aria-label={story.title}
+    >
+      <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
+        {story.coverImage ? (
+          <img
+            src={story.coverImage}
+            alt={story.title}
+            className="h-full w-full object-cover"
+            crossOrigin="anonymous"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const el = e.currentTarget as HTMLImageElement;
+              el.style.display = "none";
+            }}
+          />
+        ) : (
+          <div className="h-full w-full grid place-items-center bg-gradient-to-br from-purple-400 to-pink-400" />
+        )}
+      </div>
+      <div className="mt-2 text-sm font-medium leading-tight line-clamp-2">
+        {story.title}
+      </div>
+    </button>
+  );
+}
+
 export default function Library() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   
   const [followsSort, setFollowsSort] = useState<"recent" | "oldest" | "alphabetical">("recent");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [newListName, setNewListName] = useState("");
   const [newListPublic, setNewListPublic] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
@@ -263,33 +303,75 @@ export default function Library() {
           </TabsList>
 
           <TabsContent value="follows" className="space-y-4">
-            <div className="flex items-center justify-between">
+            {/* Header with sort + view toggle */}
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-semibold">Followed Stories</h2>
-              <Select value={followsSort} onValueChange={(value: any) => setFollowsSort(value)}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recent">Recently Followed</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="alphabetical">A-Z</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={followsSort} onValueChange={(value: any) => setFollowsSort(value)}>
+                  <SelectTrigger className="w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Recently Followed</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="alphabetical">A-Z</SelectItem>
+                  </SelectContent>
+                </Select>
+                {/* List/Grid toggle */}
+                <div className="flex rounded-md border overflow-hidden">
+                  <Button
+                    variant={viewMode === "list" ? "default" : "outline"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("list")}
+                    aria-label="List view"
+                    title="List view"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "outline"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("grid")}
+                    aria-label="Grid view"
+                    title="Grid view"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="divide-y divide-border">
-              {follows?.page.map((story) => {
-                if (!story) return null;
-                return (
-                  <StoryRow
-                    key={story._id}
-                    story={story}
-                    onClick={(id) => navigate(`/story/${id}`)}
-                    relTimeFn={relTime}
-                  />
-                );
-              })}
-            </div>
+            {/* Content: list or grid */}
+            {viewMode === "list" ? (
+              <div className="divide-y divide-border">
+                {follows?.page.map((story) => {
+                  if (!story) return null;
+                  return (
+                    <StoryRow
+                      key={story._id}
+                      story={story}
+                      onClick={(id) => navigate(`/story/${id}`)}
+                      relTimeFn={relTime}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {follows?.page.map((story) => {
+                  if (!story) return null;
+                  return (
+                    <StoryTile
+                      key={story._id}
+                      story={story}
+                      onClick={(id) => navigate(`/story/${id}`)}
+                    />
+                  );
+                })}
+              </div>
+            )}
 
             {follows?.page.length === 0 && (
               <div className="text-center py-12">
@@ -303,21 +385,61 @@ export default function Library() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            <h2 className="text-xl font-semibold">Reading History</h2>
-
-            <div className="divide-y divide-border">
-              {history?.page.map((story) => {
-                if (!story) return null;
-                return (
-                  <StoryRow
-                    key={story._id}
-                    story={story}
-                    onClick={(id) => navigate(`/story/${id}`)}
-                    relTimeFn={relTime}
-                  />
-                );
-              })}
+            {/* Header with view toggle for history */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Reading History</h2>
+              <div className="flex rounded-md border overflow-hidden">
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="icon"
+                  className="h-9 w-9 rounded-none"
+                  onClick={() => setViewMode("list")}
+                  aria-label="List view"
+                  title="List view"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="icon"
+                  className="h-9 w-9 rounded-none"
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Grid view"
+                  title="Grid view"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
+
+            {viewMode === "list" ? (
+              <div className="divide-y divide-border">
+                {history?.page.map((story) => {
+                  if (!story) return null;
+                  return (
+                    <StoryRow
+                      key={story._id}
+                      story={story}
+                      onClick={(id) => navigate(`/story/${id}`)}
+                      relTimeFn={relTime}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {history?.page.map((story) => {
+                  if (!story) return null;
+                  return (
+                    <StoryTile
+                      key={story._id}
+                      story={story}
+                      onClick={(id) => navigate(`/story/${id}`)}
+                    />
+                  );
+                })}
+              </div>
+            )}
 
             {history?.page.length === 0 && (
               <div className="text-center py-12">
