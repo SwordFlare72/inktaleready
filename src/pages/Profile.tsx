@@ -411,9 +411,8 @@ export default function Profile() {
                           </div>
                         </div>
                         <div className="mt-2">
-                          <div className="text-sm font-semibold line-clamp-2">{story.title}</div>
-                          <div className="text-[11px] text-muted-foreground line-clamp-1">
-                            {story.author?.name || "Anonymous"}
+                          <div className="text-base font-semibold leading-tight line-clamp-2">
+                            {story.title}
                           </div>
                         </div>
                       </button>
