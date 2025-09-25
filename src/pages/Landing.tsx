@@ -143,14 +143,13 @@ export default function Landing() {
                       </div>
                     )}
                   </div>
-                  <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
+                  <div className="absolute top-2 left-2 px-2 h-5 rounded-md bg-background/80 border shadow-sm text-[11px] font-bold text-foreground/80 grid place-items-center">
                     {idx + 1}
                   </div>
                 </div>
                 <div className="mt-2">
-                  <div className="text-sm font-semibold line-clamp-2">{story.title}</div>
-                  <div className="text-[11px] text-muted-foreground line-clamp-1">
-                    {story.author?.name || "Anonymous"}
+                  <div className="text-base font-semibold leading-tight line-clamp-2">
+                    {story.title}
                   </div>
                 </div>
               </button>
