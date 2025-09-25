@@ -195,8 +195,8 @@ function SplashOverlay() {
             height={120}
             className="rounded-2xl shadow-lg object-cover absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
             initial={{ scale: 0.9, x: 0 }}
-            // Decrease left shift slightly to reduce spacing to the text
-            animate={{ scale: 1, x: -70 }}
+            // Decrease left shift a bit more to reduce spacing further
+            animate={{ scale: 1, x: -60 }}
             transition={{ duration: 2.2, ease: [0.25, 0.1, 0.25, 1] }}
           />
 
@@ -206,8 +206,8 @@ function SplashOverlay() {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7, duration: 1.2, ease: 'easeOut' }}
-            // Bring the text closer to the logo
-            style={{ marginLeft: 6 }}
+            // Bring the text even closer to the logo
+            style={{ marginLeft: 2 }}
           >
             InkTale
           </motion.span>
