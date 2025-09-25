@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, Home, Plus } from "lucide-react";
+import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, Home, Plus, Check } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -25,10 +25,12 @@ export default function Story() {
   const readingLists = useQuery(api.library.listMyLists, isAuthenticated ? {} : "skip");
   const createList = useMutation(api.library.createList);
   const addToList = useMutation(api.library.addToList);
+  const removeFromList = useMutation(api.library.removeFromList);
 
   const [showAddToList, setShowAddToList] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [newListPublic, setNewListPublic] = useState(false);
+  const [showCreateSection, setShowCreateSection] = useState(false);
 
   // Load similar stories by genre (exclude current later in render)
   const similar = useQuery(
@@ -99,6 +101,22 @@ export default function Story() {
       return;
     }
     setShowAddToList(true);
+  };
+
+  const handleToggleList = async (list: any) => {
+    if (!id) return;
+    try {
+      const inList = Array.isArray(list.storyIds) && list.storyIds.includes(id as any);
+      if (inList) {
+        await removeFromList({ listId: list._id as any, storyId: id as any });
+        toast.success("Removed from reading list");
+      } else {
+        await addToList({ listId: list._id as any, storyId: id as any });
+        toast.success("Added to reading list");
+      }
+    } catch {
+      toast.error("Failed to update list");
+    }
   };
 
   const handleAddToExisting = async (listId: string) => {
@@ -422,43 +440,63 @@ export default function Story() {
           ) : readingLists.length > 0 ? (
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Select a list to add this story:
+                Tap a list to add or remove this story:
               </div>
               <div className="max-h-72 overflow-y-auto divide-y rounded-md border">
-                {readingLists.map((list) => (
-                  <div key={list._id} className="p-3 flex items-center justify-between">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{list.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {list.storyCount} {list.storyCount === 1 ? "story" : "stories"} · {list.isPublic ? "Public" : "Private"}
+                {readingLists.map((list) => {
+                  const included =
+                    Array.isArray(list.storyIds) && id ? list.storyIds.includes(id as any) : false;
+                  return (
+                    <button
+                      key={list._id}
+                      className="w-full p-3 flex items-center justify-between hover:bg-accent/60 transition-colors text-left"
+                      onClick={() => handleToggleList(list)}
+                    >
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{list.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {list.storyCount} {list.storyCount === 1 ? "story" : "stories"} · {list.isPublic ? "Public" : "Private"}
+                        </div>
                       </div>
-                    </div>
-                    <Button size="sm" onClick={() => handleAddToExisting(list._id as any)}>
-                      Add
-                    </Button>
-                  </div>
-                ))}
+                      {included && (
+                        <Check className="h-5 w-5 text-primary shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="border-t pt-3 space-y-3">
-                <div className="text-sm font-medium">Or create a new list</div>
-                <Input
-                  placeholder="List name"
-                  value={newListName}
-                  onChange={(e) => setNewListName(e.target.value)}
-                />
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={newListPublic}
-                    onChange={(e) => setNewListPublic(e.target.checked)}
-                  />
-                  Make this list public
-                </label>
-                <div className="flex justify-end">
-                  <Button onClick={handleCreateAndAdd}>Create & Add</Button>
-                </div>
+              {/* Create list entry row */}
+              <div className="pt-2">
+                <button
+                  className="text-sm text-primary hover:underline inline-flex items-center gap-2"
+                  onClick={() => setShowCreateSection((v) => !v)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Reading List
+                </button>
               </div>
+
+              {showCreateSection && (
+                <div className="border-t pt-3 space-y-3">
+                  <Input
+                    placeholder="List name"
+                    value={newListName}
+                    onChange={(e) => setNewListName(e.target.value)}
+                  />
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={newListPublic}
+                      onChange={(e) => setNewListPublic(e.target.checked)}
+                    />
+                    Make this list public
+                  </label>
+                  <div className="flex justify-end">
+                    <Button onClick={handleCreateAndAdd}>Create & Add</Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             // No lists yet
