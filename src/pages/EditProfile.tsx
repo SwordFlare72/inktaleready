@@ -240,11 +240,8 @@ export default function EditProfile() {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
                           setImageUrl(url);
-                          // Immediately save to backend so it shows everywhere
-                          try {
-                            await updateMe({ image: url });
-                          } catch {}
-                          toast.success("Profile image uploaded");
+                          // Do NOT save immediately; wait for user to click "Save Changes"
+                          toast.success("Profile image selected. Click 'Save Changes' to apply.");
                         } catch {
                           toast.error("Upload failed");
                         } finally {
