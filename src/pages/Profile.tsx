@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Edit, Users, BookOpen, Eye, Heart, ArrowLeft, MoreVertical, MessageSquare } from "lucide-react";
+import { Edit, Users, BookOpen, Eye, Heart, ArrowLeft, MoreVertical, MessageSquare, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useLocation } from "react-router";
@@ -482,61 +482,72 @@ export default function Profile() {
                 ) : (
                   <div className="space-y-6">
                     {publicLists.map((list: any) => (
-                      <Card key={list._id}>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg flex items-center justify-between">
+                      <div key={list._id} className="rounded-2xl">
+                        <div className="flex items-center justify-between mb-2">
+                          {/* Name with arrow that opens full list page */}
+                          <button
+                            onClick={() => navigate(`/library/list/${list._id}`)}
+                            className="inline-flex items-center gap-2 text-lg font-semibold hover:underline"
+                          >
                             <span>{list.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
-                            </span>
-                          </CardTitle>
-                          {list.description && (
-                            <p className="text-sm text-muted-foreground">{list.description}</p>
-                          )}
-                        </CardHeader>
-                        <CardContent>
-                          {list.stories && list.stories.length > 0 ? (
-                            <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
-                              {list.stories.map((story: any, idx: number) => (
-                                <button
-                                  key={story._id}
-                                  onClick={() => navigate(`/story/${story._id}`)}
-                                  className="w-32 flex-shrink-0 snap-start text-left"
-                                >
-                                  <div className="relative">
-                                    <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
-                                      {story.coverImage ? (
-                                        <img
-                                          src={story.coverImage}
-                                          alt={story.title}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full grid place-items-center">
-                                          <BookOpen className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
-                                      {idx + 1}
-                                    </div>
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                          <span className="text-xs text-muted-foreground">
+                            {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
+                          </span>
+                        </div>
+
+                        {/* Borderless content with horizontal scroll from the right side as well */}
+                        <div className="overflow-x-auto pb-2 snap-x px-1 pr-4">
+                          <div className="flex gap-3">
+                            {(list.stories || []).slice(0, 10).map((story: any, idx: number) => (
+                              <button
+                                key={story._id}
+                                onClick={() => navigate(`/story/${story._id}`)}
+                                className="w-32 flex-shrink-0 snap-start text-left"
+                              >
+                                <div className="relative">
+                                  <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
+                                    {story.coverImage ? (
+                                      <img
+                                        src={story.coverImage}
+                                        alt={story.title}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full grid place-items-center">
+                                        <BookOpen className="h-6 w-6 text-muted-foreground" />
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="mt-2">
-                                    <div className="text-sm font-semibold line-clamp-2">
-                                      {story.title}
-                                    </div>
-                                    <div className="text-[11px] text-muted-foreground line-clamp-1">
-                                      {story.author?.name ?? "Anonymous"}
-                                    </div>
+                                  <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
+                                    {idx + 1}
                                   </div>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">No stories yet</div>
-                          )}
-                        </CardContent>
-                      </Card>
+                                </div>
+                                <div className="mt-2">
+                                  <div className="text-sm font-semibold line-clamp-2">
+                                    {story.title}
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground line-clamp-1">
+                                    {story.author?.name ?? "Anonymous"}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+
+                            {/* View All button after 10 stories */}
+                            {Array.isArray(list.stories) && list.stories.length > 10 && (
+                              <button
+                                onClick={() => navigate(`/library/list/${list._id}`)}
+                                className="w-28 h-full flex-shrink-0 snap-start grid place-items-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted/40"
+                                aria-label="View all stories in this list"
+                              >
+                                View All
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
