@@ -81,7 +81,8 @@ export default function Landing() {
     const search = new URLSearchParams();
     if (params.genre) search.set("genre", params.genre);
     if (params.sort) search.set("sort", params.sort);
-    navigate(`/explore?${search.toString()}`);
+    // Route to the Search page so the list renders with the same compact list UI
+    navigate(`/search?${search.toString()}`);
   };
 
   const handleViewAllHistory = () => {
