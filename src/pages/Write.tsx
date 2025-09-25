@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -64,6 +65,7 @@ export default function Write() {
   const [editGenre, setEditGenre] = useState("");
   const [editTags, setEditTags] = useState("");
   const [editCover, setEditCover] = useState("");
+  const [editIsCompleted, setEditIsCompleted] = useState(false);
 
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
@@ -223,6 +225,7 @@ export default function Write() {
     setEditGenre(story.genre || "");
     setEditTags((story.tags || []).join(", "));
     setEditCover(story.coverImage || "");
+    setEditIsCompleted(!!story.isCompleted);
     setShowEditStory(true);
   };
 
@@ -249,6 +252,7 @@ export default function Write() {
         genre: editGenre,
         tags: tagsArr,
         coverImage: editCover.trim() || undefined,
+        isCompleted: editIsCompleted,
       });
       toast.success("Story updated");
       setShowEditStory(false);
@@ -603,6 +607,19 @@ export default function Write() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Mark As Completed</label>
+                <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-sm">Completed Story</p>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle on to mark this story as completed
+                    </p>
+                  </div>
+                  <Switch checked={editIsCompleted} onCheckedChange={setEditIsCompleted} />
+                </div>
               </div>
 
               <div>
