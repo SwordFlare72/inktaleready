@@ -395,9 +395,6 @@ export default function Profile() {
                               </div>
                             )}
                           </div>
-                          <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
-                            {idx + 1}
-                          </div>
                         </div>
                         <div className="mt-2">
                           <div className="text-sm font-semibold line-clamp-2">{story.title}</div>
@@ -528,9 +525,6 @@ export default function Profile() {
                                         <BookOpen className="h-6 w-6 text-muted-foreground" />
                                       </div>
                                     )}
-                                  </div>
-                                  <div className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold">
-                                    {idx + 1}
                                   </div>
                                 </div>
                                 <div className="mt-2">
