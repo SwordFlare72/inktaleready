@@ -178,19 +178,48 @@ export default function Library() {
 
   const selectedList = (readingLists || []).find((l) => l._id === openListId);
 
+  // Add: robust clipboard helper that works even when document isn't focused
+  const copyToClipboard = async (text: string) => {
+    // Use Clipboard API if available and the document is focused
+    if (navigator.clipboard && document.hasFocus()) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    // Fallback using a hidden textarea and execCommand
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand("copy");
+    } finally {
+      document.body.removeChild(ta);
+    }
+  };
+
   const handleShareList = async (list: any) => {
-    const shareText = `Reading List: ${list.name} • ${list.storyCount} ${list.storyCount === 1 ? "story" : "stories"}\n` +
+    const shareText =
+      `Reading List: ${list.name} • ${list.storyCount} ${list.storyCount === 1 ? "story" : "stories"}\n` +
       (list.stories?.slice(0, 10).map((s: any, i: number) => `${i + 1}. ${s.title} — ${s.author?.name ?? "Anonymous"}`).join("\n") || "");
+    // Try native share first
     try {
       if (navigator.share) {
         await navigator.share({ title: list.name, text: shareText });
-      } else {
-        await navigator.clipboard.writeText(shareText);
-        toast.success("Reading list details copied");
+        return;
       }
     } catch {
-      await navigator.clipboard.writeText(shareText);
+      // swallow and fall through to clipboard copy
+    }
+    // Clipboard copy with robust fallback
+    try {
+      await copyToClipboard(shareText);
       toast.success("Reading list details copied");
+    } catch {
+      // Last resort: prompt for manual copy
+      window.prompt("Copy these reading list details:", shareText);
     }
   };
 
