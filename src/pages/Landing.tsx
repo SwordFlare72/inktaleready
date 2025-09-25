@@ -143,12 +143,16 @@ export default function Landing() {
                       </div>
                     )}
                   </div>
-                  <div className="absolute top-2 left-2 px-2 h-5 rounded-md bg-background/80 border shadow-sm text-[11px] font-bold text-foreground/80 grid place-items-center">
-                    {idx + 1}
+                  {/* Redesigned rank badge */}
+                  <div className="absolute top-2 left-2">
+                    <div className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md ring-1 ring-white/30 dark:ring-black/30 bg-gradient-to-br from-violet-600 to-fuchsia-500">
+                      {idx + 1}
+                    </div>
                   </div>
                 </div>
                 <div className="mt-2">
-                  <div className="text-base font-semibold leading-tight line-clamp-2">
+                  {/* Increase title size and keep only the title (no author line) */}
+                  <div className="text-lg font-semibold leading-tight line-clamp-2">
                     {story.title}
                   </div>
                 </div>
