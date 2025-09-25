@@ -28,7 +28,14 @@ function AvatarImage({
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={cn("aspect-square size-full", className)}
+      className={cn("aspect-square size-full object-cover", className)}
+      crossOrigin="anonymous"
+      referrerPolicy="no-referrer"
+      onError={(e) => {
+        try {
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+        } catch {}
+      }}
       {...props}
     />
   )

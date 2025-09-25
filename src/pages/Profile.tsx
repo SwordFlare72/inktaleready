@@ -214,6 +214,13 @@ export default function Profile() {
                 src={displayUser.bannerImage}
                 alt="Profile banner"
                 className="h-full w-full object-cover"
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  try {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  } catch {}
+                }}
               />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">

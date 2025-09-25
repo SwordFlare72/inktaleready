@@ -204,7 +204,18 @@ export default function EditProfile() {
               <div className="flex items-center gap-4">
                 <div className="h-20 w-20 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                   {imageUrl ? (
-                    <img src={imageUrl} alt="Profile" className="h-full w-full object-cover" />
+                    <img
+                      src={imageUrl}
+                      alt="Profile"
+                      className="h-full w-full object-cover"
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        try {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        } catch {}
+                      }}
+                    />
                   ) : (
                     <div className="text-xs text-muted-foreground">No image</div>
                   )}
@@ -229,6 +240,10 @@ export default function EditProfile() {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
                           setImageUrl(url);
+                          // Immediately save to backend so it shows everywhere
+                          try {
+                            await updateMe({ image: url });
+                          } catch {}
                           toast.success("Profile image uploaded");
                         } catch {
                           toast.error("Upload failed");
@@ -256,7 +271,18 @@ export default function EditProfile() {
               <div className="flex items-center gap-4">
                 <div className="h-20 w-32 rounded overflow-hidden bg-muted flex items-center justify-center">
                   {bannerUrl ? (
-                    <img src={bannerUrl} alt="Banner" className="h-full w-full object-cover" />
+                    <img
+                      src={bannerUrl}
+                      alt="Banner"
+                      className="h-full w-full object-cover"
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        try {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        } catch {}
+                      }}
+                    />
                   ) : (
                     <div className="text-xs text-muted-foreground">No background</div>
                   )}
@@ -281,6 +307,10 @@ export default function EditProfile() {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
                           setBannerUrl(url);
+                          // Immediately save banner to backend
+                          try {
+                            await updateMe({ bannerImage: url });
+                          } catch {}
                           toast.success("Background image uploaded");
                         } catch {
                           toast.error("Upload failed");
