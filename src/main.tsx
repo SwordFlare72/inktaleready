@@ -4,7 +4,7 @@ import { InstrumentationProvider } from "@/instrumentation.tsx";
 import AuthPage from "@/pages/Auth.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
-import { StrictMode, useEffect } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation, Navigate, useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
@@ -168,7 +168,14 @@ function HomeGate() {
 
 function SplashOverlay() {
   const { isLoading } = useAuth();
-  if (!isLoading) return null;
+  // Hold the splash a bit longer even after auth finishes
+  const [hold, setHold] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setHold(false), 2800); // keep for ~2.8s total
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!isLoading && !hold) return null;
 
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black">
