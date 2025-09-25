@@ -4,11 +4,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, Home } from "lucide-react";
+import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, Home, Plus } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export default function Story() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +22,13 @@ export default function Story() {
   const readingProgress = useQuery(api.readingProgress.getProgress, id ? { storyId: id as any } : "skip");
   
   const toggleFollow = useMutation(api.stories.toggleStoryFollow);
+  const readingLists = useQuery(api.library.listMyLists, isAuthenticated ? {} : "skip");
+  const createList = useMutation(api.library.createList);
+  const addToList = useMutation(api.library.addToList);
+
+  const [showAddToList, setShowAddToList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [newListPublic, setNewListPublic] = useState(false);
 
   // Load similar stories by genre (exclude current later in render)
   const similar = useQuery(
@@ -80,6 +89,47 @@ export default function Story() {
       toast.success("Story link copied to clipboard!");
     } catch {
       toast.error("Failed to copy link");
+    }
+  };
+
+  const openAddToList = () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to manage reading lists");
+      navigate("/auth");
+      return;
+    }
+    setShowAddToList(true);
+  };
+
+  const handleAddToExisting = async (listId: string) => {
+    if (!id) return;
+    try {
+      await addToList({ listId: listId as any, storyId: id as any });
+      toast.success("Added to reading list");
+      setShowAddToList(false);
+    } catch {
+      toast.error("Failed to add to list");
+    }
+  };
+
+  const handleCreateAndAdd = async () => {
+    if (!newListName.trim()) {
+      toast.error("Please enter a list name");
+      return;
+    }
+    if (!id) return;
+    try {
+      const listId = await createList({
+        name: newListName.trim(),
+        isPublic: newListPublic,
+      });
+      await addToList({ listId: listId as any, storyId: id as any });
+      toast.success("List created and story added");
+      setNewListName("");
+      setNewListPublic(false);
+      setShowAddToList(false);
+    } catch {
+      toast.error("Failed to create list");
     }
   };
 
@@ -197,6 +247,14 @@ export default function Story() {
                   Library
                 </>
               )}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full"
+              onClick={openAddToList}
+            >
+              <Plus className="w-4 h-4" />
             </Button>
           </div>
 
@@ -351,6 +409,83 @@ export default function Story() {
           </div>
         )}
       </div>
+
+      <Dialog open={showAddToList} onOpenChange={setShowAddToList}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add to Reading List</DialogTitle>
+          </DialogHeader>
+
+          {/* Loading state */}
+          {readingLists === undefined ? (
+            <div className="py-6 text-sm text-muted-foreground">Loading your lists…</div>
+          ) : readingLists.length > 0 ? (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Select a list to add this story:
+              </div>
+              <div className="max-h-72 overflow-y-auto divide-y rounded-md border">
+                {readingLists.map((list) => (
+                  <div key={list._id} className="p-3 flex items-center justify-between">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{list.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {list.storyCount} {list.storyCount === 1 ? "story" : "stories"} · {list.isPublic ? "Public" : "Private"}
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => handleAddToExisting(list._id as any)}>
+                      Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t pt-3 space-y-3">
+                <div className="text-sm font-medium">Or create a new list</div>
+                <Input
+                  placeholder="List name"
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                />
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={newListPublic}
+                    onChange={(e) => setNewListPublic(e.target.checked)}
+                  />
+                  Make this list public
+                </label>
+                <div className="flex justify-end">
+                  <Button onClick={handleCreateAndAdd}>Create & Add</Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // No lists yet
+            <div className="space-y-3">
+              <div className="text-sm">
+                You don't have any reading lists yet. Create one to add this story.
+              </div>
+              <Input
+                placeholder="List name"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+              />
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={newListPublic}
+                  onChange={(e) => setNewListPublic(e.target.checked)}
+                />
+                Make this list public
+              </label>
+              <div className="flex justify-end">
+                <Button onClick={handleCreateAndAdd}>Create & Add</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
