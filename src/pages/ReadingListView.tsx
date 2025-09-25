@@ -1,9 +1,11 @@
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { ChevronLeft, BookOpen } from "lucide-react";
+import { ChevronLeft, BookOpen, Eye, Star, List as ListIcon, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router";
 
 // Minimal, borderless row component (same visual as Library/Search)
@@ -11,18 +13,24 @@ function StoryRow({
   story,
   onClick,
   relTimeFn,
+  onRemove,
 }: {
   story: any;
   onClick: (id: string) => void;
   relTimeFn: (ts?: number) => string;
+  onRemove: (id: string) => Promise<void>;
 }) {
+  const maxChips = 3;
+  const tags: Array<string> = Array.isArray(story.tags) ? story.tags : [];
+  const extraCount = tags.length > maxChips ? tags.length - maxChips : 0;
+
   return (
     <div
       className="w-full cursor-pointer py-4 hover:bg-muted/40 transition-colors"
       onClick={() => onClick(story._id)}
     >
       <div className="flex items-start gap-4">
-        <div className="h-20 w-16 overflow-hidden rounded-md bg-muted flex-shrink-0">
+        <div className="h-24 w-20 overflow-hidden rounded-md bg-muted flex-shrink-0">
           {story.coverImage ? (
             <img
               src={story.coverImage}
@@ -45,41 +53,66 @@ function StoryRow({
             <h3 className="font-semibold text-base leading-snug line-clamp-1">
               {story.title}
             </h3>
-            {story.genre && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/60 capitalize whitespace-nowrap">
-                {story.genre}
-              </span>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="shrink-0 p-2 rounded-md hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Story options"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onClick={() => onClick(story._id)}>Open</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={async () => {
+                    await onRemove(story._id);
+                  }}
+                >
+                  Remove from list
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+          <div className="mt-1 text-xs text-muted-foreground line-clamp-1">
             by {story.author?.name || "Anonymous"}
-          </p>
+          </div>
+
+          <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-4">
+            <span className="inline-flex items-center gap-1">
+              <Eye className="h-3.5 w-3.5" />
+              {story.totalViews?.toLocaleString?.() ?? story.totalViews ?? 0}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Star className="h-3.5 w-3.5" />
+              {story.totalLikes?.toLocaleString?.() ?? story.totalLikes ?? 0}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <ListIcon className="h-3.5 w-3.5" />
+              {story.totalChapters ?? 0}
+            </span>
+          </div>
 
           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
             {story.description}
           </p>
 
-          <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>
-              {story.totalChapters} chapter{story.totalChapters === 1 ? "" : "s"}
-            </span>
-            <span>•</span>
-            <span>Uploaded {relTimeFn(story.lastUpdated)}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 5c-7.633 0-10 7-10 7s2.367 7 10 7 10-7 10-7-2.367-7-10-7zm0 12c-2.761 0-5-2.239-5-5s2.239-5 5-5 5 2.239 5 5-2.239 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z" />
-              </svg>
-              {story.totalViews}
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-              {story.totalLikes}
-            </span>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {tags.slice(0, maxChips).map((t) => (
+              <span
+                key={t}
+                className="px-2 py-0.5 rounded-full bg-muted text-foreground/80 text-[11px]"
+              >
+                {t}
+              </span>
+            ))}
+            {extraCount > 0 && (
+              <span className="text-[11px] text-muted-foreground">+{extraCount} more</span>
+            )}
           </div>
         </div>
       </div>
@@ -92,6 +125,8 @@ export default function ReadingListView() {
   const { id } = useParams<{ id: string }>();
 
   const list = useQuery(api.library.getListById, id ? { listId: id as any } : "skip");
+
+  const removeFromList = useMutation(api.library.removeFromList);
 
   const relTime = (ts?: number) => {
     if (!ts) return "";
@@ -111,6 +146,16 @@ export default function ReadingListView() {
 
   const handleStoryClick = (storyId: string) => {
     navigate(`/story/${storyId}`);
+  };
+
+  const handleRemoveFromThisList = async (storyId: string) => {
+    if (!id) return;
+    try {
+      await removeFromList({ listId: id as any, storyId: storyId as any });
+      toast.success("Removed from list");
+    } catch {
+      toast.error("Failed to remove from list");
+    }
   };
 
   if (list === undefined) {
@@ -161,7 +206,13 @@ export default function ReadingListView() {
             {list.stories?.length > 0 ? (
               <div className="divide-y divide-border">
                 {list.stories.map((story: any) => (
-                  <StoryRow key={story._id} story={story} onClick={handleStoryClick} relTimeFn={relTime} />
+                  <StoryRow
+                    key={story._id}
+                    story={story}
+                    onClick={handleStoryClick}
+                    relTimeFn={relTime}
+                    onRemove={handleRemoveFromThisList}
+                  />
                 ))}
               </div>
             ) : (
