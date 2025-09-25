@@ -117,6 +117,12 @@ function StoryTile({
   story: any;
   onClick: (id: string) => void;
 }) {
+  // Normalize a progress percentage if available on the story object (0–100)
+  const progress: number =
+    typeof (story as any)?.progress === "number"
+      ? Math.max(0, Math.min(100, (story as any).progress))
+      : 0;
+
   return (
     <button
       className="text-left"
@@ -140,7 +146,20 @@ function StoryTile({
           <div className="h-full w-full grid place-items-center bg-gradient-to-br from-purple-400 to-pink-400" />
         )}
       </div>
-      <div className="mt-2 text-sm font-medium leading-tight line-clamp-2">
+
+      {/* Progress bar under cover */}
+      <div className="mt-2">
+        <div className="h-1.5 w-full rounded-full bg-muted/70 overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all"
+            style={{ width: `${progress}%` }}
+            aria-label="Reading progress"
+          />
+        </div>
+      </div>
+
+      {/* Title with fixed height to keep rows aligned (2 lines max) */}
+      <div className="mt-2 text-sm font-medium leading-tight line-clamp-2 min-h-[2.5rem]">
         {story.title}
       </div>
     </button>
