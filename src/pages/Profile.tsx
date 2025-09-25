@@ -368,26 +368,20 @@ export default function Profile() {
 
               {/* Stories */}
               <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2 mb-6">
                   <h2 className="text-2xl font-bold">
                     {isOwnProfile ? "My Stories" : "Stories"}
                   </h2>
-                  {/* Remove right-corner Open; replaced with inline arrow next to title when own profile */}
-                </div>
-
-                {/* Inline arrow beside title for owner */}
-                {isOwnProfile && (
-                  <div className="mb-3 -mt-4">
+                  {isOwnProfile && (
                     <button
                       onClick={() => navigate("/profile/stories")}
-                      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
                       aria-label="Open all my stories"
                     >
-                      <span>Open</span>
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-5 w-5" />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Horizontal scroller like Home */}
                 {storiesToShow.length > 0 ? (
@@ -439,13 +433,8 @@ export default function Profile() {
 
               {/* Following grid (preview) */}
               <div className="px-4 sm:px-6 mt-10 mb-8">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 mb-4">
                   <h2 className="text-2xl font-bold">Following</h2>
-                  {/* Remove right-corner Open */}
-                </div>
-
-                {/* Inline arrow beside title */}
-                <div className="-mt-3 mb-3">
                   <button
                     onClick={() => {
                       if (isOwnProfile) {
@@ -454,13 +443,13 @@ export default function Profile() {
                         setOpenFollowing(true);
                       }
                     }}
-                    className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Open full following list"
                   >
-                    <span>Open</span>
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
+
                 {followingList === undefined ? (
                   <div className="text-sm text-muted-foreground">Loading...</div>
                 ) : followingList.length === 0 ? (
