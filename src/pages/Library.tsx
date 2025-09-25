@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MoreVertical, List as ListIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // Add: Minimal, borderless row component like Search list
 function StoryRow({
@@ -374,7 +375,7 @@ export default function Library() {
               {readingLists?.map((list) => (
                 <Card
                   key={list._id}
-                  className="cursor-pointer transition-all hover:shadow-lg border-2 rounded-2xl"
+                  className="group cursor-pointer transition-all hover:shadow-xl border rounded-2xl"
                   onClick={() => navigate(`/library/list/${list._id}`)}
                 >
                   <CardHeader className="flex flex-row items-start justify-between space-y-0">
@@ -382,7 +383,7 @@ export default function Library() {
                       <ListIcon className="h-5 w-5" />
                       <span className="truncate">{list.name}</span>
                     </CardTitle>
-
+                    
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -437,12 +438,14 @@ export default function Library() {
                     </DropdownMenu>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <p className="text-sm text-muted-foreground mb-1">
-                      {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {list.isPublic ? "Public" : "Private"} list
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+                        {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
+                      </Badge>
+                      <Badge className={`rounded-full px-2.5 py-1 text-xs ${list.isPublic ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-slate-500/15 text-slate-600 dark:text-slate-300"}`}>
+                        {list.isPublic ? "Public" : "Private"}
+                      </Badge>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
