@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { useState } from "react";
 
 function UserRow({ u, onOpen, isFollowing, onToggle }: {
   u: any;
@@ -46,6 +47,8 @@ function UserRow({ u, onOpen, isFollowing, onToggle }: {
 export default function FollowingList() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  // Ensure the tabs are visible immediately without scrolling
+  const [tab, setTab] = useState<"followers" | "following">("following");
 
   // Fetch both lists
   const following = useQuery(
@@ -77,23 +80,28 @@ export default function FollowingList() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-3 flex items-center">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back
-          </Button>
-          <div className="ml-2 font-semibold">Connections</div>
+      {/* Wrap header + content in Tabs so the tab bar stays in the sticky header */}
+      <Tabs value={tab} onValueChange={(v:any)=>setTab(v)} className="w-full">
+        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center">
+              <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
+              <div className="ml-2 font-semibold">Connections</div>
+            </div>
+            {/* Tabs visible immediately under the header without scrolling */}
+            <div className="mt-3">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="followers">Followers</TabsTrigger>
+                <TabsTrigger value="following">Following</TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-4 pb-28">
-        <Tabs defaultValue="following" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="followers">Followers</TabsTrigger>
-            <TabsTrigger value="following">Following</TabsTrigger>
-          </TabsList>
-
+        <div className="container mx-auto px-4 py-3 pb-28">
           <TabsContent value="followers" className="mt-4">
             {followers === undefined ? (
               <div className="text-sm text-muted-foreground py-8 text-center">Loading...</div>
@@ -133,8 +141,8 @@ export default function FollowingList() {
               </div>
             )}
           </TabsContent>
-        </Tabs>
-      </div>
+        </div>
+      </Tabs>
     </motion.div>
   );
 }
