@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, BookOpen, Eye, Star, List as ListIcon, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 
 // Minimal, borderless row component (same visual as Library/Search)
 function StoryRow({
@@ -120,10 +120,24 @@ function StoryRow({
 export default function ReadingListView() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const fromProfile = (location.state as any)?.from === "profile";
+  const profileId = (location.state as any)?.profileId as string | undefined;
 
   const list = useQuery(api.library.getListById, id ? { listId: id as any } : "skip");
 
   const removeFromList = useMutation(api.library.removeFromList);
+  const handleBack = () => {
+    if (fromProfile) {
+      if (profileId) {
+        navigate(`/profile/${profileId}`);
+      } else {
+        navigate("/profile");
+      }
+    } else {
+      navigate("/library");
+    }
+  };
 
   const relTime = (ts?: number) => {
     if (!ts) return "";
@@ -186,7 +200,7 @@ export default function ReadingListView() {
       {/* Top bar with back button */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/library")}>
+          <Button variant="ghost" size="sm" onClick={handleBack}>
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back
           </Button>

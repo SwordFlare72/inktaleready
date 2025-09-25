@@ -486,7 +486,16 @@ export default function Profile() {
                         <div className="flex items-center justify-between mb-2">
                           {/* Name with arrow that opens full list page */}
                           <button
-                            onClick={() => navigate(`/library/list/${list._id}`)}
+                            onClick={() =>
+                              navigate(`/library/list/${list._id}`, {
+                                state: {
+                                  from: "profile" as const,
+                                  profileId: isOwnProfile && currentUser
+                                    ? (currentUser._id as string)
+                                    : (targetUserId as string | undefined),
+                                },
+                              })
+                            }
                             className="inline-flex items-center gap-2 text-lg font-semibold hover:underline"
                           >
                             <span>{list.name}</span>
