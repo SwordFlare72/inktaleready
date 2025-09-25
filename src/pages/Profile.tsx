@@ -133,7 +133,10 @@ export default function Profile() {
   const displayUser = isOwnProfile ? currentUser : profileUser;
 
   const readingListCount = Array.isArray(publicLists) ? publicLists.length : 0;
-  const followerCount = typeof displayUser?.totalFollowers === "number" ? displayUser.totalFollowers : 0;
+  // Fix follower count on own profile: compute from followersList length; otherwise use public field
+  const followerCount = isOwnProfile
+    ? (Array.isArray(followersList) ? followersList.length : 0)
+    : (typeof displayUser?.totalFollowers === "number" ? displayUser.totalFollowers : 0);
 
   // Announcements data and actions
   const announcements = useQuery(
