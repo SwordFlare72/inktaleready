@@ -235,3 +235,40 @@ export const listPublicListsByUser = query({
     );
   },
 });
+
+// Add: rename a reading list
+export const renameList = mutation({
+  args: {
+    listId: v.id("readingLists"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Must be authenticated");
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.userId !== user._id) {
+      throw new Error("Reading list not found");
+    }
+
+    await ctx.db.patch(args.listId, { name: args.name.trim() });
+  },
+});
+
+// Add: delete a reading list
+export const deleteList = mutation({
+  args: {
+    listId: v.id("readingLists"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Must be authenticated");
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.userId !== user._id) {
+      throw new Error("Reading list not found");
+    }
+
+    await ctx.db.delete(args.listId);
+  },
+});

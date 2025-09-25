@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog as UIDialog, DialogContent as UIDialogContent, DialogHeader as UIDialogHeader, DialogTitle as UIDialogTitle, DialogTrigger as UIDialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
@@ -12,6 +12,9 @@ import { BookOpen, Clock, Plus, List } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { MoreVertical, List as ListIcon } from "lucide-react";
 
 // Add: Minimal, borderless row component like Search list
 function StoryRow({
@@ -112,6 +115,10 @@ export default function Library() {
   const [newListName, setNewListName] = useState("");
   const [newListPublic, setNewListPublic] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
+  const [openListId, setOpenListId] = useState<string | null>(null);
+  const [showRename, setShowRename] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const follows = useQuery(api.library.listFollows, 
     isAuthenticated ? {
@@ -129,6 +136,8 @@ export default function Library() {
   const readingLists = useQuery(api.library.listMyLists, isAuthenticated ? {} : "skip");
 
   const createList = useMutation(api.library.createList);
+  const renameList = useMutation(api.library.renameList);
+  const deleteList = useMutation(api.library.deleteList);
 
   const handleCreateList = async () => {
     if (!newListName.trim()) {
@@ -165,6 +174,24 @@ export default function Library() {
     if (months < 12) return `${months} month${months === 1 ? "" : "s"} ago`;
     const years = Math.floor(months / 12);
     return `${years} year${years === 1 ? "" : "s"} ago`;
+  };
+
+  const selectedList = (readingLists || []).find((l) => l._id === openListId);
+
+  const handleShareList = async (list: any) => {
+    const shareText = `Reading List: ${list.name} • ${list.storyCount} ${list.storyCount === 1 ? "story" : "stories"}\n` +
+      (list.stories?.slice(0, 10).map((s: any, i: number) => `${i + 1}. ${s.title} — ${s.author?.name ?? "Anonymous"}`).join("\n") || "");
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: list.name, text: shareText });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        toast.success("Reading list details copied");
+      }
+    } catch {
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Reading list details copied");
+    }
   };
 
   if (!isAuthenticated) {
@@ -273,17 +300,17 @@ export default function Library() {
           <TabsContent value="lists" className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Reading Lists</h2>
-              <Dialog open={showCreateList} onOpenChange={setShowCreateList}>
-                <DialogTrigger asChild>
+              <UIDialog open={showCreateList} onOpenChange={setShowCreateList}>
+                <UIDialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Create List
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create Reading List</DialogTitle>
-                  </DialogHeader>
+                </UIDialogTrigger>
+                <UIDialogContent>
+                  <UIDialogHeader>
+                    <UIDialogTitle>Create Reading List</UIDialogTitle>
+                  </UIDialogHeader>
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium mb-2 block">List Name</label>
@@ -309,25 +336,83 @@ export default function Library() {
                       <Button onClick={handleCreateList}>Create List</Button>
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
+                </UIDialogContent>
+              </UIDialog>
             </div>
 
+            {/* Improved list cards with menu and open-on-click */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {readingLists?.map((list) => (
-                <Card key={list._id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardHeader>
+                <Card
+                  key={list._id}
+                  className="cursor-pointer transition-all hover:shadow-lg border-2 rounded-2xl"
+                  onClick={() => setOpenListId(list._id as string)}
+                >
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0">
                     <CardTitle className="flex items-center gap-2">
-                      <List className="h-5 w-5" />
-                      {list.name}
+                      <ListIcon className="h-5 w-5" />
+                      <span className="truncate">{list.name}</span>
                     </CardTitle>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenListId(list._id as string);
+                          }}
+                        >
+                          Open
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRenameValue(list.name);
+                            setOpenListId(list._id as string);
+                            setShowRename(true);
+                          }}
+                        >
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await handleShareList(list);
+                          }}
+                        >
+                          Share
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteId(list._id as string);
+                          }}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {list.storyCount} {list.storyCount === 1 ? 'story' : 'stories'}
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {list.isPublic ? 'Public' : 'Private'} list
+                      {list.isPublic ? "Public" : "Private"} list
                     </p>
                   </CardContent>
                 </Card>
@@ -345,6 +430,104 @@ export default function Library() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* View List Dialog */}
+        <UIDialog open={!!openListId} onOpenChange={(o) => !o && setOpenListId(null)}>
+          <UIDialogContent className="max-w-2xl">
+            <UIDialogHeader>
+              <UIDialogTitle>{selectedList?.name || "Reading List"}</UIDialogTitle>
+            </UIDialogHeader>
+            {!selectedList ? (
+              <div className="py-6 text-sm text-muted-foreground">Loading list…</div>
+            ) : selectedList.stories?.length > 0 ? (
+              <div className="divide-y divide-border">
+                {selectedList.stories.map((story: any) => (
+                  <StoryRow
+                    key={story._id}
+                    story={story}
+                    onClick={(id) => {
+                      setOpenListId(null);
+                      navigate(`/story/${id}`);
+                    }}
+                    relTimeFn={relTime}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-sm text-muted-foreground">No stories in this list</div>
+            )}
+          </UIDialogContent>
+        </UIDialog>
+
+        {/* Rename Dialog */}
+        <UIDialog open={showRename} onOpenChange={setShowRename}>
+          <UIDialogContent className="max-w-sm">
+            <UIDialogHeader>
+              <UIDialogTitle>Rename Reading List</UIDialogTitle>
+            </UIDialogHeader>
+            <div className="space-y-3">
+              <Input
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                placeholder="New list name"
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowRename(false)}>Cancel</Button>
+                <Button
+                  onClick={async () => {
+                    if (!openListId) return;
+                    const name = renameValue.trim();
+                    if (!name) {
+                      toast.error("Enter a list name");
+                      return;
+                    }
+                    try {
+                      await renameList({ listId: openListId as any, name });
+                      toast.success("List renamed");
+                      setShowRename(false);
+                    } catch {
+                      toast.error("Failed to rename list");
+                    }
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </UIDialogContent>
+        </UIDialog>
+
+        {/* Delete Confirm */}
+        <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this reading list?</AlertDialogTitle>
+            </AlertDialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This action cannot be undone.
+            </p>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={async () => {
+                  if (!deleteId) return;
+                  try {
+                    await deleteList({ listId: deleteId as any });
+                    toast.success("Reading list deleted");
+                  } catch {
+                    toast.error("Failed to delete list");
+                  } finally {
+                    setDeleteId(null);
+                    if (openListId === deleteId) setOpenListId(null);
+                  }
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </motion.div>
   );
