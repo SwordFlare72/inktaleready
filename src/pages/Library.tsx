@@ -375,7 +375,7 @@ export default function Library() {
               {readingLists?.map((list) => (
                 <Card
                   key={list._id}
-                  className="group cursor-pointer transition-all hover:shadow-xl border rounded-2xl"
+                  className="group cursor-pointer transition-all border-2 rounded-3xl bg-background/60 dark:bg-background/40 backdrop-blur-sm hover:border-primary/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
                   onClick={() => navigate(`/library/list/${list._id}`)}
                 >
                   <CardHeader className="flex flex-row items-start justify-between space-y-0">
