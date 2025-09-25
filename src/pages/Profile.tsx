@@ -465,11 +465,11 @@ export default function Profile() {
                         onClick={() => navigate(`/profile/${u._id}`)}
                       >
                         <div className="flex flex-col items-center gap-2">
-                          <Avatar className="h-12 w-12">
+                          <Avatar className="h-14 w-14">
                             <AvatarImage src={u.image} />
                             <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
                           </Avatar>
-                          <div className="text-xs line-clamp-1">{u.name || "User"}</div>
+                          <div className="text-sm md:text-base font-semibold line-clamp-1">{u.name || "User"}</div>
                         </div>
                       </button>
                     ))}
@@ -478,7 +478,7 @@ export default function Profile() {
                         onClick={() => setOpenFollowing(true)}
                         className="w-24 flex-shrink-0 snap-start text-center"
                       >
-                        <div className="h-12 w-12 rounded-full border grid place-items-center text-xs">
+                        <div className="h-14 w-14 rounded-full border grid place-items-center text-sm">
                           View All
                         </div>
                         <div className="text-xs mt-2 text-muted-foreground">+{followingList.length - 10} more</div>
