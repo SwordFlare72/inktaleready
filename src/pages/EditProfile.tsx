@@ -307,11 +307,8 @@ export default function EditProfile() {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
                           setBannerUrl(url);
-                          // Immediately save banner to backend
-                          try {
-                            await updateMe({ bannerImage: url });
-                          } catch {}
-                          toast.success("Background image uploaded");
+                          // Do NOT save immediately; wait for user to click "Save Changes"
+                          toast.success("Background image selected. Click 'Save Changes' to apply.");
                         } catch {
                           toast.error("Upload failed");
                         } finally {
