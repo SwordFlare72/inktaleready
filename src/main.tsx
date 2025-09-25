@@ -28,6 +28,8 @@ import ChapterEditor from "./pages/ChapterEditor.tsx";
 import StoryChaptersManage from "./pages/StoryChaptersManage.tsx";
 import EditProfile from "./pages/EditProfile.tsx";
 import ReadingListView from "./pages/ReadingListView.tsx";
+import MyStoriesList from "./pages/MyStoriesList.tsx";
+import FollowingList from "./pages/FollowingList.tsx";
 import { motion } from "framer-motion";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -128,6 +130,10 @@ function BottomNavGate() {
   // Add: Hide nav on a dedicated reading list page
   const onReadingListView = location.pathname.startsWith("/library/list/");
 
+  // Add: Hide nav on dedicated "My Stories" and "Following" pages
+  const onProfileStories = location.pathname.startsWith("/profile/stories");
+  const onProfileFollowing = location.pathname.startsWith("/profile/following");
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
@@ -136,7 +142,9 @@ function BottomNavGate() {
     onReader ||
     otherUsersProfile ||
     onMessages ||
-    onReadingListView
+    onReadingListView ||
+    onProfileStories ||
+    onProfileFollowing
   ) return null;
 
   return <BottomNav />;
@@ -228,6 +236,12 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/profile/:id" element={<Profile />} />
             <Route path="/profile/edit" element={
               <ProtectedRoute><EditProfile /></ProtectedRoute>
+            } />
+            <Route path="/profile/stories" element={
+              <ProtectedRoute><MyStoriesList /></ProtectedRoute>
+            } />
+            <Route path="/profile/following" element={
+              <ProtectedRoute><FollowingList /></ProtectedRoute>
             } />
             <Route path="/earnings" element={
               <ProtectedRoute><Earnings /></ProtectedRoute>

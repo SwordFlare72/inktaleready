@@ -372,18 +372,22 @@ export default function Profile() {
                   <h2 className="text-2xl font-bold">
                     {isOwnProfile ? "My Stories" : "Stories"}
                   </h2>
-                  {/* Show arrow only for own profile to manage full list on /write */}
-                  {isOwnProfile && (
+                  {/* Remove right-corner Open; replaced with inline arrow next to title when own profile */}
+                </div>
+
+                {/* Inline arrow beside title for owner */}
+                {isOwnProfile && (
+                  <div className="mb-3 -mt-4">
                     <button
-                      onClick={() => navigate("/write")}
+                      onClick={() => navigate("/profile/stories")}
                       className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       aria-label="Open all my stories"
                     >
                       <span>Open</span>
                       <ChevronRight className="h-4 w-4" />
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Horizontal scroller like Home */}
                 {storiesToShow.length > 0 ? (
@@ -437,12 +441,17 @@ export default function Profile() {
               <div className="px-4 sm:px-6 mt-10 mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold">Following</h2>
+                  {/* Remove right-corner Open */}
+                </div>
+
+                {/* Inline arrow beside title */}
+                <div className="-mt-3 mb-3">
                   <button
                     onClick={() => {
                       if (isOwnProfile) {
-                        navigate("/library"); // opens Library (default tab: Following)
+                        navigate("/profile/following");
                       } else {
-                        setOpenFollowing(true); // for other profiles, open the full list dialog
+                        setOpenFollowing(true);
                       }
                     }}
                     className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
