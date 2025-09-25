@@ -130,7 +130,7 @@ export default function Landing() {
                 className="w-32 flex-shrink-0 snap-start text-left"
               >
                 <div className="relative">
-                  <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
+                  <div className="aspect-[3/4] w/full overflow-hidden rounded-lg bg-muted">
                     {story.coverImage ? (
                       <img
                         src={story.coverImage}
@@ -150,9 +150,9 @@ export default function Landing() {
                     </div>
                   </div>
                 </div>
+                {/* Fixed-height title block for perfect row alignment */}
                 <div className="mt-2">
-                  {/* Increase title size and keep only the title (no author line) */}
-                  <div className="text-lg font-semibold leading-tight line-clamp-2">
+                  <div className="text-lg font-semibold leading-tight line-clamp-2 min-h-[2.5rem]">
                     {story.title}
                   </div>
                 </div>
