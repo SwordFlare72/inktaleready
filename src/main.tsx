@@ -171,7 +171,8 @@ function SplashOverlay() {
   // Hold the splash a bit longer even after auth finishes
   const [hold, setHold] = useState(true);
   useEffect(() => {
-    const t = setTimeout(() => setHold(false), 2800); // keep for ~2.8s total
+    // Increase total splash time to ~3s
+    const t = setTimeout(() => setHold(false), 3000);
     return () => clearTimeout(t);
   }, []);
 
@@ -194,7 +195,8 @@ function SplashOverlay() {
             height={120}
             className="rounded-2xl shadow-lg object-cover absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
             initial={{ scale: 0.9, x: 0 }}
-            animate={{ scale: 1, x: -80 }}
+            // Decrease left shift slightly to reduce spacing to the text
+            animate={{ scale: 1, x: -70 }}
             transition={{ duration: 2.2, ease: [0.25, 0.1, 0.25, 1] }}
           />
 
@@ -204,7 +206,8 @@ function SplashOverlay() {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7, duration: 1.2, ease: 'easeOut' }}
-            style={{ marginLeft: 10 }}
+            // Bring the text closer to the logo
+            style={{ marginLeft: 6 }}
           >
             InkTale
           </motion.span>
