@@ -442,25 +442,35 @@ export default function Story() {
               <div className="text-sm text-muted-foreground">
                 Tap a list to add or remove this story:
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y rounded-md border">
+              <div className="max-h-72 overflow-y-auto space-y-3">
                 {readingLists.map((list) => {
                   const included =
                     Array.isArray(list.storyIds) && id ? list.storyIds.includes(id as any) : false;
                   return (
                     <button
                       key={list._id}
-                      className="w-full p-3 flex items-center justify-between hover:bg-accent/60 transition-colors text-left"
+                      className={`w-full p-4 flex items-center justify-between rounded-xl border-2 transition-all text-left
+                        ${included
+                          ? "border-emerald-500/70 bg-emerald-500/5 hover:bg-emerald-500/10"
+                          : "border-border hover:bg-accent/60"
+                        }`}
                       onClick={() => handleToggleList(list)}
                     >
                       <div className="min-w-0">
-                        <div className="font-medium truncate">{list.name}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="font-semibold text-base truncate">{list.name}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
                           {list.storyCount} {list.storyCount === 1 ? "story" : "stories"} · {list.isPublic ? "Public" : "Private"}
                         </div>
                       </div>
-                      {included && (
-                        <Check className="h-5 w-5 text-primary shrink-0" />
-                      )}
+                      <div
+                        className={`shrink-0 h-7 w-7 rounded-full grid place-items-center transition-colors
+                          ${included
+                            ? "bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-md"
+                            : "border border-muted-foreground/30 bg-background"
+                          }`}
+                      >
+                        {included && <Check className="h-4 w-4" />}
+                      </div>
                     </button>
                   );
                 })}
