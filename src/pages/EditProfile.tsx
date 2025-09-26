@@ -289,9 +289,10 @@ export default function EditProfile() {
                         try {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
-                          const clean = normalizeUrl(url);
-                          setImageUrl(clean); // store clean URL
-                          setPreviewImageUrl(withBust(clean)); // show fresh in UI
+                          // Save full signed URL (with query params). Do NOT strip query.
+                          setImageUrl(url);
+                          // Use a cache-busted preview to reflect immediately
+                          setPreviewImageUrl(withBust(url));
                           toast.success("Profile image selected. Click 'Save Changes' to apply.");
                         } catch (err: any) {
                           const msg = String(err?.message || "");
@@ -356,9 +357,10 @@ export default function EditProfile() {
                         try {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
-                          const clean = normalizeUrl(url);
-                          setBannerUrl(clean); // store clean URL
-                          setPreviewBannerUrl(withBust(clean)); // show fresh in UI
+                          // Save full signed URL (with query params). Do NOT strip query.
+                          setBannerUrl(url);
+                          // Use a cache-busted preview to reflect immediately
+                          setPreviewBannerUrl(withBust(url));
                           toast.success("Background image selected. Click 'Save Changes' to apply.");
                         } catch (err: any) {
                           const msg = String(err?.message || "");
