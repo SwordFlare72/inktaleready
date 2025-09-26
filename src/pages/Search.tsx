@@ -41,7 +41,8 @@ function StoryRow({
       onClick={() => onClick(story._id)}
     >
       <div className="flex items-start gap-4">
-        <div className="h-20 w-16 overflow-hidden rounded-md bg-muted flex-shrink-0">
+        {/* Make cover slightly larger for better visibility */}
+        <div className="h-24 w-20 overflow-hidden rounded-md bg-muted flex-shrink-0">
           {story.coverImage ? (
             <img
               src={story.coverImage}
@@ -61,7 +62,8 @@ function StoryRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-base leading-snug line-clamp-1">
+            {/* Increase title size */}
+            <h3 className="font-semibold text-lg leading-snug line-clamp-1">
               {story.title}
             </h3>
             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/60 capitalize whitespace-nowrap">
@@ -69,6 +71,7 @@ function StoryRow({
             </span>
           </div>
 
+          {/* Keep author line but slightly larger spacing overall */}
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
             by {story.author?.name || "Anonymous"}
           </p>
@@ -77,7 +80,8 @@ function StoryRow({
             {story.description}
           </p>
 
-          <div className="mt-2 text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+          {/* Increase meta size for readability */}
+          <div className="mt-2 text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>
               {story.totalChapters} chapter{story.totalChapters === 1 ? "" : "s"}
             </span>

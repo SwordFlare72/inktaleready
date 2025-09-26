@@ -121,9 +121,9 @@ export default function Landing() {
           )}
         </div>
         {items === undefined ? (
-          <div className="h-36 flex gap-3 overflow-hidden">
+          <div className="h-40 flex gap-3 overflow-hidden">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="w-28 flex-shrink-0">
+              <div key={i} className="w-32 flex-shrink-0">
                 <div className="aspect-[3/4] rounded-md bg-muted animate-pulse" />
                 <div className="h-3 mt-2 rounded bg-muted animate-pulse" />
               </div>
@@ -137,7 +137,7 @@ export default function Landing() {
               <button
                 key={story._id ?? idx}
                 onClick={() => navigate(`/story/${story._id}`)}
-                className="w-32 flex-shrink-0 snap-start text-left"
+                className="w-36 flex-shrink-0 snap-start text-left"
               >
                 <div className="relative">
                   <div className="aspect-[3/4] w/full overflow-hidden rounded-lg bg-muted">
@@ -160,9 +160,9 @@ export default function Landing() {
                     </div>
                   </div>
                 </div>
-                {/* Fixed-height title block for perfect row alignment */}
+                {/* Fixed-height title block for perfect row alignment, keep bigger */}
                 <div className="mt-2">
-                  <div className="text-lg font-semibold leading-tight line-clamp-2 min-h-[2.5rem]">
+                  <div className="text-lg font-semibold leading-tight line-clamp-2 min-h-[2.75rem]">
                     {story.title}
                   </div>
                 </div>
