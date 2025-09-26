@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -79,6 +80,21 @@ export default function EditProfile() {
     }
     return true;
   }
+
+  // Avatar cropper states
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string>("");
+  const cropImgRef = useRef<HTMLImageElement | null>(null);
+  const [cropScale, setCropScale] = useState(1);
+  const [cropOffset, setCropOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const cropDragRef = useRef<{ dragging: boolean; startX: number; startY: number; startOffX: number; startOffY: number }>({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    startOffX: 0,
+    startOffY: 0,
+  });
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (me) {
@@ -286,23 +302,16 @@ export default function EditProfile() {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         if (!validateFile(file, { maxMB: 5 })) return;
+                        // Open cropper dialog instead of immediate upload
                         try {
-                          setBusy(true);
-                          const url = await uploadFileAndGetUrl(file);
-                          // Save full signed URL (with query params). Do NOT strip query.
-                          setImageUrl(url);
-                          // Use a cache-busted preview to reflect immediately
-                          setPreviewImageUrl(withBust(url));
-                          toast.success("Profile image selected. Click 'Save Changes' to apply.");
-                        } catch (err: any) {
-                          const msg = String(err?.message || "");
-                          if (msg.toLowerCase().includes("permission")) {
-                            toast.error("Permission denied. Please allow photo access.");
-                          } else {
-                            toast.error("Upload failed");
-                          }
-                        } finally {
-                          setBusy(false);
+                          const src = URL.createObjectURL(file);
+                          setPendingAvatarFile(file);
+                          setCropSrc(src);
+                          setCropScale(1);
+                          setCropOffset({ x: 0, y: 0 });
+                          setCropOpen(true);
+                        } catch {
+                          toast.error("Could not open image");
                         }
                       }}
                     />
@@ -515,6 +524,162 @@ export default function EditProfile() {
               </Button>
               <Button onClick={handleChangeEmail} disabled={emailBusy || !newEmail.trim() || !confirmPassword.trim()}>
                 {emailBusy ? "Updating..." : "Change"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Avatar Cropper Dialog */}
+      <Dialog open={cropOpen} onOpenChange={(o) => setCropOpen(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crop your avatar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div
+              className="mx-auto size-64 rounded-full overflow-hidden bg-muted relative touch-none select-none"
+              onMouseDown={(e) => {
+                cropDragRef.current.dragging = true;
+                cropDragRef.current.startX = e.clientX;
+                cropDragRef.current.startY = e.clientY;
+                cropDragRef.current.startOffX = cropOffset.x;
+                cropDragRef.current.startOffY = cropOffset.y;
+              }}
+              onMouseMove={(e) => {
+                if (!cropDragRef.current.dragging) return;
+                const dx = e.clientX - cropDragRef.current.startX;
+                const dy = e.clientY - cropDragRef.current.startY;
+                setCropOffset({ x: cropDragRef.current.startOffX + dx, y: cropDragRef.current.startOffY + dy });
+              }}
+              onMouseUp={() => (cropDragRef.current.dragging = false)}
+              onMouseLeave={() => (cropDragRef.current.dragging = false)}
+              onTouchStart={(e) => {
+                const t = e.touches[0];
+                cropDragRef.current.dragging = true;
+                cropDragRef.current.startX = t.clientX;
+                cropDragRef.current.startY = t.clientY;
+                cropDragRef.current.startOffX = cropOffset.x;
+                cropDragRef.current.startOffY = cropOffset.y;
+              }}
+              onTouchMove={(e) => {
+                if (!cropDragRef.current.dragging) return;
+                const t = e.touches[0];
+                const dx = t.clientX - cropDragRef.current.startX;
+                const dy = t.clientY - cropDragRef.current.startY;
+                setCropOffset({ x: cropDragRef.current.startOffX + dx, y: cropDragRef.current.startOffY + dy });
+              }}
+              onTouchEnd={() => (cropDragRef.current.dragging = false)}
+            >
+              {cropSrc ? (
+                <img
+                  ref={cropImgRef}
+                  src={cropSrc}
+                  alt="Crop source"
+                  className="absolute left-1/2 top-1/2 pointer-events-none"
+                  style={{
+                    transform: `translate(-50%, -50%) translate(${cropOffset.x}px, ${cropOffset.y}px) scale(${cropScale})`,
+                    transformOrigin: "center center",
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">No image</div>
+              )}
+            </div>
+
+            <div className="px-1">
+              <div className="text-xs text-muted-foreground mb-1">Zoom</div>
+              <Slider
+                value={[cropScale]}
+                onValueChange={(v) => setCropScale(Math.min(5, Math.max(0.5, v[0] ?? 1)))}
+                min={0.5}
+                max={5}
+                step={0.01}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCropOpen(false);
+                  if (cropSrc) URL.revokeObjectURL(cropSrc);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    if (!cropImgRef.current) throw new Error("Image not ready");
+                    setBusy(true);
+                    // Render 512x512 square canvas
+                    const canvas = document.createElement("canvas");
+                    const size = 512;
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext("2d");
+                    if (!ctx) throw new Error("Canvas not supported");
+
+                    const img = cropImgRef.current;
+                    // Natural dimensions
+                    const iw = img.naturalWidth || img.width;
+                    const ih = img.naturalHeight || img.height;
+
+                    // Compute how the image is drawn in the preview box (256x256 logical) then map to canvas
+                    const previewBox = 256; // logical reference for calculations
+                    // Scale image to fit previewBox by its smaller side to mimic contain
+                    const baseScale = Math.max(previewBox / iw, previewBox / ih);
+                    const totalScale = baseScale * cropScale;
+
+                    // Translate offsets from preview space to image pixels
+                    const dx = (previewBox / 2 + cropOffset.x) - (iw * totalScale) / 2;
+                    const dy = (previewBox / 2 + cropOffset.y) - (ih * totalScale) / 2;
+
+                    // Now map previewBox -> canvas size
+                    const scaleToCanvas = size / previewBox;
+
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(0, 0, size, size);
+                    ctx.imageSmoothingQuality = "high";
+                    ctx.drawImage(
+                      img,
+                      0,
+                      0,
+                      iw,
+                      ih,
+                      dx * scaleToCanvas,
+                      dy * scaleToCanvas,
+                      iw * totalScale * scaleToCanvas,
+                      ih * totalScale * scaleToCanvas
+                    );
+
+                    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+                    if (!blob) throw new Error("Could not create image");
+                    // Create a File-like object for upload
+                    const file = new File([blob], (pendingAvatarFile?.name ?? "avatar") + ".jpg", { type: "image/jpeg" });
+
+                    const url = await uploadFileAndGetUrl(file);
+                    setImageUrl(url);
+                    setPreviewImageUrl(withBust(url));
+                    toast.success("Avatar updated. Click 'Save Changes' to apply.");
+                  } catch (e: any) {
+                    const msg = String(e?.message || "");
+                    if (msg.toLowerCase().includes("permission")) {
+                      toast.error("Permission denied. Please allow photo access.");
+                    } else {
+                      toast.error("Crop or upload failed");
+                    }
+                  } finally {
+                    setBusy(false);
+                    setCropOpen(false);
+                    if (cropSrc) URL.revokeObjectURL(cropSrc);
+                    setPendingAvatarFile(null);
+                  }
+                }}
+                disabled={busy || !cropSrc}
+              >
+                {busy ? "Saving..." : "Crop & Save"}
               </Button>
             </div>
           </div>
