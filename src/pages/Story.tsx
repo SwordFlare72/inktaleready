@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-export default function Story() {
+export default function StoryPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -164,6 +164,18 @@ export default function Story() {
     }
   };
 
+  // Add: navigate to author profile when clicking avatar or author name
+  const handleAuthorClick = () => {
+    try {
+      const id =
+        (story as any)?.author?._id ||
+        (story as any)?.authorId ||
+        (story as any)?.author?.id;
+      if (!id) return;
+      navigate(`/profile/${id}`);
+    } catch {}
+  };
+
   if (story === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -228,14 +240,29 @@ export default function Story() {
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{story.title}</h1>
 
           {/* Author row */}
-          <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={story.author?.image || ""} />
-              <AvatarFallback>
-                {(story.author?.name?.[0] || "A").toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm">{story.author?.name || "Anonymous"}</span>
+          <div className="mt-2 flex items-center gap-3">
+            <div
+              onClick={handleAuthorClick}
+              role="button"
+              tabIndex={0}
+              className="cursor-pointer outline-none focus:ring-2 focus:ring-primary/60 rounded-full"
+            >
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={story.author?.image || ""} />
+                <AvatarFallback>
+                  {(story.author?.name?.[0] || "A").toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="min-w-0">
+              <button
+                type="button"
+                onClick={handleAuthorClick}
+                className="font-semibold hover:underline cursor-pointer text-base md:text-lg"
+              >
+                {(story as any)?.author?.name || (story as any)?.authorName || "Anonymous"}
+              </button>
+            </div>
           </div>
 
           {/* Metrics */}
