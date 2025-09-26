@@ -74,7 +74,7 @@ export default function CategoryList() {
               className="w-full text-left group"
             >
               <div className="flex gap-3">
-                <div className="h-24 w-20 overflow-hidden rounded-md bg-muted flex items-center justify-center">
+                <div className="h-28 w-24 overflow-hidden rounded-md bg-muted flex items-center justify-center">
                   {story.coverImage ? (
                     <img
                       src={story.coverImage}
@@ -93,13 +93,13 @@ export default function CategoryList() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-base font-semibold leading-tight line-clamp-2">{story.title}</div>
+                  <div className="text-lg font-semibold leading-tight line-clamp-2">{story.title}</div>
                   {story.description && (
-                    <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
                       {story.description}
                     </div>
                   )}
-                  <div className="text-xs text-muted-foreground mt-2 flex items-center gap-3">
+                  <div className="text-sm text-muted-foreground mt-2 flex items-center gap-3">
                     <span className="flex items-center gap-1">
                       <Eye className="h-3.5 w-3.5" /> {story.totalViews ?? 0}
                     </span>

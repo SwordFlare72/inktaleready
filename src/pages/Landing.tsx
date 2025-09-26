@@ -137,7 +137,7 @@ export default function Landing() {
               <button
                 key={story._id ?? idx}
                 onClick={() => navigate(`/story/${story._id}`)}
-                className="w-36 flex-shrink-0 snap-start text-left"
+                className="w-32 flex-shrink-0 snap-start text-left"
               >
                 <div className="relative">
                   <div className="aspect-[3/4] w/full overflow-hidden rounded-lg bg-muted">
@@ -162,7 +162,7 @@ export default function Landing() {
                 </div>
                 {/* Fixed-height title block for perfect row alignment, keep bigger */}
                 <div className="mt-2">
-                  <div className="text-lg font-semibold leading-tight line-clamp-2 min-h-[2.75rem]">
+                  <div className="text-base font-semibold leading-tight line-clamp-2 min-h-[2.5rem]">
                     {story.title}
                   </div>
                 </div>
