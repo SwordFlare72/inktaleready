@@ -111,6 +111,12 @@ export default function EditProfile() {
     }
   }, [me]);
 
+  useEffect(() => {
+    if (imageUrl === "") {
+      setPreviewImageUrl("");
+    }
+  }, [imageUrl]);
+
   async function uploadFileAndGetUrl(file: File): Promise<string> {
     // Guard: sanity check
     if (!(file instanceof File)) {

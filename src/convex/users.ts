@@ -166,12 +166,22 @@ export const updateMe = mutation({
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Must be authenticated");
 
+    // Add: sanitize URLs to avoid saving blob:/data: or accidental whitespace
+    const sanitizeUrl = (u?: string) => {
+      if (u === undefined) return undefined;
+      const s = u.trim();
+      if (!s) return undefined;
+      if (s.startsWith("blob:")) return undefined;
+      if (s.startsWith("data:")) return undefined;
+      return s;
+    };
+
     const updates: any = {};
     if (args.name !== undefined) updates.name = args.name;
-    if (args.image !== undefined) updates.image = args.image;
+    if (args.image !== undefined) updates.image = sanitizeUrl(args.image);
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
-    if (args.bannerImage !== undefined) (updates as any).bannerImage = args.bannerImage;
+    if (args.bannerImage !== undefined) (updates as any).bannerImage = sanitizeUrl(args.bannerImage);
 
     await ctx.db.patch(user._id, updates);
     return user._id;

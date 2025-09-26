@@ -21,30 +21,58 @@ function Avatar({
   )
 }
 
-function AvatarImage({
-  className,
-  ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+const AvatarImage = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Image>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+>(({ className, onError, onLoad, crossOrigin, referrerPolicy, src, ...props }, ref) => {
+  // Add: minute-based cache-busting so updated avatars bypass stale caches
+  const bust = React.useMemo(() => Math.floor(Date.now() / 60000), []);
+  const finalSrc = React.useMemo(() => {
+    if (!src) return src as any;
+    try {
+      const u = new URL(String(src));
+      u.searchParams.set("cb", String(bust));
+      return u.toString();
+    } catch {
+      const s = String(src);
+      return `${s}${s.includes("?") ? "&" : "?"}cb=${bust}`;
+    }
+  }, [src, bust]);
+
+  // Add: ensure fallback shows on error and image reappears on successful load
+  const handleError = React.useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      try {
+        (e.currentTarget as HTMLImageElement).style.display = "none";
+      } catch {}
+      onError?.(e as any);
+    },
+    [onError],
+  );
+
+  const handleLoad = React.useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      try {
+        (e.currentTarget as HTMLImageElement).style.display = "";
+      } catch {}
+      onLoad?.(e as any);
+    },
+    [onLoad],
+  );
+
   return (
     <AvatarPrimitive.Image
-      data-slot="avatar-image"
-      className={cn("aspect-square size-full object-cover", className)}
-      crossOrigin="anonymous"
-      referrerPolicy="no-referrer"
-      onError={(e) => {
-        try {
-          (e.currentTarget as HTMLImageElement).style.display = "none";
-        } catch {}
-      }}
-      onLoad={(e) => {
-        try {
-          (e.currentTarget as HTMLImageElement).style.display = "";
-        } catch {}
-      }}
+      ref={ref}
+      src={finalSrc as any}
+      crossOrigin={crossOrigin ?? "anonymous"}
+      referrerPolicy={referrerPolicy ?? "no-referrer"}
+      onError={handleError}
+      onLoad={handleLoad}
+      className={cn("h-full w-full object-cover", className)}
       {...props}
     />
-  )
-}
+  );
+});
 
 function AvatarFallback({
   className,
