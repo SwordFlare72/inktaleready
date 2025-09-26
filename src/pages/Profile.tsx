@@ -276,7 +276,7 @@ export default function Profile() {
             <div className="flex items-end justify-between gap-3">
               <div className="flex items-end gap-3">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-background">
-                  <AvatarImage src={displayUser.image} />
+                  <AvatarImage src={displayUser.image ? `${displayUser.image}${displayUser.image.includes("?") ? "&" : "?"}cb=${Date.now() >> 12}` : undefined} />
                   <AvatarFallback className="text-2xl">
                     {displayUser.name?.charAt(0) || "U"}
                   </AvatarFallback>

@@ -36,6 +36,11 @@ function AvatarImage({
           (e.currentTarget as HTMLImageElement).style.display = "none";
         } catch {}
       }}
+      onLoad={(e) => {
+        try {
+          (e.currentTarget as HTMLImageElement).style.display = "";
+        } catch {}
+      }}
       {...props}
     />
   )
