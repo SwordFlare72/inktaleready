@@ -81,8 +81,17 @@ export default function Landing() {
     const search = new URLSearchParams();
     if (params.genre) search.set("genre", params.genre);
     if (params.sort) search.set("sort", params.sort);
-    // Route to the Search page so the list renders with the same compact list UI
-    navigate(`/search?${search.toString()}`);
+    // Provide a readable title for the new page
+    if (params.genre) {
+      search.set("title", `${params.genre.charAt(0).toUpperCase() + params.genre.slice(1)} Stories`);
+    } else if (params.sort === "popular") {
+      search.set("title", "Most Popular");
+    } else if (params.sort === "views") {
+      search.set("title", "Trending Now");
+    } else if (params.sort === "recent") {
+      search.set("title", "Recently Added");
+    }
+    navigate(`/category?${search.toString()}`);
   };
 
   const handleViewAllHistory = () => {

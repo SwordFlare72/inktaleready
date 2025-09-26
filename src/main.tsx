@@ -30,6 +30,7 @@ import EditProfile from "./pages/EditProfile.tsx";
 import ReadingListView from "./pages/ReadingListView.tsx";
 import MyStoriesList from "./pages/MyStoriesList.tsx";
 import FollowingList from "./pages/FollowingList.tsx";
+import CategoryList from "./pages/CategoryList.tsx";
 import { motion } from "framer-motion";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -134,6 +135,9 @@ function BottomNavGate() {
   const onProfileStories = location.pathname.startsWith("/profile/stories");
   const onProfileFollowing = location.pathname.startsWith("/profile/following");
 
+  // Add: Hide nav on category list page
+  const onCategoryList = location.pathname.startsWith("/category");
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
@@ -144,7 +148,8 @@ function BottomNavGate() {
     onMessages ||
     onReadingListView ||
     onProfileStories ||
-    onProfileFollowing
+    onProfileFollowing ||
+    onCategoryList
   ) return null;
 
   return <BottomNav />;
@@ -275,6 +280,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/messages" element={
               <ProtectedRoute><Messages /></ProtectedRoute>
             } />
+            <Route path="/category" element={<CategoryList />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNavGate />
