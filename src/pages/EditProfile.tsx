@@ -11,6 +11,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export default function EditProfile() {
   const me = useQuery(api.users.currentUser, {});
@@ -111,20 +112,72 @@ export default function EditProfile() {
   }, [me]);
 
   async function uploadFileAndGetUrl(file: File): Promise<string> {
-    const uploadUrl = await getUploadUrl({});
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch(uploadUrl, { method: "POST", body: fd });
-    if (!res.ok) throw new Error("Upload failed");
-    const { storageId } = await res.json();
-
-    // Add: small retry when resolving public URL
-    for (let i = 0; i < 2; i++) {
-      const url = await getFileUrl({ storageId });
-      if (url) return url;
-      await new Promise((r) => setTimeout(r, 150));
+    // Guard: sanity check
+    if (!(file instanceof File)) {
+      throw new Error("No file selected");
     }
-    throw new Error("Could not get file URL");
+
+    let uploadUrl: string;
+    try {
+      uploadUrl = await getUploadUrl({});
+    } catch {
+      throw new Error("Upload not authorized. Please sign in again.");
+    }
+
+    // Upload with timeout
+    const ac = new AbortController();
+    const timeout = setTimeout(() => ac.abort(), 20000); // 20s timeout
+
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(uploadUrl, { method: "POST", body: fd, signal: ac.signal });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        // Map common server errors
+        if (res.status === 413 || /payload too large/i.test(text)) {
+          throw new Error("File too large");
+        }
+        if (res.status === 415 || /unsupported/i.test(text)) {
+          throw new Error("Unsupported file type");
+        }
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Upload not authorized. Please sign in again.");
+        }
+        throw new Error(text || `Upload failed (HTTP ${res.status})`);
+      }
+
+      const json = await res.json().catch(() => ({} as any));
+      // Ensure correct Id<"_storage"> typing
+      const storageIdRaw = (json as any)?.storageId;
+      if (!storageIdRaw || typeof storageIdRaw !== "string") {
+        throw new Error("Upload failed: missing storage id");
+      }
+      const storageId = storageIdRaw as Id<"_storage">;
+
+      // Resolve a public URL with small retry
+      for (let i = 0; i < 3; i++) {
+        try {
+          const url = await getFileUrl({ storageId });
+          if (url && typeof url === "string") return url;
+        } catch {
+          // swallow and retry
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      throw new Error("Could not get file URL");
+    } catch (e: any) {
+      if (e?.name === "AbortError") {
+        throw new Error("Upload timed out");
+      }
+      if (String(e?.message || "").toLowerCase().includes("failed to fetch")) {
+        throw new Error("Network error. Please try again.");
+      }
+      throw e;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async function handleUsernameBlur() {
@@ -300,8 +353,15 @@ export default function EditProfile() {
                       className="hidden"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (!validateFile(file, { maxMB: 5 })) return;
+                        if (!file) {
+                          // Ensure input can re-trigger with the same file next time
+                          try { (e.target as HTMLInputElement).value = ""; } catch {}
+                          return;
+                        }
+                        if (!validateFile(file, { maxMB: 5 })) {
+                          try { (e.target as HTMLInputElement).value = ""; } catch {}
+                          return;
+                        }
                         // Open cropper dialog instead of immediate upload
                         try {
                           const src = URL.createObjectURL(file);
@@ -312,6 +372,9 @@ export default function EditProfile() {
                           setCropOpen(true);
                         } catch {
                           toast.error("Could not open image");
+                        } finally {
+                          // Always reset input so selecting the same file triggers onChange again
+                          try { (e.target as HTMLInputElement).value = ""; } catch {}
                         }
                       }}
                     />
@@ -361,8 +424,14 @@ export default function EditProfile() {
                       className="hidden"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (!validateFile(file, { maxMB: 8 })) return;
+                        if (!file) {
+                          try { (e.target as HTMLInputElement).value = ""; } catch {}
+                          return;
+                        }
+                        if (!validateFile(file, { maxMB: 8 })) {
+                          try { (e.target as HTMLInputElement).value = ""; } catch {}
+                          return;
+                        }
                         try {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
@@ -372,14 +441,24 @@ export default function EditProfile() {
                           setPreviewBannerUrl(withBust(url));
                           toast.success("Background image selected. Click 'Save Changes' to apply.");
                         } catch (err: any) {
-                          const msg = String(err?.message || "");
-                          if (msg.toLowerCase().includes("permission")) {
-                            toast.error("Permission denied. Please allow photo access.");
+                          const msg = String(err?.message || "").toLowerCase();
+                          if (msg.includes("too large")) {
+                            toast.error("File too large. Try a smaller image.");
+                          } else if (msg.includes("unsupported")) {
+                            toast.error("Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.");
+                          } else if (msg.includes("not authorized") || msg.includes("sign in")) {
+                            toast.error("Upload not authorized. Please sign in again.");
+                          } else if (msg.includes("timed out")) {
+                            toast.error("Upload timed out. Please try again.");
+                          } else if (msg.includes("network") || msg.includes("failed to fetch")) {
+                            toast.error("Network error. Please try again.");
                           } else {
                             toast.error("Upload failed");
                           }
                         } finally {
                           setBusy(false);
+                          // Reset the input so selecting the same file again re-triggers the change
+                          try { (e.target as HTMLInputElement).value = ""; } catch {}
                         }
                       }}
                     />
@@ -664,8 +743,18 @@ export default function EditProfile() {
                     setPreviewImageUrl(withBust(url));
                     toast.success("Avatar updated. Click 'Save Changes' to apply.");
                   } catch (e: any) {
-                    const msg = String(e?.message || "");
-                    if (msg.toLowerCase().includes("permission")) {
+                    const msg = String(e?.message || "").toLowerCase();
+                    if (msg.includes("too large")) {
+                      toast.error("File too large. Try a smaller image.");
+                    } else if (msg.includes("unsupported")) {
+                      toast.error("Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.");
+                    } else if (msg.includes("not authorized") || msg.includes("sign in")) {
+                      toast.error("Upload not authorized. Please sign in again.");
+                    } else if (msg.includes("timed out")) {
+                      toast.error("Upload timed out. Please try again.");
+                    } else if (msg.includes("network") || msg.includes("failed to fetch")) {
+                      toast.error("Network error. Please try again.");
+                    } else if (msg.includes("permission")) {
                       toast.error("Permission denied. Please allow photo access.");
                     } else {
                       toast.error("Crop or upload failed");
