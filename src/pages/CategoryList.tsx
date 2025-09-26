@@ -1,23 +1,25 @@
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { useMemo, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate, useNavigationType } from "react-router";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Eye, Heart, ChevronLeft } from "lucide-react";
 
 export default function CategoryList() {
   const navigate = useNavigate();
   const location = useLocation();
+  const navType = useNavigationType();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-  // Scroll to top on mount and when params change
+  // Scroll to top on mount and when params change, but NOT on back navigation
   useEffect(() => {
+    if (navType === "POP") return; // preserve scroll when going back
     try {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     } catch {
       window.scrollTo(0, 0);
     }
-  }, [location.pathname, location.search]);
+  }, [location.pathname, location.search, navType]);
 
   const sort = (params.get("sort") as "recent" | "popular" | "views") ?? "recent";
   const genre = params.get("genre") || undefined;

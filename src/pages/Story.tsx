@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, Home, Plus, Check } from "lucide-react";
+import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, ChevronLeft, Plus, Check } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -16,6 +16,19 @@ export default function Story() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  
+  // Add: robust back handler that preserves list scroll when possible
+  const handleBack = () => {
+    try {
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate("/");
+      }
+    } catch {
+      navigate("/");
+    }
+  };
   
   const story = useQuery(api.stories.getStoryById, id ? { storyId: id as any } : "skip");
   const isFollowing = useQuery(api.stories.isFollowing, id ? { storyId: id as any } : "skip");
@@ -186,8 +199,8 @@ export default function Story() {
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-              <Home className="w-4 h-4 mr-1" /> Home
+            <Button variant="ghost" size="sm" onClick={handleBack}>
+              <ChevronLeft className="w-4 h-4 mr-1" /> Back
             </Button>
           </div>
           <div className="flex items-center gap-2">
