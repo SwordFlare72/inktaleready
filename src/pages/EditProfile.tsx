@@ -31,12 +31,54 @@ export default function EditProfile() {
   const [imageUrl, setImageUrl] = useState<string>("");
   const [bannerUrl, setBannerUrl] = useState<string>("");
 
+  // Add: preview URLs with cache-busting for immediate UI refresh after upload/save
+  const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
+  const [previewBannerUrl, setPreviewBannerUrl] = useState<string>("");
+
   const [busy, setBusy] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
+
+  // Add: helpers
+  function normalizeUrl(url: string) {
+    // ensure we store a clean URL without transient query params used for cache busting
+    try {
+      const u = new URL(url);
+      u.search = ""; // strip query
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  function withBust(url: string) {
+    if (!url) return "";
+    try {
+      const u = new URL(url);
+      u.searchParams.set("v", String(Date.now()));
+      return u.toString();
+    } catch {
+      // if not a valid URL, fallback as-is
+      return `${url}${url.includes("?") ? "&" : "?"}v=${Date.now()}`;
+    }
+  }
+
+  function validateFile(file: File, opts: { maxMB: number }) {
+    const allowed = ["image/png", "image/jpeg", "image/webp", "image/gif", "image/jpg"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Invalid file type. Use PNG, JPG, JPEG, WEBP, or GIF.");
+      return false;
+    }
+    const maxBytes = opts.maxMB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      toast.error(`Max ${opts.maxMB}MB`);
+      return false;
+    }
+    return true;
+  }
 
   useEffect(() => {
     if (me) {
@@ -46,6 +88,9 @@ export default function EditProfile() {
       setGender(me.gender ?? "");
       setImageUrl(me.image ?? "");
       setBannerUrl((me as any).bannerImage ?? "");
+      // Add: keep previews in sync from saved URLs (no bust initially)
+      setPreviewImageUrl(me.image ?? "");
+      setPreviewBannerUrl((me as any).bannerImage ?? "");
     }
   }, [me]);
 
@@ -56,9 +101,14 @@ export default function EditProfile() {
     const res = await fetch(uploadUrl, { method: "POST", body: fd });
     if (!res.ok) throw new Error("Upload failed");
     const { storageId } = await res.json();
-    const url = await getFileUrl({ storageId });
-    if (!url) throw new Error("Could not get file URL");
-    return url;
+
+    // Add: small retry when resolving public URL
+    for (let i = 0; i < 2; i++) {
+      const url = await getFileUrl({ storageId });
+      if (url) return url;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    throw new Error("Could not get file URL");
   }
 
   async function handleUsernameBlur() {
@@ -84,13 +134,12 @@ export default function EditProfile() {
 
     setBusy(true);
     try {
-      // Update core profile fields
       await updateMe({
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
-        image: imageUrl || undefined,
-        bannerImage: bannerUrl || undefined,
+        image: imageUrl || undefined,          // save clean URL
+        bannerImage: bannerUrl || undefined,   // save clean URL
       });
 
       // Update username if changed
@@ -109,6 +158,10 @@ export default function EditProfile() {
           throw e;
         }
       }
+
+      // Add: ensure UI previews refresh to latest after DB save
+      if (imageUrl) setPreviewImageUrl(withBust(imageUrl));
+      if (bannerUrl) setPreviewBannerUrl(withBust(bannerUrl));
 
       toast.success("Profile updated");
       navigate(-1);
@@ -203,9 +256,9 @@ export default function EditProfile() {
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="h-20 w-20 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                  {imageUrl ? (
+                  {previewImageUrl ? (
                     <img
-                      src={imageUrl}
+                      src={previewImageUrl}
                       alt="Profile"
                       className="h-full w-full object-cover"
                       crossOrigin="anonymous"
@@ -232,18 +285,21 @@ export default function EditProfile() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast.error("Max 5MB");
-                          return;
-                        }
+                        if (!validateFile(file, { maxMB: 5 })) return;
                         try {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
-                          setImageUrl(url);
-                          // Do NOT save immediately; wait for user to click "Save Changes"
+                          const clean = normalizeUrl(url);
+                          setImageUrl(clean); // store clean URL
+                          setPreviewImageUrl(withBust(clean)); // show fresh in UI
                           toast.success("Profile image selected. Click 'Save Changes' to apply.");
-                        } catch {
-                          toast.error("Upload failed");
+                        } catch (err: any) {
+                          const msg = String(err?.message || "");
+                          if (msg.toLowerCase().includes("permission")) {
+                            toast.error("Permission denied. Please allow photo access.");
+                          } else {
+                            toast.error("Upload failed");
+                          }
                         } finally {
                           setBusy(false);
                         }
@@ -267,9 +323,9 @@ export default function EditProfile() {
 
               <div className="flex items-center gap-4">
                 <div className="h-20 w-32 rounded overflow-hidden bg-muted flex items-center justify-center">
-                  {bannerUrl ? (
+                  {previewBannerUrl ? (
                     <img
-                      src={bannerUrl}
+                      src={previewBannerUrl}
                       alt="Banner"
                       className="h-full w-full object-cover"
                       crossOrigin="anonymous"
@@ -296,18 +352,21 @@ export default function EditProfile() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        if (file.size > 8 * 1024 * 1024) {
-                          toast.error("Max 8MB");
-                          return;
-                        }
+                        if (!validateFile(file, { maxMB: 8 })) return;
                         try {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
-                          setBannerUrl(url);
-                          // Do NOT save immediately; wait for user to click "Save Changes"
+                          const clean = normalizeUrl(url);
+                          setBannerUrl(clean); // store clean URL
+                          setPreviewBannerUrl(withBust(clean)); // show fresh in UI
                           toast.success("Background image selected. Click 'Save Changes' to apply.");
-                        } catch {
-                          toast.error("Upload failed");
+                        } catch (err: any) {
+                          const msg = String(err?.message || "");
+                          if (msg.toLowerCase().includes("permission")) {
+                            toast.error("Permission denied. Please allow photo access.");
+                          } else {
+                            toast.error("Upload failed");
+                          }
                         } finally {
                           setBusy(false);
                         }
