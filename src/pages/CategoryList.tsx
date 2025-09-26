@@ -1,6 +1,6 @@
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Eye, Heart, ChevronLeft } from "lucide-react";
@@ -9,6 +9,15 @@ export default function CategoryList() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+  // Scroll to top on mount and when params change
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname, location.search]);
 
   const sort = (params.get("sort") as "recent" | "popular" | "views") ?? "recent";
   const genre = params.get("genre") || undefined;
