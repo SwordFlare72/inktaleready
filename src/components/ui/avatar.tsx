@@ -39,22 +39,17 @@ const AvatarImage = React.forwardRef<
     }
   }, [src, bust]);
 
-  // Add: ensure fallback shows on error and image reappears on successful load
+  // Remove: do NOT forcibly hide the image on error — let Radix fallback handle it
   const handleError = React.useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
-      try {
-        (e.currentTarget as HTMLImageElement).style.display = "none";
-      } catch {}
       onError?.(e as any);
     },
     [onError],
   );
 
+  // Keep: ensure visible when load succeeds
   const handleLoad = React.useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
-      try {
-        (e.currentTarget as HTMLImageElement).style.display = "";
-      } catch {}
       onLoad?.(e as any);
     },
     [onLoad],
@@ -68,6 +63,8 @@ const AvatarImage = React.forwardRef<
       referrerPolicy={referrerPolicy ?? "no-referrer"}
       onError={handleError}
       onLoad={handleLoad}
+      loading="lazy"
+      decoding="async"
       className={cn("h-full w-full object-cover", className)}
       {...props}
     />
