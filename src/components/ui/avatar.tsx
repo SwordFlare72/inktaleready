@@ -25,29 +25,39 @@ const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
 >(({ className, onError, onLoad, crossOrigin, referrerPolicy, src, ...props }, ref) => {
-  // Add: minute-based cache-busting so updated avatars bypass stale caches
-  const bust = React.useMemo(() => Math.floor(Date.now() / 60000), []);
+  // Versioned cache-busting that increments only when the `src` actually changes
+  const prevSrcRef = React.useRef<string | undefined>(undefined);
+  const [version, setVersion] = React.useState(0);
+  React.useEffect(() => {
+    const s = src ? String(src) : undefined;
+    if (s !== prevSrcRef.current) {
+      prevSrcRef.current = s;
+      setVersion((v) => v + 1);
+    }
+  }, [src]);
+
   const finalSrc = React.useMemo(() => {
     if (!src) return src as any;
     try {
       const u = new URL(String(src));
-      u.searchParams.set("cb", String(bust));
+      // preserve existing query params and just add a stable version param
+      u.searchParams.set("cb", String(version));
       return u.toString();
     } catch {
       const s = String(src);
-      return `${s}${s.includes("?") ? "&" : "?"}cb=${bust}`;
+      const sep = s.includes("?") ? "&" : "?";
+      return `${s}${sep}cb=${version}`;
     }
-  }, [src, bust]);
+  }, [src, version]);
 
-  // Remove: do NOT forcibly hide the image on error — let Radix fallback handle it
   const handleError = React.useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
+      // Do not manipulate visibility; allow Radix fallback to take over
       onError?.(e as any);
     },
     [onError],
   );
 
-  // Keep: ensure visible when load succeeds
   const handleLoad = React.useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
       onLoad?.(e as any);
