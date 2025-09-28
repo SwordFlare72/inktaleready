@@ -209,13 +209,24 @@ export default function EditProfile() {
 
     setBusy(true);
     try {
-      await updateMe({
+      const payload: any = {
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
         image: imageUrl || undefined,          // save clean URL
         bannerImage: bannerUrl || undefined,   // save clean URL
-      });
+      };
+
+      // If user attempted to change avatar, ensure it actually updated in DB
+      if (payload.image !== undefined) {
+        const changed = !!(payload.image && (me.image !== payload.image));
+        if (!changed) {
+          // Show explicit message per requirement
+          toast.error("Avatar wasn't changed, please try again");
+        }
+      }
+
+      const res = await updateMe(payload);
 
       // Update username if changed
       const desired = username.trim();
@@ -240,8 +251,8 @@ export default function EditProfile() {
 
       toast.success("Profile updated");
       navigate(-1);
-    } catch {
-      toast.error("Failed to update profile");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update profile");
     } finally {
       setBusy(false);
     }

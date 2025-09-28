@@ -184,7 +184,22 @@ export const updateMe = mutation({
     if (args.bannerImage !== undefined) (updates as any).bannerImage = sanitizeUrl(args.bannerImage);
 
     await ctx.db.patch(user._id, updates);
-    return user._id;
+
+    // Return whether avatar actually changed so UI can confirm or show error
+    const saved = await ctx.db.get(user._id);
+    const requestedImage = updates.image;
+    const changedAvatar =
+      requestedImage !== undefined ? saved?.image === requestedImage : false;
+
+    return {
+      ok: true,
+      changedAvatar,
+      // lightweight echo for convenience
+      image: saved?.image,
+      bannerImage: (saved as any)?.bannerImage,
+      name: saved?.name,
+      bio: saved?.bio,
+    };
   },
 });
 
