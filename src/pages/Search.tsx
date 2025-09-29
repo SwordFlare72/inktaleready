@@ -169,7 +169,7 @@ export default function Search() {
   // Rename: stories search results and add users search results
   const searchResultsStories = useQuery(
     api.stories.searchStories,
-    mode === "stories" && (debouncedSearchTerm.trim().length > 0 || parsedTags.length > 0)
+    mode === "stories"
       ? {
           searchTerm: debouncedSearchTerm.trim(),
           genre: genre !== "all" ? genre : undefined,
@@ -338,138 +338,127 @@ export default function Search() {
         )}
 
         {/* Results */}
-        {(debouncedSearchTerm.trim().length === 0 && parsedTags.length === 0) ? (
-          <div className="text-center py-12">
-            <SearchIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Start searching</h3>
-            <p className="text-muted-foreground">
-              Enter a search term to find {mode === "stories" ? "stories by title, description, or tags" : "users by name"}
-            </p>
-          </div>
-        ) : (
+        {mode === "users" ? (
+          // Users mode keeps existing behavior (requires a query)
           <>
-            {/* Branch by mode to determine loading/empty/results */}
-            {mode === "stories" ? (
-              <>
-                {searchResultsStories === undefined ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <Card key={i} className="overflow-hidden animate-pulse">
-                        <div className="aspect-[3/4] bg-muted" />
-                        <CardContent className="p-4">
-                          <div className="h-4 bg-muted rounded mb-2" />
-                          <div className="h-3 bg-muted rounded mb-3" />
-                          <div className="flex justify-between">
-                            <div className="h-3 bg-muted rounded w-16" />
-                            <div className="h-3 bg-muted rounded w-12" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : searchResultsStories.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No stories found</h3>
-                    <p className="text-muted-foreground">
-                      Try different keywords or check your spelling
-                    </p>
-                    <Button
-                      onClick={() => navigate("/explore")}
-                      className="mt-4"
-                      variant="outline"
-                    >
-                      Browse All Stories
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-4">
-                      <p className="text-muted-foreground">
-                        Found {searchResultsStories.length} result{searchResultsStories.length !== 1 ? "s" : ""} for "{debouncedSearchTerm || (parsedTags.join(", ") || "filters")}"
-                      </p>
-                    </div>
-                    {/* Borderless, full-width rows with separators; better mobile scroll */}
-                    <div className="divide-y divide-border">
-                      {searchResultsStories.map((story) => (
-                        <motion.div
-                          key={story._id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.15 }}
-                        >
-                          <StoryRow story={story} onClick={handleStoryClick} relTimeFn={relTime} />
-                        </motion.div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
+            {debouncedSearchTerm.trim().length === 0 ? (
+              <div className="text-center py-12">
+                <SearchIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Start searching</h3>
+                <p className="text-muted-foreground">
+                  Enter a search term to find users by name
+                </p>
+              </div>
+            ) : userResults === undefined ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden animate-pulse">
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-muted" />
+                      <div className="flex-1">
+                        <div className="h-4 bg-muted rounded mb-2 w-1/2" />
+                        <div className="h-3 bg-muted rounded w-3/4" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : userResults.length === 0 ? (
+              <div className="text-center py-12">
+                <UsersIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No users found</h3>
+                <p className="text-muted-foreground">Try a different name</p>
+              </div>
             ) : (
-              // Users mode
               <>
-                {userResults === undefined ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <Card key={i} className="overflow-hidden animate-pulse">
+                <div className="mb-4">
+                  <p className="text-muted-foreground">
+                    Found {userResults.length} user{userResults.length !== 1 ? "s" : ""} for "{debouncedSearchTerm}"
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userResults.map((u) => (
+                    <motion.div
+                      key={u._id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Card
+                        className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => navigate(`/profile/${u._id}`)}
+                      >
                         <CardContent className="p-4 flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-muted" />
-                          <div className="flex-1">
-                            <div className="h-4 bg-muted rounded mb-2 w-1/2" />
-                            <div className="h-3 bg-muted rounded w-3/4" />
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={u.image || ""} />
+                            <AvatarFallback>
+                              {(u.name?.[0] || "U").toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold truncate">{u.name || "Anonymous"}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {u.bio || "—"}
+                            </p>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
-                ) : userResults.length === 0 ? (
-                  <div className="text-center py-12">
-                    <UsersIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No users found</h3>
-                    <p className="text-muted-foreground">
-                      Try a different name
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-4">
-                      <p className="text-muted-foreground">
-                        Found {userResults.length} user{userResults.length !== 1 ? "s" : ""} for "{debouncedSearchTerm}"
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {userResults.map((u) => (
-                        <motion.div
-                          key={u._id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          whileHover={{ scale: 1.02 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Card
-                            className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                            onClick={() => navigate(`/profile/${u._id}`)}
-                          >
-                            <CardContent className="p-4 flex items-center gap-3">
-                              <Avatar className="h-12 w-12">
-                                <AvatarImage src={u.image || ""} />
-                                <AvatarFallback>
-                                  {(u.name?.[0] || "U").toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="min-w-0">
-                                <h3 className="font-semibold truncate">{u.name || "Anonymous"}</h3>
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                  {u.bio || "—"}
-                                </p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </>
-                )}
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          // Stories mode: ALWAYS show stories according to current filters
+          <>
+            {searchResultsStories === undefined ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden animate-pulse">
+                    <div className="aspect-[3/4] bg-muted" />
+                    <CardContent className="p-4">
+                      <div className="h-4 bg-muted rounded mb-2" />
+                      <div className="h-3 bg-muted rounded mb-3" />
+                      <div className="flex justify-between">
+                        <div className="h-3 bg-muted rounded w-16" />
+                        <div className="h-3 bg-muted rounded w-12" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : searchResultsStories.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No stories found</h3>
+                <p className="text-muted-foreground">
+                  Try different filters
+                </p>
+                <Button onClick={() => navigate("/explore")} className="mt-4" variant="outline">
+                  Browse All Stories
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <p className="text-muted-foreground">
+                    Showing {searchResultsStories.length} stor{searchResultsStories.length !== 1 ? "ies" : "y"} {debouncedSearchTerm ? `for "${debouncedSearchTerm}"` : "(filtered)"}
+                  </p>
+                </div>
+                <div className="divide-y divide-border">
+                  {searchResultsStories.map((story) => (
+                    <motion.div
+                      key={story._id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <StoryRow story={story} onClick={handleStoryClick} relTimeFn={relTime} />
+                    </motion.div>
+                  ))}
+                </div>
               </>
             )}
           </>
