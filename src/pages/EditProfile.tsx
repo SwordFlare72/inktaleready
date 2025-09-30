@@ -213,18 +213,9 @@ export default function EditProfile() {
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
-        image: imageUrl || undefined,          // save clean URL
-        bannerImage: bannerUrl || undefined,   // save clean URL
+        image: imageUrl || undefined,        // persist only on Save
+        bannerImage: bannerUrl || undefined, // persist only on Save
       };
-
-      // If user attempted to change avatar, ensure it actually updated in DB
-      if (payload.image !== undefined) {
-        const changed = !!(payload.image && (me.image !== payload.image));
-        if (!changed) {
-          // Show explicit message per requirement
-          toast.error("Avatar wasn't changed, please try again");
-        }
-      }
 
       const res = await updateMe(payload);
 
@@ -245,7 +236,12 @@ export default function EditProfile() {
         }
       }
 
-      // Add: ensure UI previews refresh to latest after DB save
+      // After saving, if image was intended to change but backend indicates not changed
+      if (payload.image !== undefined && res && res.changedAvatar === false) {
+        toast.error("Avatar wasn't changed, please try again");
+      }
+
+      // Refresh previews to ensure fresh fetches after save
       if (imageUrl) setPreviewImageUrl(withBust(imageUrl));
       if (bannerUrl) setPreviewBannerUrl(withBust(bannerUrl));
 
@@ -351,6 +347,7 @@ export default function EditProfile() {
                       referrerPolicy="no-referrer"
                       onError={(e) => {
                         try {
+                          // fallback to "No image" placeholder in preview container only
                           (e.currentTarget as HTMLImageElement).style.display = "none";
                         } catch {}
                       }}
@@ -370,16 +367,12 @@ export default function EditProfile() {
                       className="hidden"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file) {
-                          // Ensure input can re-trigger with the same file next time
-                          try { (e.target as HTMLInputElement).value = ""; } catch {}
-                          return;
-                        }
-                        if (!validateFile(file, { maxMB: 5 })) {
-                          try { (e.target as HTMLInputElement).value = ""; } catch {}
-                          return;
-                        }
-                        // Open cropper dialog instead of immediate upload
+                        // Reset file input so same file can trigger again
+                        try { (e.target as HTMLInputElement).value = ""; } catch {}
+                        if (!file) return;
+                        if (!validateFile(file, { maxMB: 5 })) return;
+
+                        // Open cropper with this selection
                         try {
                           const src = URL.createObjectURL(file);
                           setPendingAvatarFile(file);
@@ -389,9 +382,6 @@ export default function EditProfile() {
                           setCropOpen(true);
                         } catch {
                           toast.error("Could not open image");
-                        } finally {
-                          // Always reset input so selecting the same file triggers onChange again
-                          try { (e.target as HTMLInputElement).value = ""; } catch {}
                         }
                       }}
                     />
@@ -403,7 +393,10 @@ export default function EditProfile() {
                       Choose Image
                     </Button>
                     {imageUrl && (
-                      <Button variant="ghost" onClick={() => setImageUrl("")} disabled={busy}>
+                      <Button variant="ghost" onClick={() => {
+                        setImageUrl("");
+                        setPreviewImageUrl("");
+                      }} disabled={busy}>
                         Clear
                       </Button>
                     )}
@@ -441,21 +434,17 @@ export default function EditProfile() {
                       className="hidden"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file) {
-                          try { (e.target as HTMLInputElement).value = ""; } catch {}
-                          return;
-                        }
-                        if (!validateFile(file, { maxMB: 8 })) {
-                          try { (e.target as HTMLInputElement).value = ""; } catch {}
-                          return;
-                        }
+                        // Reset input early
+                        try { (e.target as HTMLInputElement).value = ""; } catch {}
+                        if (!file) return;
+                        if (!validateFile(file, { maxMB: 8 })) return;
+
+                        // Upload now; persist on Save
                         try {
                           setBusy(true);
                           const url = await uploadFileAndGetUrl(file);
-                          // Save full signed URL (with query params). Do NOT strip query.
-                          setBannerUrl(url);
-                          // Use a cache-busted preview to reflect immediately
-                          setPreviewBannerUrl(withBust(url));
+                          setBannerUrl(url); // raw signed URL
+                          setPreviewBannerUrl(withBust(url)); // ensure immediate preview
                           toast.success("Background image selected. Click 'Save Changes' to apply.");
                         } catch (err: any) {
                           const msg = String(err?.message || "").toLowerCase();
@@ -474,8 +463,6 @@ export default function EditProfile() {
                           }
                         } finally {
                           setBusy(false);
-                          // Reset the input so selecting the same file again re-triggers the change
-                          try { (e.target as HTMLInputElement).value = ""; } catch {}
                         }
                       }}
                     />
@@ -487,7 +474,10 @@ export default function EditProfile() {
                       Choose Image
                     </Button>
                     {bannerUrl && (
-                      <Button variant="ghost" onClick={() => setBannerUrl("")} disabled={busy}>
+                      <Button variant="ghost" onClick={() => {
+                        setBannerUrl("");
+                        setPreviewBannerUrl("");
+                      }} disabled={busy}>
                         Clear
                       </Button>
                     )}
@@ -709,7 +699,6 @@ export default function EditProfile() {
                   try {
                     if (!cropImgRef.current) throw new Error("Image not ready");
                     setBusy(true);
-                    // Render 512x512 square canvas
                     const canvas = document.createElement("canvas");
                     const size = 512;
                     canvas.width = size;
@@ -718,21 +707,14 @@ export default function EditProfile() {
                     if (!ctx) throw new Error("Canvas not supported");
 
                     const img = cropImgRef.current;
-                    // Natural dimensions
                     const iw = img.naturalWidth || img.width;
                     const ih = img.naturalHeight || img.height;
 
-                    // Compute how the image is drawn in the preview box (256x256 logical) then map to canvas
-                    const previewBox = 256; // logical reference for calculations
-                    // Scale image to fit previewBox by its smaller side to mimic contain
+                    const previewBox = 256;
                     const baseScale = Math.max(previewBox / iw, previewBox / ih);
                     const totalScale = baseScale * cropScale;
-
-                    // Translate offsets from preview space to image pixels
                     const dx = (previewBox / 2 + cropOffset.x) - (iw * totalScale) / 2;
                     const dy = (previewBox / 2 + cropOffset.y) - (ih * totalScale) / 2;
-
-                    // Now map previewBox -> canvas size
                     const scaleToCanvas = size / previewBox;
 
                     ctx.fillStyle = "#000";
@@ -740,22 +722,21 @@ export default function EditProfile() {
                     ctx.imageSmoothingQuality = "high";
                     ctx.drawImage(
                       img,
-                      0,
-                      0,
-                      iw,
-                      ih,
+                      0, 0, iw, ih,
                       dx * scaleToCanvas,
                       dy * scaleToCanvas,
                       iw * totalScale * scaleToCanvas,
                       ih * totalScale * scaleToCanvas
                     );
 
-                    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+                    const blob: Blob | null = await new Promise((resolve) =>
+                      canvas.toBlob(resolve, "image/jpeg", 0.92)
+                    );
                     if (!blob) throw new Error("Could not create image");
-                    // Create a File-like object for upload
                     const file = new File([blob], (pendingAvatarFile?.name ?? "avatar") + ".jpg", { type: "image/jpeg" });
 
                     const url = await uploadFileAndGetUrl(file);
+                    // Do NOT persist yet; wait for Save Changes
                     setImageUrl(url);
                     setPreviewImageUrl(withBust(url));
                     toast.success("Avatar updated. Click 'Save Changes' to apply.");
