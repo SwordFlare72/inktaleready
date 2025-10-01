@@ -214,20 +214,9 @@ export default function Profile() {
           <div className="h-40 sm:h-56 w-full bg-muted overflow-hidden">
             {displayUser.bannerImage ? (
               <img
-                src={
-                  `${displayUser.bannerImage}${
-                    displayUser.bannerImage.includes("?") ? "&" : "?"
-                  }cb=${Date.now() >> 12}`
-                }
+                src={displayUser.bannerImage}
                 alt="Profile banner"
                 className="h-full w-full object-cover"
-                crossOrigin="anonymous"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  try {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  } catch {}
-                }}
               />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">

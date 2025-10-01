@@ -379,24 +379,6 @@ export default function EditProfile() {
                       src={previewImageUrl}
                       alt="Profile"
                       className="h-full w-full object-cover"
-                      crossOrigin="anonymous"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        console.error(
-                          "Failed to load profile preview:",
-                          previewImageUrl,
-                        );
-                        try {
-                          (e.currentTarget as HTMLImageElement).style.display =
-                            "none";
-                        } catch {}
-                      }}
-                      onLoad={() => {
-                        console.log(
-                          "Profile preview loaded successfully:",
-                          previewImageUrl,
-                        );
-                      }}
                     />
                   ) : (
                     <div className="text-xs text-muted-foreground">
@@ -470,24 +452,6 @@ export default function EditProfile() {
                       src={previewBannerUrl}
                       alt="Banner"
                       className="h-full w-full object-cover"
-                      crossOrigin="anonymous"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        console.error(
-                          "Failed to load banner preview:",
-                          previewBannerUrl,
-                        );
-                        try {
-                          (e.currentTarget as HTMLImageElement).style.display =
-                            "none";
-                        } catch {}
-                      }}
-                      onLoad={() => {
-                        console.log(
-                          "Banner preview loaded successfully:",
-                          previewBannerUrl,
-                        );
-                      }}
                     />
                   ) : (
                     <div className="text-xs text-muted-foreground">
