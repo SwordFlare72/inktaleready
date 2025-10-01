@@ -9,13 +9,21 @@ import { Slider } from "@/components/ui/slider";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import type { Id } from "@/convex/_generated/dataModel";
 
 export default function EditProfile() {
   const me = useQuery(api.users.currentUser, {});
   const updateMe = useMutation(api.users.updateMe);
+  async function handleImageUpload(url: string) {
+    await updateMe({ image: url });
+  }
   const setUsername = useMutation(api.users.setUsername);
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
   const getUploadUrl = useAction(api.files.getUploadUrl);
@@ -69,7 +77,13 @@ export default function EditProfile() {
   }
 
   function validateFile(file: File, opts: { maxMB: number }) {
-    const allowed = ["image/png", "image/jpeg", "image/webp", "image/gif", "image/jpg"];
+    const allowed = [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/gif",
+      "image/jpg",
+    ];
     if (!allowed.includes(file.type)) {
       toast.error("Invalid file type. Use PNG, JPG, JPEG, WEBP, or GIF.");
       return false;
@@ -87,8 +101,17 @@ export default function EditProfile() {
   const [cropSrc, setCropSrc] = useState<string>("");
   const cropImgRef = useRef<HTMLImageElement | null>(null);
   const [cropScale, setCropScale] = useState(1);
-  const [cropOffset, setCropOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const cropDragRef = useRef<{ dragging: boolean; startX: number; startY: number; startOffX: number; startOffY: number }>({
+  const [cropOffset, setCropOffset] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const cropDragRef = useRef<{
+    dragging: boolean;
+    startX: number;
+    startY: number;
+    startOffX: number;
+    startOffY: number;
+  }>({
     dragging: false,
     startX: 0,
     startY: 0,
@@ -137,7 +160,11 @@ export default function EditProfile() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(uploadUrl, { method: "POST", body: fd, signal: ac.signal });
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        body: fd,
+        signal: ac.signal,
+      });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -154,7 +181,7 @@ export default function EditProfile() {
         throw new Error(text || `Upload failed (HTTP ${res.status})`);
       }
 
-      const json = await res.json().catch(() => ({} as any));
+      const json = await res.json().catch(() => ({}) as any);
       // Ensure correct Id<"_storage"> typing
       const storageIdRaw = (json as any)?.storageId;
       if (!storageIdRaw || typeof storageIdRaw !== "string") {
@@ -177,7 +204,11 @@ export default function EditProfile() {
       if (e?.name === "AbortError") {
         throw new Error("Upload timed out");
       }
-      if (String(e?.message || "").toLowerCase().includes("failed to fetch")) {
+      if (
+        String(e?.message || "")
+          .toLowerCase()
+          .includes("failed to fetch")
+      ) {
         throw new Error("Network error. Please try again.");
       }
       throw e;
@@ -213,7 +244,7 @@ export default function EditProfile() {
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
-        image: imageUrl || undefined,        // persist only on Save
+        image: imageUrl || undefined, // persist only on Save
         bannerImage: bannerUrl || undefined, // persist only on Save
       };
 
@@ -262,7 +293,9 @@ export default function EditProfile() {
       return;
     }
     // Prevent no-op changes (same email)
-    const currentEmailNormalized = (((me as any).email || "") as string).replace(/\s+/g, "").toLowerCase();
+    const currentEmailNormalized = (((me as any).email || "") as string)
+      .replace(/\s+/g, "")
+      .toLowerCase();
     if (normalized === currentEmailNormalized) {
       toast.error("New email cannot be the same as your current email");
       return;
@@ -271,7 +304,9 @@ export default function EditProfile() {
     setEmailBusy(true);
     try {
       // Re-authenticate against the provider email (authEmail if present, else email)
-      const providerEmail = ((((me as any).authEmail || (me as any).email) || "") as string)
+      const providerEmail = (
+        ((me as any).authEmail || (me as any).email || "") as string
+      )
         .replace(/\s+/g, "")
         .toLowerCase();
 
@@ -347,22 +382,33 @@ export default function EditProfile() {
                       crossOrigin="anonymous"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
-                        console.error("Failed to load profile preview:", previewImageUrl);
+                        console.error(
+                          "Failed to load profile preview:",
+                          previewImageUrl,
+                        );
                         try {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            "none";
                         } catch {}
                       }}
                       onLoad={() => {
-                        console.log("Profile preview loaded successfully:", previewImageUrl);
+                        console.log(
+                          "Profile preview loaded successfully:",
+                          previewImageUrl,
+                        );
                       }}
                     />
                   ) : (
-                    <div className="text-xs text-muted-foreground">No image</div>
+                    <div className="text-xs text-muted-foreground">
+                      No image
+                    </div>
                   )}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium">Profile picture</div>
-                  <div className="text-xs text-muted-foreground">Tap to change</div>
+                  <div className="text-xs text-muted-foreground">
+                    Tap to change
+                  </div>
                   <div className="mt-2 flex items-center gap-2">
                     <input
                       id="profile-file"
@@ -372,7 +418,9 @@ export default function EditProfile() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         // Reset file input so same file can trigger again
-                        try { (e.target as HTMLInputElement).value = ""; } catch {}
+                        try {
+                          (e.target as HTMLInputElement).value = "";
+                        } catch {}
                         if (!file) return;
                         if (!validateFile(file, { maxMB: 5 })) return;
 
@@ -391,16 +439,22 @@ export default function EditProfile() {
                     />
                     <Button
                       variant="outline"
-                      onClick={() => document.getElementById("profile-file")?.click()}
+                      onClick={() =>
+                        document.getElementById("profile-file")?.click()
+                      }
                       disabled={busy}
                     >
                       Choose Image
                     </Button>
                     {imageUrl && (
-                      <Button variant="ghost" onClick={() => {
-                        setImageUrl("");
-                        setPreviewImageUrl("");
-                      }} disabled={busy}>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setImageUrl("");
+                          setPreviewImageUrl("");
+                        }}
+                        disabled={busy}
+                      >
                         Clear
                       </Button>
                     )}
@@ -419,22 +473,33 @@ export default function EditProfile() {
                       crossOrigin="anonymous"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
-                        console.error("Failed to load banner preview:", previewBannerUrl);
+                        console.error(
+                          "Failed to load banner preview:",
+                          previewBannerUrl,
+                        );
                         try {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            "none";
                         } catch {}
                       }}
                       onLoad={() => {
-                        console.log("Banner preview loaded successfully:", previewBannerUrl);
+                        console.log(
+                          "Banner preview loaded successfully:",
+                          previewBannerUrl,
+                        );
                       }}
                     />
                   ) : (
-                    <div className="text-xs text-muted-foreground">No background</div>
+                    <div className="text-xs text-muted-foreground">
+                      No background
+                    </div>
                   )}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium">Background picture</div>
-                  <div className="text-xs text-muted-foreground">Tap to change</div>
+                  <div className="text-xs text-muted-foreground">
+                    Tap to change
+                  </div>
                   <div className="mt-2 flex items-center gap-2">
                     <input
                       id="banner-file"
@@ -444,7 +509,9 @@ export default function EditProfile() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         // Reset input early
-                        try { (e.target as HTMLInputElement).value = ""; } catch {}
+                        try {
+                          (e.target as HTMLInputElement).value = "";
+                        } catch {}
                         if (!file) return;
                         if (!validateFile(file, { maxMB: 8 })) return;
 
@@ -454,18 +521,30 @@ export default function EditProfile() {
                           const url = await uploadFileAndGetUrl(file);
                           setBannerUrl(url); // raw signed URL
                           setPreviewBannerUrl(withBust(url)); // ensure immediate preview
-                          toast.success("Background image selected. Click 'Save Changes' to apply.");
+                          toast.success(
+                            "Background image selected. Click 'Save Changes' to apply.",
+                          );
                         } catch (err: any) {
                           const msg = String(err?.message || "").toLowerCase();
                           if (msg.includes("too large")) {
                             toast.error("File too large. Try a smaller image.");
                           } else if (msg.includes("unsupported")) {
-                            toast.error("Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.");
-                          } else if (msg.includes("not authorized") || msg.includes("sign in")) {
-                            toast.error("Upload not authorized. Please sign in again.");
+                            toast.error(
+                              "Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.",
+                            );
+                          } else if (
+                            msg.includes("not authorized") ||
+                            msg.includes("sign in")
+                          ) {
+                            toast.error(
+                              "Upload not authorized. Please sign in again.",
+                            );
                           } else if (msg.includes("timed out")) {
                             toast.error("Upload timed out. Please try again.");
-                          } else if (msg.includes("network") || msg.includes("failed to fetch")) {
+                          } else if (
+                            msg.includes("network") ||
+                            msg.includes("failed to fetch")
+                          ) {
                             toast.error("Network error. Please try again.");
                           } else {
                             toast.error("Upload failed");
@@ -477,16 +556,22 @@ export default function EditProfile() {
                     />
                     <Button
                       variant="outline"
-                      onClick={() => document.getElementById("banner-file")?.click()}
+                      onClick={() =>
+                        document.getElementById("banner-file")?.click()
+                      }
                       disabled={busy}
                     >
                       Choose Image
                     </Button>
                     {bannerUrl && (
-                      <Button variant="ghost" onClick={() => {
-                        setBannerUrl("");
-                        setPreviewBannerUrl("");
-                      }} disabled={busy}>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setBannerUrl("");
+                          setPreviewBannerUrl("");
+                        }}
+                        disabled={busy}
+                      >
                         Clear
                       </Button>
                     )}
@@ -513,16 +598,22 @@ export default function EditProfile() {
                     placeholder="your_username"
                   />
                   {usernameError && (
-                    <div className="text-xs text-red-500 mt-1">{usernameError}</div>
+                    <div className="text-xs text-red-500 mt-1">
+                      {usernameError}
+                    </div>
                   )}
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    3–20 chars. Letters, numbers, underscores only. Saved in lowercase.
+                    3–20 chars. Letters, numbers, underscores only. Saved in
+                    lowercase.
                   </p>
                 </div>
 
                 <div>
                   <Label className="mb-1 block">Display Name</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                   <p className="text-[11px] text-muted-foreground mt-1">
                     Shown publicly. Can include spaces and symbols.
                   </p>
@@ -531,7 +622,11 @@ export default function EditProfile() {
 
               <div>
                 <Label className="mb-1 block">Bio</Label>
-                <Textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} />
+                <Textarea
+                  rows={4}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                />
               </div>
 
               <div>
@@ -549,20 +644,26 @@ export default function EditProfile() {
             <div className="space-y-4">
               <div className="text-xl font-semibold">Account Settings</div>
               <p className="text-sm text-muted-foreground">
-                The information you enter here will not be visible to other users.
+                The information you enter here will not be visible to other
+                users.
               </p>
 
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm text-muted-foreground">Email</div>
-                    <div className="font-medium break-all">{(me as any).email || "—"}</div>
+                    <div className="font-medium break-all">
+                      {(me as any).email || "—"}
+                    </div>
                   </div>
-                  <Button variant="outline" onClick={() => {
-                    setNewEmail("");
-                    setConfirmPassword("");
-                    setEmailDialogOpen(true);
-                  }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setNewEmail("");
+                      setConfirmPassword("");
+                      setEmailDialogOpen(true);
+                    }}
+                  >
                     Change
                   </Button>
                 </div>
@@ -570,8 +671,12 @@ export default function EditProfile() {
                 <div className="border-t" />
 
                 <div>
-                  <div className="text-sm text-muted-foreground">Account password</div>
-                  <div className="font-medium tracking-widest select-none">••••••••</div>
+                  <div className="text-sm text-muted-foreground">
+                    Account password
+                  </div>
+                  <div className="font-medium tracking-widest select-none">
+                    ••••••••
+                  </div>
                   <p className="text-[11px] text-muted-foreground mt-1">
                     The dots do not represent your actual password size.
                   </p>
@@ -580,7 +685,11 @@ export default function EditProfile() {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => navigate(-1)} disabled={busy}>
+              <Button
+                variant="outline"
+                onClick={() => navigate(-1)}
+                disabled={busy}
+              >
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={busy}>
@@ -614,10 +723,19 @@ export default function EditProfile() {
               disabled={emailBusy}
             />
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setEmailDialogOpen(false)} disabled={emailBusy}>
+              <Button
+                variant="outline"
+                onClick={() => setEmailDialogOpen(false)}
+                disabled={emailBusy}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleChangeEmail} disabled={emailBusy || !newEmail.trim() || !confirmPassword.trim()}>
+              <Button
+                onClick={handleChangeEmail}
+                disabled={
+                  emailBusy || !newEmail.trim() || !confirmPassword.trim()
+                }
+              >
                 {emailBusy ? "Updating..." : "Change"}
               </Button>
             </div>
@@ -645,7 +763,10 @@ export default function EditProfile() {
                 if (!cropDragRef.current.dragging) return;
                 const dx = e.clientX - cropDragRef.current.startX;
                 const dy = e.clientY - cropDragRef.current.startY;
-                setCropOffset({ x: cropDragRef.current.startOffX + dx, y: cropDragRef.current.startOffY + dy });
+                setCropOffset({
+                  x: cropDragRef.current.startOffX + dx,
+                  y: cropDragRef.current.startOffY + dy,
+                });
               }}
               onMouseUp={() => (cropDragRef.current.dragging = false)}
               onMouseLeave={() => (cropDragRef.current.dragging = false)}
@@ -662,7 +783,10 @@ export default function EditProfile() {
                 const t = e.touches[0];
                 const dx = t.clientX - cropDragRef.current.startX;
                 const dy = t.clientY - cropDragRef.current.startY;
-                setCropOffset({ x: cropDragRef.current.startOffX + dx, y: cropDragRef.current.startOffY + dy });
+                setCropOffset({
+                  x: cropDragRef.current.startOffX + dx,
+                  y: cropDragRef.current.startOffY + dy,
+                });
               }}
               onTouchEnd={() => (cropDragRef.current.dragging = false)}
             >
@@ -678,7 +802,9 @@ export default function EditProfile() {
                   }}
                 />
               ) : (
-                <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">No image</div>
+                <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">
+                  No image
+                </div>
               )}
             </div>
 
@@ -686,7 +812,9 @@ export default function EditProfile() {
               <div className="text-xs text-muted-foreground mb-1">Zoom</div>
               <Slider
                 value={[cropScale]}
-                onValueChange={(v) => setCropScale(Math.min(5, Math.max(0.5, v[0] ?? 1)))}
+                onValueChange={(v) =>
+                  setCropScale(Math.min(5, Math.max(0.5, v[0] ?? 1)))
+                }
                 min={0.5}
                 max={5}
                 step={0.01}
@@ -720,10 +848,15 @@ export default function EditProfile() {
                     const ih = img.naturalHeight || img.height;
 
                     const previewBox = 256;
-                    const baseScale = Math.max(previewBox / iw, previewBox / ih);
+                    const baseScale = Math.max(
+                      previewBox / iw,
+                      previewBox / ih,
+                    );
                     const totalScale = baseScale * cropScale;
-                    const dx = (previewBox / 2 + cropOffset.x) - (iw * totalScale) / 2;
-                    const dy = (previewBox / 2 + cropOffset.y) - (ih * totalScale) / 2;
+                    const dx =
+                      previewBox / 2 + cropOffset.x - (iw * totalScale) / 2;
+                    const dy =
+                      previewBox / 2 + cropOffset.y - (ih * totalScale) / 2;
                     const scaleToCanvas = size / previewBox;
 
                     ctx.fillStyle = "#000";
@@ -731,38 +864,59 @@ export default function EditProfile() {
                     ctx.imageSmoothingQuality = "high";
                     ctx.drawImage(
                       img,
-                      0, 0, iw, ih,
+                      0,
+                      0,
+                      iw,
+                      ih,
                       dx * scaleToCanvas,
                       dy * scaleToCanvas,
                       iw * totalScale * scaleToCanvas,
-                      ih * totalScale * scaleToCanvas
+                      ih * totalScale * scaleToCanvas,
                     );
 
                     const blob: Blob | null = await new Promise((resolve) =>
-                      canvas.toBlob(resolve, "image/jpeg", 0.92)
+                      canvas.toBlob(resolve, "image/jpeg", 0.92),
                     );
                     if (!blob) throw new Error("Could not create image");
-                    const file = new File([blob], (pendingAvatarFile?.name ?? "avatar") + ".jpg", { type: "image/jpeg" });
+                    const file = new File(
+                      [blob],
+                      (pendingAvatarFile?.name ?? "avatar") + ".jpg",
+                      { type: "image/jpeg" },
+                    );
 
                     const url = await uploadFileAndGetUrl(file);
                     // Do NOT persist yet; wait for Save Changes
                     setImageUrl(url);
                     setPreviewImageUrl(withBust(url));
-                    toast.success("Avatar updated. Click 'Save Changes' to apply.");
+                    toast.success(
+                      "Avatar updated. Click 'Save Changes' to apply.",
+                    );
                   } catch (e: any) {
                     const msg = String(e?.message || "").toLowerCase();
                     if (msg.includes("too large")) {
                       toast.error("File too large. Try a smaller image.");
                     } else if (msg.includes("unsupported")) {
-                      toast.error("Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.");
-                    } else if (msg.includes("not authorized") || msg.includes("sign in")) {
-                      toast.error("Upload not authorized. Please sign in again.");
+                      toast.error(
+                        "Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.",
+                      );
+                    } else if (
+                      msg.includes("not authorized") ||
+                      msg.includes("sign in")
+                    ) {
+                      toast.error(
+                        "Upload not authorized. Please sign in again.",
+                      );
                     } else if (msg.includes("timed out")) {
                       toast.error("Upload timed out. Please try again.");
-                    } else if (msg.includes("network") || msg.includes("failed to fetch")) {
+                    } else if (
+                      msg.includes("network") ||
+                      msg.includes("failed to fetch")
+                    ) {
                       toast.error("Network error. Please try again.");
                     } else if (msg.includes("permission")) {
-                      toast.error("Permission denied. Please allow photo access.");
+                      toast.error(
+                        "Permission denied. Please allow photo access.",
+                      );
                     } else {
                       toast.error("Crop or upload failed");
                     }
