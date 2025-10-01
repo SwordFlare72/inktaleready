@@ -337,19 +337,23 @@ export default function EditProfile() {
 
             <div className="space-y-6">
               <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                <div className="h-20 w-20 rounded-full overflow-hidden bg-muted flex items-center justify-center relative">
                   {previewImageUrl ? (
                     <img
+                      key={previewImageUrl}
                       src={previewImageUrl}
                       alt="Profile"
                       className="h-full w-full object-cover"
                       crossOrigin="anonymous"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
+                        console.error("Failed to load profile preview:", previewImageUrl);
                         try {
-                          // fallback to "No image" placeholder in preview container only
                           (e.currentTarget as HTMLImageElement).style.display = "none";
                         } catch {}
+                      }}
+                      onLoad={() => {
+                        console.log("Profile preview loaded successfully:", previewImageUrl);
                       }}
                     />
                   ) : (
@@ -405,18 +409,23 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="h-20 w-32 rounded overflow-hidden bg-muted flex items-center justify-center">
+                <div className="h-20 w-32 rounded overflow-hidden bg-muted flex items-center justify-center relative">
                   {previewBannerUrl ? (
                     <img
+                      key={previewBannerUrl}
                       src={previewBannerUrl}
                       alt="Banner"
                       className="h-full w-full object-cover"
                       crossOrigin="anonymous"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
+                        console.error("Failed to load banner preview:", previewBannerUrl);
                         try {
                           (e.currentTarget as HTMLImageElement).style.display = "none";
                         } catch {}
+                      }}
+                      onLoad={() => {
+                        console.log("Banner preview loaded successfully:", previewBannerUrl);
                       }}
                     />
                   ) : (
