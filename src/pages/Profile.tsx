@@ -3,20 +3,52 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Edit, Users, BookOpen, Eye, Heart, ArrowLeft, MoreVertical, MessageSquare, ChevronRight } from "lucide-react";
+import {
+  Edit,
+  Users,
+  BookOpen,
+  Eye,
+  Heart,
+  ArrowLeft,
+  MoreVertical,
+  MessageSquare,
+  ChevronRight,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useLocation } from "react-router";
 import { toast } from "sonner";
 import { DialogDescription } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Settings as SettingsIcon, LogOut } from "lucide-react";
 import { Image as ImageIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +59,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user: currentUser, signOut } = useAuth();
-  
+
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -80,54 +112,72 @@ export default function Profile() {
   const isOwnProfile = !id || (currentUser && id === currentUser._id);
   const targetUserId = id as Id<"users"> | undefined;
 
-  const profileUser = useQuery(api.users.getUserPublic, 
-    targetUserId ? { userId: targetUserId } : "skip"
-  );
-  
-  const userStories = useQuery(api.users.listUserStories,
-    isOwnProfile && currentUser ? {
-      userId: currentUser._id as Id<"users">,
-      paginationOpts: { numItems: 20, cursor: null },
-    } : targetUserId ? {
-      userId: targetUserId,
-      paginationOpts: { numItems: 20, cursor: null },
-    } : "skip"
+  const profileUser = useQuery(
+    api.users.getUserPublic,
+    targetUserId ? { userId: targetUserId } : "skip",
   );
 
-  const storiesToShow = isOwnProfile ? (userStories?.page ?? []) : (profileUser?.stories ?? []);
+  const userStories = useQuery(
+    api.users.listUserStories,
+    isOwnProfile && currentUser
+      ? {
+          userId: currentUser._id as Id<"users">,
+          paginationOpts: { numItems: 20, cursor: null },
+        }
+      : targetUserId
+        ? {
+            userId: targetUserId,
+            paginationOpts: { numItems: 20, cursor: null },
+          }
+        : "skip",
+  );
+
+  const storiesToShow = isOwnProfile
+    ? (userStories?.page ?? [])
+    : (profileUser?.stories ?? []);
 
   const publicLists = useQuery(
     api.library.listPublicListsByUser,
-    (isOwnProfile && currentUser)
+    isOwnProfile && currentUser
       ? { userId: currentUser._id as Id<"users"> }
       : targetUserId
         ? { userId: targetUserId }
-        : "skip"
+        : "skip",
   );
 
   const updateMe = useMutation(api.users.updateMe);
   const toggleUserFollow = useMutation(api.users.toggleUserFollow);
   const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
 
-  const [confirmDeleteAnnId, setConfirmDeleteAnnId] = useState<string | null>(null);
+  const [confirmDeleteAnnId, setConfirmDeleteAnnId] = useState<string | null>(
+    null,
+  );
   const [isDeletingAnn, setIsDeletingAnn] = useState(false);
 
   const isFollowing = useQuery(
     api.users.isFollowingUser,
-    !isOwnProfile && targetUserId ? { userId: targetUserId } : "skip"
+    !isOwnProfile && targetUserId ? { userId: targetUserId } : "skip",
   );
 
   const followersList = useQuery(
     api.users.listFollowers,
     isOwnProfile
-      ? (currentUser?._id ? { userId: currentUser._id as Id<"users"> } : "skip")
-      : (targetUserId ? { userId: targetUserId } : "skip")
+      ? currentUser?._id
+        ? { userId: currentUser._id as Id<"users"> }
+        : "skip"
+      : targetUserId
+        ? { userId: targetUserId }
+        : "skip",
   );
   const followingList = useQuery(
     api.users.listFollowing,
     isOwnProfile
-      ? (currentUser?._id ? { userId: currentUser._id as Id<"users"> } : "skip")
-      : (targetUserId ? { userId: targetUserId } : "skip")
+      ? currentUser?._id
+        ? { userId: currentUser._id as Id<"users"> }
+        : "skip"
+      : targetUserId
+        ? { userId: targetUserId }
+        : "skip",
   );
 
   const displayUser = isOwnProfile ? currentUser : profileUser;
@@ -135,15 +185,27 @@ export default function Profile() {
   const readingListCount = Array.isArray(publicLists) ? publicLists.length : 0;
   // Fix follower count on own profile: compute from followersList length; otherwise use public field
   const followerCount = isOwnProfile
-    ? (Array.isArray(followersList) ? followersList.length : 0)
-    : (typeof displayUser?.totalFollowers === "number" ? displayUser.totalFollowers : 0);
+    ? Array.isArray(followersList)
+      ? followersList.length
+      : 0
+    : typeof displayUser?.totalFollowers === "number"
+      ? displayUser.totalFollowers
+      : 0;
 
   // Announcements data and actions
   const announcements = useQuery(
     api.announcements.listByUser,
-    (isOwnProfile && currentUser)
-      ? { userId: currentUser._id as Id<"users">, paginationOpts: { numItems: 10, cursor: null } }
-      : (targetUserId ? { userId: targetUserId, paginationOpts: { numItems: 10, cursor: null } } : "skip")
+    isOwnProfile && currentUser
+      ? {
+          userId: currentUser._id as Id<"users">,
+          paginationOpts: { numItems: 10, cursor: null },
+        }
+      : targetUserId
+        ? {
+            userId: targetUserId,
+            paginationOpts: { numItems: 10, cursor: null },
+          }
+        : "skip",
   );
   const listReplies = useQuery; // alias to satisfy TS where used inline via useQuery
   const createAnnouncement = useMutation(api.announcements.create);
@@ -152,13 +214,19 @@ export default function Profile() {
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
   // Add: per-announcement replies expanded state
-  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+  const [expandedReplies, setExpandedReplies] = useState<
+    Record<string, boolean>
+  >({});
 
   // Read tab and target announcement from URL
   const searchParams = new URLSearchParams(location.search);
-  const initialTab = (searchParams.get("tab") === "announcements" ? "announcements" : "about") as "about" | "announcements";
+  const initialTab = (
+    searchParams.get("tab") === "announcements" ? "announcements" : "about"
+  ) as "about" | "announcements";
   const targetAnnouncementId = searchParams.get("aid");
-  const [activeTab, setActiveTab] = useState<"about" | "announcements">(initialTab);
+  const [activeTab, setActiveTab] = useState<"about" | "announcements">(
+    initialTab,
+  );
 
   // Move the deep-link effect ABOVE any early returns to preserve hook order
   useEffect(() => {
@@ -252,7 +320,9 @@ export default function Profile() {
                     <DropdownMenuItem
                       onClick={() => {
                         if (!targetUserId) return;
-                        navigate("/messages", { state: { partnerId: targetUserId } });
+                        navigate("/messages", {
+                          state: { partnerId: targetUserId },
+                        });
                       }}
                       className="cursor-pointer"
                     >
@@ -270,7 +340,14 @@ export default function Profile() {
             <div className="flex items-end justify-between gap-3">
               <div className="flex items-end gap-3">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-background">
-                  <AvatarImage src={displayUser.image} />
+                  <AvatarImage
+                    key={displayUser.image || "no-image"}
+                    src={
+                      displayUser.image
+                        ? `${displayUser.image}${displayUser.image.includes("?") ? "&" : "?"}cb=${Date.now() >> 12}`
+                        : undefined
+                    }
+                  />
                   <AvatarFallback className="text-2xl">
                     {displayUser.name?.charAt(0) || "U"}
                   </AvatarFallback>
@@ -281,7 +358,9 @@ export default function Profile() {
                   </div>
                   {/* Username line */}
                   {displayUser.username && (
-                    <div className="text-sm text-muted-foreground">@{displayUser.username}</div>
+                    <div className="text-sm text-muted-foreground">
+                      @{displayUser.username}
+                    </div>
                   )}
                 </div>
               </div>
@@ -290,7 +369,12 @@ export default function Profile() {
               {isOwnProfile ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="mr-4 mt-2 sm:mr-6 sm:mt-3" aria-label="Settings">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="mr-4 mt-2 sm:mr-6 sm:mt-3"
+                      aria-label="Settings"
+                    >
                       <SettingsIcon className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -324,14 +408,21 @@ export default function Profile() {
             {/* Compact stats row */}
             <div className="mt-4 grid grid-cols-3 gap-6 text-center items-center">
               <div className="px-2">
-                <div className="text-xl font-semibold">{storiesToShow.length}</div>
+                <div className="text-xl font-semibold">
+                  {storiesToShow.length}
+                </div>
                 <div className="text-xs text-muted-foreground">Stories</div>
               </div>
               <div className="px-2">
                 <div className="text-xl font-semibold">{readingListCount}</div>
-                <div className="text-xs text-muted-foreground">Reading Lists</div>
+                <div className="text-xs text-muted-foreground">
+                  Reading Lists
+                </div>
               </div>
-              <button className="px-2 text-center w-full" onClick={() => setOpenFollowers(true)}>
+              <button
+                className="px-2 text-center w-full"
+                onClick={() => setOpenFollowers(true)}
+              >
                 <div className="text-xl font-semibold">{followerCount}</div>
                 <div className="text-xs text-muted-foreground">Followers</div>
               </button>
@@ -341,7 +432,11 @@ export default function Profile() {
 
         {/* Tabs: About + Announcements */}
         <div className="px-4 sm:px-6 mt-6">
-          <Tabs value={activeTab} onValueChange={(v:any)=>setActiveTab(v)} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v: any) => setActiveTab(v)}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="announcements">Announcements</TabsTrigger>
@@ -359,7 +454,8 @@ export default function Profile() {
                 </div>
               ) : isOwnProfile ? (
                 <div className="mb-8 text-center text-sm text-muted-foreground">
-                  Tap Settings → Profile Settings to add a description about yourself.
+                  Tap Settings → Profile Settings to add a description about
+                  yourself.
                 </div>
               ) : null}
 
@@ -416,10 +512,15 @@ export default function Profile() {
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p className="text-muted-foreground">
-                      {isOwnProfile ? "You haven't published any stories yet" : "No published stories"}
+                      {isOwnProfile
+                        ? "You haven't published any stories yet"
+                        : "No published stories"}
                     </p>
                     {isOwnProfile && (
-                      <Button className="mt-4" onClick={() => navigate("/write")}>
+                      <Button
+                        className="mt-4"
+                        onClick={() => navigate("/write")}
+                      >
                         Start Writing
                       </Button>
                     )}
@@ -447,9 +548,13 @@ export default function Profile() {
                 </div>
 
                 {followingList === undefined ? (
-                  <div className="text-sm text-muted-foreground">Loading...</div>
+                  <div className="text-sm text-muted-foreground">
+                    Loading...
+                  </div>
                 ) : followingList.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">Not following anyone</div>
+                  <div className="text-sm text-muted-foreground">
+                    Not following anyone
+                  </div>
                 ) : (
                   <div className="flex gap-3 overflow-x-auto pb-2 snap-x px-1">
                     {followingList.slice(0, 10).map((u: any) => (
@@ -461,9 +566,13 @@ export default function Profile() {
                         <div className="flex flex-col items-center gap-2">
                           <Avatar className="h-14 w-14">
                             <AvatarImage src={u.image} />
-                            <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                            <AvatarFallback>
+                              {u.name?.charAt(0) || "U"}
+                            </AvatarFallback>
                           </Avatar>
-                          <div className="text-sm md:text-base font-semibold line-clamp-1">{u.name || "User"}</div>
+                          <div className="text-sm md:text-base font-semibold line-clamp-1">
+                            {u.name || "User"}
+                          </div>
                         </div>
                       </button>
                     ))}
@@ -475,7 +584,9 @@ export default function Profile() {
                         <div className="h-14 w-14 rounded-full border grid place-items-center text-sm">
                           View All
                         </div>
-                        <div className="text-xs mt-2 text-muted-foreground">+{followingList.length - 10} more</div>
+                        <div className="text-xs mt-2 text-muted-foreground">
+                          +{followingList.length - 10} more
+                        </div>
                       </button>
                     )}
                   </div>
@@ -485,11 +596,15 @@ export default function Profile() {
               {/* Public Reading Lists */}
               <div className="mb-8">
                 <h2 className="text-2xl font-bold mb-6">
-                  {isOwnProfile ? "My Public Reading Lists" : "Public Reading Lists"}
+                  {isOwnProfile
+                    ? "My Public Reading Lists"
+                    : "Public Reading Lists"}
                 </h2>
 
                 {publicLists === undefined ? (
-                  <div className="text-sm text-muted-foreground">Loading reading lists...</div>
+                  <div className="text-sm text-muted-foreground">
+                    Loading reading lists...
+                  </div>
                 ) : publicLists.length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -510,9 +625,10 @@ export default function Profile() {
                               navigate(`/library/list/${list._id}`, {
                                 state: {
                                   from: "profile" as const,
-                                  profileId: isOwnProfile && currentUser
-                                    ? (currentUser._id as string)
-                                    : (targetUserId as string | undefined),
+                                  profileId:
+                                    isOwnProfile && currentUser
+                                      ? (currentUser._id as string)
+                                      : (targetUserId as string | undefined),
                                 },
                               })
                             }
@@ -522,55 +638,63 @@ export default function Profile() {
                             <ChevronRight className="h-4 w-4" />
                           </button>
                           <span className="text-xs text-muted-foreground">
-                            {list.storyCount} {list.storyCount === 1 ? "story" : "stories"}
+                            {list.storyCount}{" "}
+                            {list.storyCount === 1 ? "story" : "stories"}
                           </span>
                         </div>
 
                         {/* Borderless content with horizontal scroll from the right side as well */}
                         <div className="overflow-x-auto pb-2 snap-x px-1 pr-4">
                           <div className="flex gap-3">
-                            {(list.stories || []).slice(0, 10).map((story: any, idx: number) => (
-                              <button
-                                key={story._id}
-                                onClick={() => navigate(`/story/${story._id}`)}
-                                className="w-32 flex-shrink-0 snap-start text-left"
-                              >
-                                <div className="relative">
-                                  <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
-                                    {story.coverImage ? (
-                                      <img
-                                        src={story.coverImage}
-                                        alt={story.title}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full grid place-items-center">
-                                        <BookOpen className="h-6 w-6 text-muted-foreground" />
-                                      </div>
-                                    )}
+                            {(list.stories || [])
+                              .slice(0, 10)
+                              .map((story: any, idx: number) => (
+                                <button
+                                  key={story._id}
+                                  onClick={() =>
+                                    navigate(`/story/${story._id}`)
+                                  }
+                                  className="w-32 flex-shrink-0 snap-start text-left"
+                                >
+                                  <div className="relative">
+                                    <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
+                                      {story.coverImage ? (
+                                        <img
+                                          src={story.coverImage}
+                                          alt={story.title}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full grid place-items-center">
+                                          <BookOpen className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="mt-2">
-                                  <div className="text-sm font-semibold line-clamp-2">
-                                    {story.title}
+                                  <div className="mt-2">
+                                    <div className="text-sm font-semibold line-clamp-2">
+                                      {story.title}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground line-clamp-1">
+                                      {story.author?.name ?? "Anonymous"}
+                                    </div>
                                   </div>
-                                  <div className="text-[11px] text-muted-foreground line-clamp-1">
-                                    {story.author?.name ?? "Anonymous"}
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
+                                </button>
+                              ))}
 
                             {/* View All button after 10 stories */}
-                            {Array.isArray(list.stories) && list.stories.length > 10 && (
-                              <button
-                                onClick={() => navigate(`/library/list/${list._id}`)}
-                                className="w-28 h-full flex-shrink-0 snap-start grid place-items-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted/40"
-                                aria-label="View all stories in this list"
-                              >
-                                View All
-                              </button>
-                            )}
+                            {Array.isArray(list.stories) &&
+                              list.stories.length > 10 && (
+                                <button
+                                  onClick={() =>
+                                    navigate(`/library/list/${list._id}`)
+                                  }
+                                  className="w-28 h-full flex-shrink-0 snap-start grid place-items-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted/40"
+                                  aria-label="View all stories in this list"
+                                >
+                                  View All
+                                </button>
+                              )}
                           </div>
                         </div>
                       </div>
@@ -586,7 +710,9 @@ export default function Profile() {
               {isOwnProfile && (
                 <Card className="border-muted/60 shadow-sm">
                   <CardContent className="pt-6">
-                    <div className="text-sm mb-2 font-semibold">Post an announcement</div>
+                    <div className="text-sm mb-2 font-semibold">
+                      Post an announcement
+                    </div>
                     <Textarea
                       placeholder="Share an update..."
                       value={newAnnouncement}
@@ -600,7 +726,9 @@ export default function Profile() {
                         disabled={!newAnnouncement.trim()}
                         onClick={async () => {
                           try {
-                            await createAnnouncement({ body: newAnnouncement.trim() });
+                            await createAnnouncement({
+                              body: newAnnouncement.trim(),
+                            });
                             setNewAnnouncement("");
                             toast.success("Announcement posted");
                           } catch (e: any) {
@@ -617,24 +745,35 @@ export default function Profile() {
 
               {/* List announcements */}
               {announcements === undefined ? (
-                <div className="text-sm text-muted-foreground">Loading announcements...</div>
+                <div className="text-sm text-muted-foreground">
+                  Loading announcements...
+                </div>
               ) : (announcements.page?.length ?? 0) === 0 ? (
-                <div className="text-sm text-muted-foreground">No announcements yet</div>
+                <div className="text-sm text-muted-foreground">
+                  No announcements yet
+                </div>
               ) : (
                 announcements.page.map((a: any) => (
-                  <Card key={a._id} id={`ann-${String(a._id)}`} className="border-muted/60 shadow-sm relative">
+                  <Card
+                    key={a._id}
+                    id={`ann-${String(a._id)}`}
+                    className="border-muted/60 shadow-sm relative"
+                  >
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={a.author?.image} />
-                          <AvatarFallback>{a.author?.name?.charAt(0) || "U"}</AvatarFallback>
+                          <AvatarFallback>
+                            {a.author?.name?.charAt(0) || "U"}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
                           <div className="text-sm font-semibold leading-tight">
                             {a.author?.name || "User"}
                           </div>
                           <div className="text-[11px] text-muted-foreground">
-                            Announcement • {new Date(a._creationTime).toLocaleString()}
+                            Announcement •{" "}
+                            {new Date(a._creationTime).toLocaleString()}
                           </div>
                         </div>
 
@@ -643,13 +782,20 @@ export default function Profile() {
                           <div className="ml-auto">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="More options">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  aria-label="More options"
+                                >
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
                                 <DropdownMenuItem
-                                  onClick={() => setConfirmDeleteAnnId(String(a._id))}
+                                  onClick={() =>
+                                    setConfirmDeleteAnnId(String(a._id))
+                                  }
                                   className="text-red-600 focus:text-red-600 cursor-pointer"
                                 >
                                   Delete
@@ -702,21 +848,31 @@ export default function Profile() {
                             rows={2}
                             value={replyInputs[String(a._id)] || ""}
                             onChange={(e) =>
-                              setReplyInputs((s) => ({ ...s, [String(a._id)]: e.target.value }))
+                              setReplyInputs((s) => ({
+                                ...s,
+                                [String(a._id)]: e.target.value,
+                              }))
                             }
                             className="rounded-lg bg-muted/30 focus-visible:ring-1 focus-visible:ring-ring"
                           />
                           <Button
                             size="sm"
                             className="self-end"
-                            disabled={!(replyInputs[String(a._id)] || "").trim()}
+                            disabled={
+                              !(replyInputs[String(a._id)] || "").trim()
+                            }
                             onClick={async () => {
                               try {
                                 await replyToAnnouncement({
                                   announcementId: a._id as Id<"announcements">,
-                                  body: (replyInputs[String(a._id)] || "").trim(),
+                                  body: (
+                                    replyInputs[String(a._id)] || ""
+                                  ).trim(),
                                 });
-                                setReplyInputs((s) => ({ ...s, [String(a._id)]: "" }));
+                                setReplyInputs((s) => ({
+                                  ...s,
+                                  [String(a._id)]: "",
+                                }));
                               } catch (e: any) {
                                 toast.error(e?.message || "Failed to reply");
                               }
@@ -729,23 +885,36 @@ export default function Profile() {
                     </CardContent>
 
                     {/* Confirm delete announcement dialog */}
-                    <AlertDialog open={confirmDeleteAnnId === String(a._id)} onOpenChange={(o) => !o && setConfirmDeleteAnnId(null)}>
+                    <AlertDialog
+                      open={confirmDeleteAnnId === String(a._id)}
+                      onOpenChange={(o) => !o && setConfirmDeleteAnnId(null)}
+                    >
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete this announcement?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Delete this announcement?
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete this announcement? This action cannot be undone.
+                            Are you sure you want to delete this announcement?
+                            This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel disabled={isDeletingAnn} onClick={() => setConfirmDeleteAnnId(null)}>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel
+                            disabled={isDeletingAnn}
+                            onClick={() => setConfirmDeleteAnnId(null)}
+                          >
+                            Cancel
+                          </AlertDialogCancel>
                           <AlertDialogAction
                             className="bg-red-600 text-white hover:bg-red-700"
                             disabled={isDeletingAnn}
                             onClick={async () => {
                               setIsDeletingAnn(true);
                               try {
-                                await deleteAnnouncement({ announcementId: a._id as any });
+                                await deleteAnnouncement({
+                                  announcementId: a._id as any,
+                                });
                                 toast.success("Announcement deleted");
                                 setConfirmDeleteAnnId(null);
                               } catch (e: any) {
@@ -792,7 +961,9 @@ export default function Profile() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Profile Image URL</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Profile Image URL
+                </label>
                 <Input
                   value={editImage}
                   onChange={(e) => setEditImage(e.target.value)}
@@ -800,7 +971,10 @@ export default function Profile() {
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEditDialog(false)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSaveProfile}>Save Changes</Button>
@@ -820,7 +994,9 @@ export default function Profile() {
               {followersList === undefined ? (
                 <div className="text-sm text-muted-foreground">Loading...</div>
               ) : followersList.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No followers yet</div>
+                <div className="text-sm text-muted-foreground">
+                  No followers yet
+                </div>
               ) : (
                 followersList.map((u: any) => (
                   <div
@@ -833,12 +1009,18 @@ export default function Profile() {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={u.image} />
-                      <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                      <AvatarFallback>
+                        {u.name?.charAt(0) || "U"}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{u.name || "User"}</div>
+                      <div className="text-sm font-medium truncate">
+                        {u.name || "User"}
+                      </div>
                       {u.bio && (
-                        <div className="text-xs text-muted-foreground truncate">{u.bio}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {u.bio}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -859,7 +1041,9 @@ export default function Profile() {
               {followingList === undefined ? (
                 <div className="text-sm text-muted-foreground">Loading...</div>
               ) : followingList.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Not following anyone</div>
+                <div className="text-sm text-muted-foreground">
+                  Not following anyone
+                </div>
               ) : (
                 followingList.map((u: any) => (
                   <div
@@ -872,12 +1056,18 @@ export default function Profile() {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={u.image} />
-                      <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
+                      <AvatarFallback>
+                        {u.name?.charAt(0) || "U"}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{u.name || "User"}</div>
+                      <div className="text-sm font-medium truncate">
+                        {u.name || "User"}
+                      </div>
                       {u.bio && (
-                        <div className="text-xs text-muted-foreground truncate">{u.bio}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {u.bio}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -893,7 +1083,8 @@ export default function Profile() {
             <AlertDialogHeader>
               <AlertDialogTitle>Log out of Fiction Hub?</AlertDialogTitle>
               <AlertDialogDescription>
-                You can always sign back in with your email or continue as a guest. Are you sure you want to log out?
+                You can always sign back in with your email or continue as a
+                guest. Are you sure you want to log out?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -921,7 +1112,13 @@ export default function Profile() {
 }
 
 // Helper subcomponent for replies list
-function AnnouncementReplies({ announcementId, announcementAuthorId }: { announcementId: Id<"announcements">, announcementAuthorId: Id<"users"> }) {
+function AnnouncementReplies({
+  announcementId,
+  announcementAuthorId,
+}: {
+  announcementId: Id<"announcements">;
+  announcementAuthorId: Id<"users">;
+}) {
   const { user: currentUser } = useAuth();
   const replies = useQuery(api.announcements.listReplies, { announcementId });
   const deleteReply = useMutation(api.announcements.deleteReply);
@@ -929,7 +1126,9 @@ function AnnouncementReplies({ announcementId, announcementAuthorId }: { announc
   const [isDeletingReply, setIsDeletingReply] = useState(false);
 
   if (replies === undefined) {
-    return <div className="text-xs text-muted-foreground">Loading replies...</div>;
+    return (
+      <div className="text-xs text-muted-foreground">Loading replies...</div>
+    );
   }
   if (replies.length === 0) return null;
   return (
@@ -938,20 +1137,32 @@ function AnnouncementReplies({ announcementId, announcementAuthorId }: { announc
         Replies
       </div>
       {replies.map((r: any) => {
-        const canDelete = currentUser && (currentUser._id === r.authorId || currentUser._id === announcementAuthorId);
+        const canDelete =
+          currentUser &&
+          (currentUser._id === r.authorId ||
+            currentUser._id === announcementAuthorId);
         return (
           <div key={r._id} className="flex items-start gap-2">
             <Avatar className="h-7 w-7">
               <AvatarImage src={r.author?.image} />
-              <AvatarFallback>{r.author?.name?.charAt(0) || "U"}</AvatarFallback>
+              <AvatarFallback>
+                {r.author?.name?.charAt(0) || "U"}
+              </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-medium">{r.author?.name || "User"}</div>
+                <div className="text-xs font-medium">
+                  {r.author?.name || "User"}
+                </div>
                 {canDelete && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="More options">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        aria-label="More options"
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -966,20 +1177,31 @@ function AnnouncementReplies({ announcementId, announcementAuthorId }: { announc
                   </DropdownMenu>
                 )}
               </div>
-              <div className="text-sm whitespace-pre-wrap leading-relaxed">{r.body}</div>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                {r.body}
+              </div>
             </div>
 
             {/* Confirm delete reply dialog */}
-            <AlertDialog open={confirmReplyId === String(r._id)} onOpenChange={(o) => !o && setConfirmReplyId(null)}>
+            <AlertDialog
+              open={confirmReplyId === String(r._id)}
+              onOpenChange={(o) => !o && setConfirmReplyId(null)}
+            >
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete this reply?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete this reply? This action cannot be undone.
+                    Are you sure you want to delete this reply? This action
+                    cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isDeletingReply} onClick={() => setConfirmReplyId(null)}>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel
+                    disabled={isDeletingReply}
+                    onClick={() => setConfirmReplyId(null)}
+                  >
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-red-600 text-white hover:bg-red-700"
                     disabled={isDeletingReply}
