@@ -285,7 +285,6 @@ export default function Profile() {
                 src={displayUser.bannerImage}
                 alt="Profile banner"
                 className="h-full w-full object-cover"
-                loading="lazy"
               />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
@@ -341,12 +340,7 @@ export default function Profile() {
               <div className="flex items-end gap-3">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-background">
                   <AvatarImage
-                    key={displayUser.image || "no-image"}
-                    src={
-                      displayUser.image
-                        ? `${displayUser.image}${displayUser.image.includes("?") ? "&" : "?"}cb=${Date.now() >> 12}`
-                        : undefined
-                    }
+                    src={displayUser.image || undefined}
                   />
                   <AvatarFallback className="text-2xl">
                     {displayUser.name?.charAt(0) || "U"}

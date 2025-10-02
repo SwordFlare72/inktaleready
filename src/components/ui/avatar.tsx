@@ -33,6 +33,7 @@ const AvatarImage = React.forwardRef<
     />
   );
 });
+AvatarImage.displayName = "AvatarImage";
 
 function AvatarFallback({
   className,
