@@ -177,11 +177,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("password", fd);
 
       // 2) Wait for session to initialize, then try to set username with robust retry
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 1000));
       
       let saved = false;
       let lastError = "";
-      const maxRetries = 20;
+      const maxRetries = 25;
       
       for (let i = 0; i < maxRetries; i++) {
         try {
@@ -192,10 +192,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           const msg = String(err?.message || "").toLowerCase();
           lastError = err?.message || "Unknown error";
           
+          console.log(`Username set attempt ${i + 1}/${maxRetries}:`, msg);
+          
           // Check if it's an authentication timing issue
           if (msg.includes("authenticated") || msg.includes("must be")) {
-            // Progressive backoff: start with 500ms, increase by 150ms each attempt
-            const delay = 500 + (i * 150);
+            // Exponential backoff with jitter for auth errors
+            const baseDelay = 600;
+            const exponentialDelay = Math.min(baseDelay * Math.pow(1.3, i), 3000);
+            const jitter = Math.random() * 200;
+            const delay = exponentialDelay + jitter;
             await new Promise((r) => setTimeout(r, delay));
             continue;
           }
@@ -206,19 +211,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             return;
           }
           
-          // For other errors, retry with shorter delay
-          if (i < maxRetries - 3) {
-            await new Promise((r) => setTimeout(r, 500));
+          // For other transient errors, retry with moderate delay
+          if (i < maxRetries - 5) {
+            await new Promise((r) => setTimeout(r, 800));
             continue;
           }
           
-          // Last few attempts failed
+          // Last few attempts - give up
           break;
         }
       }
 
       if (!saved) {
         // Username couldn't be set after all retries
+        console.error("Failed to set username after all retries:", lastError);
         setSuUsernameError(`Could not set username: ${lastError}`);
         return;
       }
