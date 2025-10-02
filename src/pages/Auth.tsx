@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, UserX, Chrome } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
@@ -227,31 +226,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       toast.success("Account created");
       navigate(redirectAfterAuth || "/");
     } catch (err: any) {
-      console.error("Signup error:", err);
       const msg = String(err?.message || "");
-      const lowerMsg = msg.toLowerCase();
-      
-      if (lowerMsg.includes("passwords do not match")) {
+      if (msg.toLowerCase().includes("passwords do not match")) {
         setError("Passwords do not match");
-      } else if (lowerMsg.includes("failed to set username")) {
-        setSuUsernameError("Could not set username. Please try again.");
+      } else if (msg.toLowerCase().includes("failed to set username")) {
+        setError("Could not set username. Please try again.");
       } else if (
-        lowerMsg.includes("already") ||
-        lowerMsg.includes("exist") ||
-        lowerMsg.includes("registered") ||
-        lowerMsg.includes("in use") ||
-        lowerMsg.includes("duplicate")
+        msg.toLowerCase().includes("already") ||
+        msg.toLowerCase().includes("exist") ||
+        msg.toLowerCase().includes("registered") ||
+        msg.toLowerCase().includes("in use")
       ) {
         setError("User already signed up");
-      } else if (lowerMsg.includes("network") || lowerMsg.includes("failed to fetch")) {
+      } else if (msg.toLowerCase().includes("network") || msg.toLowerCase().includes("failed to fetch")) {
         setError("Network error. Please try again.");
-      } else if (lowerMsg.includes("invalid") && lowerMsg.includes("email")) {
-        setSuEmailError("Invalid email address");
-      } else if (lowerMsg.includes("password")) {
-        setSuPasswordError(msg);
       } else {
-        // Show the actual error message for debugging
-        setError(msg || "Sign up failed. Please try again.");
+        setError("Sign up failed");
       }
     } finally {
       setIsLoading(false);
@@ -428,20 +418,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                   <div>
                     <Label className="mb-1 block">Gender (optional)</Label>
-                    <Select
+                    <Input
+                      placeholder="e.g., Male, Female, Non-binary"
                       value={suGender ?? ""}
-                      onValueChange={(value) => setSuGender(value || undefined)}
+                      onChange={(e) => setSuGender(e.target.value || undefined)}
                       disabled={isLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
