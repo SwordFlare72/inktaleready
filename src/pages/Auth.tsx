@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, UserX, Chrome } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
@@ -176,57 +175,25 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 2) Wait for session to initialize, then try to set username with robust retry
-      await new Promise((r) => setTimeout(r, 1000));
-      
+      // 2) Try to set username (retry until session cookie is available)
       let saved = false;
-      let lastError = "";
-      const maxRetries = 25;
-      
-      for (let i = 0; i < maxRetries; i++) {
+      for (let i = 0; i < 6; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
           break;
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
-          lastError = err?.message || "Unknown error";
-          
-          console.log(`Username set attempt ${i + 1}/${maxRetries}:`, msg);
-          
-          // Check if it's an authentication timing issue
-          if (msg.includes("authenticated") || msg.includes("must be")) {
-            // Exponential backoff with jitter for auth errors
-            const baseDelay = 600;
-            const exponentialDelay = Math.min(baseDelay * Math.pow(1.3, i), 3000);
-            const jitter = Math.random() * 200;
-            const delay = exponentialDelay + jitter;
-            await new Promise((r) => setTimeout(r, delay));
+          if (msg.includes("authenticated")) {
+            await new Promise((r) => setTimeout(r, 250));
             continue;
           }
-          
-          // Check if username is taken
-          if (msg.includes("username is already taken") || msg.includes("already taken")) {
+          if (msg.includes("username is already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
-          
-          // For other transient errors, retry with moderate delay
-          if (i < maxRetries - 5) {
-            await new Promise((r) => setTimeout(r, 800));
-            continue;
-          }
-          
-          // Last few attempts - give up
-          break;
+          throw new Error("Failed to set username");
         }
-      }
-
-      if (!saved) {
-        // Username couldn't be set after all retries
-        console.error("Failed to set username after all retries:", lastError);
-        setSuUsernameError(`Could not set username: ${lastError}`);
-        return;
       }
 
       // 3) Optional profile fields (Display Name and Gender)
@@ -238,37 +205,40 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           await updateMe(payload as any);
         }
       } catch {
-        // ignore warmup errors for optional fields
+        // ignore warmup
+      }
+
+      // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
+      if (!saved) {
+        if (shouldPromptUsername) {
+          setUsernameInput(desired);
+          setShowUsernameDialog(true);
+          return;
+        } else {
+          setSuUsernameError("Could not set username. Please try again.");
+          return;
+        }
       }
 
       toast.success("Account created");
       navigate(redirectAfterAuth || "/");
     } catch (err: any) {
-      console.error("Signup error:", err);
       const msg = String(err?.message || "");
-      const lowerMsg = msg.toLowerCase();
-      
-      if (lowerMsg.includes("passwords do not match")) {
+      if (msg.toLowerCase().includes("passwords do not match")) {
         setError("Passwords do not match");
-      } else if (lowerMsg.includes("failed to set username")) {
-        setSuUsernameError("Could not set username. Please try again.");
+      } else if (msg.toLowerCase().includes("failed to set username")) {
+        setError("Could not set username. Please try again.");
       } else if (
-        lowerMsg.includes("already") ||
-        lowerMsg.includes("exist") ||
-        lowerMsg.includes("registered") ||
-        lowerMsg.includes("in use") ||
-        lowerMsg.includes("duplicate")
+        msg.toLowerCase().includes("already") ||
+        msg.toLowerCase().includes("exist") ||
+        msg.toLowerCase().includes("registered") ||
+        msg.toLowerCase().includes("in use")
       ) {
         setError("User already signed up");
-      } else if (lowerMsg.includes("network") || lowerMsg.includes("failed to fetch")) {
+      } else if (msg.toLowerCase().includes("network") || msg.toLowerCase().includes("failed to fetch")) {
         setError("Network error. Please try again.");
-      } else if (lowerMsg.includes("invalid") && lowerMsg.includes("email")) {
-        setSuEmailError("Invalid email address");
-      } else if (lowerMsg.includes("password")) {
-        setSuPasswordError(msg);
       } else {
-        // Show the actual error message for debugging
-        setError(msg || "Sign up failed. Please try again.");
+        setError("Sign up failed");
       }
     } finally {
       setIsLoading(false);
@@ -445,20 +415,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                   <div>
                     <Label className="mb-1 block">Gender (optional)</Label>
-                    <Select
+                    <Input
+                      placeholder="e.g., Male, Female, Non-binary"
                       value={suGender ?? ""}
-                      onValueChange={(value) => setSuGender(value || undefined)}
+                      onChange={(e) => setSuGender(e.target.value || undefined)}
                       disabled={isLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>

@@ -39,7 +39,7 @@ export default function EditProfile() {
   const [gender, setGender] = useState("");
 
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [bannerStorageId, setBannerStorageId] = useState<Id<"_storage"> | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string>("");
 
   // Add: preview URLs with cache-busting for immediate UI refresh after upload/save
   const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
@@ -120,10 +120,6 @@ export default function EditProfile() {
   });
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
 
-  const bannerUrl = useQuery(api.fileQueries.getFileUrlQuery, 
-    bannerStorageId ? { storageId: bannerStorageId } : "skip"
-  );
-
   useEffect(() => {
     if (me) {
       setName(me.name ?? "");
@@ -131,19 +127,12 @@ export default function EditProfile() {
       setBio(me.bio ?? "");
       setGender(me.gender ?? "");
       setImageUrl(me.image ?? "");
-      setBannerStorageId((me as any).bannerImageStorageId ?? null);
+      setBannerUrl((me as any).bannerImage ?? "");
       // Add: keep previews in sync from saved URLs (no bust initially)
       setPreviewImageUrl(me.image ?? "");
+      setPreviewBannerUrl((me as any).bannerImage ?? "");
     }
   }, [me]);
-
-  useEffect(() => {
-    if (bannerUrl) {
-      setPreviewBannerUrl(bannerUrl);
-    } else if (bannerStorageId === null) {
-      setPreviewBannerUrl("");
-    }
-  }, [bannerUrl, bannerStorageId]);
 
   useEffect(() => {
     if (imageUrl === "") {
@@ -151,7 +140,7 @@ export default function EditProfile() {
     }
   }, [imageUrl]);
 
-  async function uploadFileAndGetStorageId(file: File): Promise<Id<"_storage">> {
+  async function uploadFileAndGetUrl(file: File): Promise<string> {
     // Guard: sanity check
     if (!(file instanceof File)) {
       throw new Error("No file selected");
@@ -198,7 +187,19 @@ export default function EditProfile() {
       if (!storageIdRaw || typeof storageIdRaw !== "string") {
         throw new Error("Upload failed: missing storage id");
       }
-      return storageIdRaw as Id<"_storage">;
+      const storageId = storageIdRaw as Id<"_storage">;
+
+      // Resolve a public URL with small retry
+      for (let i = 0; i < 3; i++) {
+        try {
+          const url = await getFileUrl({ storageId });
+          if (url && typeof url === "string") return url;
+        } catch {
+          // swallow and retry
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      throw new Error("Could not get file URL");
     } catch (e: any) {
       if (e?.name === "AbortError") {
         throw new Error("Upload timed out");
@@ -244,7 +245,7 @@ export default function EditProfile() {
         bio: bio.trim(),
         gender: gender.trim() || undefined,
         image: imageUrl || undefined, // persist only on Save
-        bannerImageStorageId: bannerStorageId, // persist only on Save
+        bannerImage: bannerUrl || undefined, // persist only on Save
       };
 
       const res = await updateMe(payload);
@@ -273,6 +274,7 @@ export default function EditProfile() {
 
       // Refresh previews to ensure fresh fetches after save
       if (imageUrl) setPreviewImageUrl(withBust(imageUrl));
+      if (bannerUrl) setPreviewBannerUrl(withBust(bannerUrl));
 
       toast.success("Profile updated");
       navigate(-1);
@@ -427,25 +429,16 @@ export default function EditProfile() {
                       Choose Image
                     </Button>
                     {imageUrl && (
-                    <Button
-                      variant="ghost"
-                      onClick={async () => {
-                        setImageUrl("");
-                        setPreviewImageUrl("");
-                        // Immediately persist the clear
-                        if (me) {
-                          try {
-                            await updateMe({ image: "" });
-                            toast.success("Profile picture cleared");
-                          } catch (e: any) {
-                            toast.error("Failed to clear profile picture");
-                          }
-                        }
-                      }}
-                      disabled={busy}
-                    >
-                      Clear
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setImageUrl("");
+                          setPreviewImageUrl("");
+                        }}
+                        disabled={busy}
+                      >
+                        Clear
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -489,8 +482,9 @@ export default function EditProfile() {
                         // Upload now; persist on Save
                         try {
                           setBusy(true);
-                          const storageId = await uploadFileAndGetStorageId(file);
-                          setBannerStorageId(storageId);
+                          const url = await uploadFileAndGetUrl(file);
+                          setBannerUrl(url); // raw signed URL
+                          setPreviewBannerUrl(withBust(url)); // ensure immediate preview
                           toast.success(
                             "Background image selected. Click 'Save Changes' to apply.",
                           );
@@ -533,21 +527,12 @@ export default function EditProfile() {
                     >
                       Choose Image
                     </Button>
-                    {bannerStorageId && (
+                    {bannerUrl && (
                       <Button
                         variant="ghost"
-                        onClick={async () => {
-                          setBannerStorageId(null);
+                        onClick={() => {
+                          setBannerUrl("");
                           setPreviewBannerUrl("");
-                          // Immediately persist the clear
-                          if (me) {
-                            try {
-                              await updateMe({ bannerImageStorageId: null });
-                              toast.success("Background image cleared");
-                            } catch (e: any) {
-                              toast.error("Failed to clear background image");
-                            }
-                          }
                         }}
                         disabled={busy}
                       >
@@ -863,11 +848,7 @@ export default function EditProfile() {
                       { type: "image/jpeg" },
                     );
 
-                    const storageId = await uploadFileAndGetStorageId(file);
-                    // Get URL for preview
-                    const url = await getFileUrl({ storageId });
-                    if (!url) throw new Error("Could not get file URL");
-                    
+                    const url = await uploadFileAndGetUrl(file);
                     // Do NOT persist yet; wait for Save Changes
                     setImageUrl(url);
                     setPreviewImageUrl(withBust(url));
