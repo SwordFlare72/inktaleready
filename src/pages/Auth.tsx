@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, UserX, Chrome } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
@@ -175,25 +176,51 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 2) Try to set username (retry until session cookie is available)
+      // 2) Wait for session to initialize, then try to set username with robust retry
+      await new Promise((r) => setTimeout(r, 800));
+      
       let saved = false;
-      for (let i = 0; i < 6; i++) {
+      let lastError = "";
+      const maxRetries = 20;
+      
+      for (let i = 0; i < maxRetries; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
           break;
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
-          if (msg.includes("authenticated")) {
-            await new Promise((r) => setTimeout(r, 250));
+          lastError = err?.message || "Unknown error";
+          
+          // Check if it's an authentication timing issue
+          if (msg.includes("authenticated") || msg.includes("must be")) {
+            // Progressive backoff: start with 500ms, increase by 150ms each attempt
+            const delay = 500 + (i * 150);
+            await new Promise((r) => setTimeout(r, delay));
             continue;
           }
-          if (msg.includes("username is already taken")) {
+          
+          // Check if username is taken
+          if (msg.includes("username is already taken") || msg.includes("already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
-          throw new Error("Failed to set username");
+          
+          // For other errors, retry with shorter delay
+          if (i < maxRetries - 3) {
+            await new Promise((r) => setTimeout(r, 500));
+            continue;
+          }
+          
+          // Last few attempts failed
+          break;
         }
+      }
+
+      if (!saved) {
+        // Username couldn't be set after all retries
+        setSuUsernameError(`Could not set username: ${lastError}`);
+        return;
       }
 
       // 3) Optional profile fields (Display Name and Gender)
@@ -205,40 +232,37 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           await updateMe(payload as any);
         }
       } catch {
-        // ignore warmup
-      }
-
-      // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
-      if (!saved) {
-        if (shouldPromptUsername) {
-          setUsernameInput(desired);
-          setShowUsernameDialog(true);
-          return;
-        } else {
-          setSuUsernameError("Could not set username. Please try again.");
-          return;
-        }
+        // ignore warmup errors for optional fields
       }
 
       toast.success("Account created");
       navigate(redirectAfterAuth || "/");
     } catch (err: any) {
+      console.error("Signup error:", err);
       const msg = String(err?.message || "");
-      if (msg.toLowerCase().includes("passwords do not match")) {
+      const lowerMsg = msg.toLowerCase();
+      
+      if (lowerMsg.includes("passwords do not match")) {
         setError("Passwords do not match");
-      } else if (msg.toLowerCase().includes("failed to set username")) {
-        setError("Could not set username. Please try again.");
+      } else if (lowerMsg.includes("failed to set username")) {
+        setSuUsernameError("Could not set username. Please try again.");
       } else if (
-        msg.toLowerCase().includes("already") ||
-        msg.toLowerCase().includes("exist") ||
-        msg.toLowerCase().includes("registered") ||
-        msg.toLowerCase().includes("in use")
+        lowerMsg.includes("already") ||
+        lowerMsg.includes("exist") ||
+        lowerMsg.includes("registered") ||
+        lowerMsg.includes("in use") ||
+        lowerMsg.includes("duplicate")
       ) {
         setError("User already signed up");
-      } else if (msg.toLowerCase().includes("network") || msg.toLowerCase().includes("failed to fetch")) {
+      } else if (lowerMsg.includes("network") || lowerMsg.includes("failed to fetch")) {
         setError("Network error. Please try again.");
+      } else if (lowerMsg.includes("invalid") && lowerMsg.includes("email")) {
+        setSuEmailError("Invalid email address");
+      } else if (lowerMsg.includes("password")) {
+        setSuPasswordError(msg);
       } else {
-        setError("Sign up failed");
+        // Show the actual error message for debugging
+        setError(msg || "Sign up failed. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -415,12 +439,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                   <div>
                     <Label className="mb-1 block">Gender (optional)</Label>
-                    <Input
-                      placeholder="e.g., Male, Female, Non-binary"
+                    <Select
                       value={suGender ?? ""}
-                      onChange={(e) => setSuGender(e.target.value || undefined)}
+                      onValueChange={(value) => setSuGender(value || undefined)}
                       disabled={isLoading}
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>

@@ -54,6 +54,25 @@ import { Image as ImageIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect } from "react";
 
+// Add BannerImage helper component after imports
+function BannerImage({ storageId }: { storageId: Id<"_storage"> }) {
+  const url = useQuery(api.fileQueries.getFileUrlQuery, { storageId });
+  if (!url) {
+    return (
+      <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+        Loading banner...
+      </div>
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt="Banner"
+      className="w-full h-full object-cover"
+    />
+  );
+}
+
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -280,12 +299,8 @@ export default function Profile() {
         {/* Profile Header with Banner */}
         <div className="w-full relative">
           <div className="h-40 sm:h-56 w-full bg-muted overflow-hidden">
-            {displayUser.bannerImage ? (
-              <img
-                src={displayUser.bannerImage}
-                alt="Profile banner"
-                className="h-full w-full object-cover"
-              />
+            {displayUser.bannerImageStorageId ? (
+              <BannerImage storageId={displayUser.bannerImageStorageId} />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
                 No cover image
