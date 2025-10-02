@@ -176,12 +176,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 2) Wait a bit for session to initialize, then try to set username
-      await new Promise((r) => setTimeout(r, 500));
-      
+      // 2) Try to set username (retry until session cookie is available)
       let saved = false;
       let lastError = "";
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 10; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
@@ -191,17 +189,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           lastError = err?.message || "Unknown error";
           
           if (msg.includes("authenticated") || msg.includes("must be")) {
-            // Session not ready yet, retry with increasing delay
-            await new Promise((r) => setTimeout(r, 400 + (i * 100)));
+            // Session not ready yet, retry
+            await new Promise((r) => setTimeout(r, 300));
             continue;
           }
           if (msg.includes("username is already taken") || msg.includes("already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
-          // Other errors - retry a few more times then fail
-          if (i < 12) {
-            await new Promise((r) => setTimeout(r, 400));
+          // Other errors - retry a few times then fail
+          if (i < 8) {
+            await new Promise((r) => setTimeout(r, 300));
             continue;
           }
           break;
