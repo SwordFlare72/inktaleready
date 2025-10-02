@@ -176,14 +176,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 2) Wait for session to initialize, then try to set username with robust retry
-      await new Promise((r) => setTimeout(r, 800));
+      // 2) Wait a bit for session to initialize, then try to set username
+      await new Promise((r) => setTimeout(r, 500));
       
       let saved = false;
       let lastError = "";
-      const maxRetries = 20;
-      
-      for (let i = 0; i < maxRetries; i++) {
+      for (let i = 0; i < 15; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
@@ -192,27 +190,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           const msg = String(err?.message || "").toLowerCase();
           lastError = err?.message || "Unknown error";
           
-          // Check if it's an authentication timing issue
           if (msg.includes("authenticated") || msg.includes("must be")) {
-            // Progressive backoff: start with 500ms, increase by 150ms each attempt
-            const delay = 500 + (i * 150);
-            await new Promise((r) => setTimeout(r, delay));
+            // Session not ready yet, retry with increasing delay
+            await new Promise((r) => setTimeout(r, 400 + (i * 100)));
             continue;
           }
-          
-          // Check if username is taken
           if (msg.includes("username is already taken") || msg.includes("already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
-          
-          // For other errors, retry with shorter delay
-          if (i < maxRetries - 3) {
-            await new Promise((r) => setTimeout(r, 500));
+          // Other errors - retry a few more times then fail
+          if (i < 12) {
+            await new Promise((r) => setTimeout(r, 400));
             continue;
           }
-          
-          // Last few attempts failed
           break;
         }
       }
