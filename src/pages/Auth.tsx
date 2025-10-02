@@ -177,38 +177,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       // 2) Try to set username (retry until session cookie is available)
       let saved = false;
-      let lastError = "";
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 6; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
           break;
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
-          lastError = err?.message || "Unknown error";
-          
-          if (msg.includes("authenticated") || msg.includes("must be")) {
-            // Session not ready yet, retry
-            await new Promise((r) => setTimeout(r, 300));
+          if (msg.includes("authenticated")) {
+            await new Promise((r) => setTimeout(r, 250));
             continue;
           }
-          if (msg.includes("username is already taken") || msg.includes("already taken")) {
+          if (msg.includes("username is already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
-          // Other errors - retry a few times then fail
-          if (i < 8) {
-            await new Promise((r) => setTimeout(r, 300));
-            continue;
-          }
-          break;
+          throw new Error("Failed to set username");
         }
-      }
-
-      if (!saved) {
-        // Username couldn't be set after all retries
-        setSuUsernameError(`Could not set username: ${lastError}`);
-        return;
       }
 
       // 3) Optional profile fields (Display Name and Gender)
@@ -220,7 +205,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           await updateMe(payload as any);
         }
       } catch {
-        // ignore warmup errors for optional fields
+        // ignore warmup
+      }
+
+      // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
+      if (!saved) {
+        if (shouldPromptUsername) {
+          setUsernameInput(desired);
+          setShowUsernameDialog(true);
+          return;
+        } else {
+          setSuUsernameError("Could not set username. Please try again.");
+          return;
+        }
       }
 
       toast.success("Account created");
