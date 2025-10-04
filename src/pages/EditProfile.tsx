@@ -22,7 +22,7 @@ export default function EditProfile() {
   const me = useQuery(api.users.currentUser, {});
   const updateMe = useMutation(api.users.updateMe);
   async function handleImageUpload(url: string) {
-    await updateMe({ image: url });
+    // Avatar upload removed - no longer supported
   }
   const setUsername = useMutation(api.users.setUsername);
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
@@ -268,9 +268,7 @@ export default function EditProfile() {
       }
 
       // After saving, if image was intended to change but backend indicates not changed
-      if (payload.image !== undefined && res && res.changedAvatar === false) {
-        toast.error("Avatar wasn't changed, please try again");
-      }
+      // Avatar change check removed
 
       // Refresh previews to ensure fresh fetches after save
       if (imageUrl) setPreviewImageUrl(withBust(imageUrl));

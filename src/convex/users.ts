@@ -129,15 +129,12 @@ export const getUserPublic = query({
     return {
       _id: user._id,
       name: user.name,
-      image: user.image,
       bio: user.bio,
       isWriter: user.isWriter,
       writerLevel: user.writerLevel || 1,
       totalFollowers: followers.length,
       totalFollowing: following.length,
-      // Add: expose username & banner image
       username: user.username,
-      bannerImage: (user as any).bannerImage,
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,
@@ -156,47 +153,24 @@ export const getUserPublic = query({
 export const updateMe = mutation({
   args: {
     name: v.optional(v.string()),
-    image: v.optional(v.string()),
     bio: v.optional(v.string()),
     gender: v.optional(v.string()),
-    // Add: banner image update
-    bannerImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Must be authenticated");
 
-    // Add: sanitize URLs to avoid saving blob:/data: or accidental whitespace
-    const sanitizeUrl = (u?: string) => {
-      if (u === undefined) return undefined;
-      const s = u.trim();
-      if (!s) return undefined;
-      if (s.startsWith("blob:")) return undefined;
-      if (s.startsWith("data:")) return undefined;
-      return s;
-    };
-
     const updates: any = {};
     if (args.name !== undefined) updates.name = args.name;
-    if (args.image !== undefined) updates.image = sanitizeUrl(args.image);
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
-    if (args.bannerImage !== undefined) (updates as any).bannerImage = sanitizeUrl(args.bannerImage);
 
     await ctx.db.patch(user._id, updates);
 
-    // Return whether avatar actually changed so UI can confirm or show error
     const saved = await ctx.db.get(user._id);
-    const requestedImage = updates.image;
-    const changedAvatar =
-      requestedImage !== undefined ? saved?.image === requestedImage : false;
 
     return {
       ok: true,
-      changedAvatar,
-      // lightweight echo for convenience
-      image: saved?.image,
-      bannerImage: (saved as any)?.bannerImage,
       name: saved?.name,
       bio: saved?.bio,
     };

@@ -71,8 +71,6 @@ const schema = defineSchema(
       // Add: username (unique via index + check) and optional gender
       username: v.optional(v.string()),
       gender: v.optional(v.string()),
-      // Add: banner image for profile header
-      bannerImage: v.optional(v.string()),
       // Add: authEmail used by the Password provider for actual authentication
       authEmail: v.optional(v.string()),
     })

@@ -280,17 +280,9 @@ export default function Profile() {
         {/* Profile Header with Banner */}
         <div className="w-full relative">
           <div className="h-40 sm:h-56 w-full bg-muted overflow-hidden">
-            {displayUser.bannerImage ? (
-              <img
-                src={displayUser.bannerImage}
-                alt="Profile banner"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
-                No cover image
-              </div>
-            )}
+            <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+              Profile Banner
+            </div>
           </div>
 
           {/* Add: Back button when viewing another user's profile */}
@@ -339,9 +331,6 @@ export default function Profile() {
             <div className="flex items-end justify-between gap-3">
               <div className="flex items-end gap-3">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-background">
-                  <AvatarImage
-                    src={displayUser.image || undefined}
-                  />
                   <AvatarFallback className="text-2xl">
                     {displayUser.name?.charAt(0) || "U"}
                   </AvatarFallback>
