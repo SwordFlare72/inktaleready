@@ -199,7 +199,7 @@ export default function Landing() {
             </div>
             {!isLoading && isAuthenticated && (
               <span className="hidden sm:block text-sm text-muted-foreground">
-                Welcome, {user?.name || user?.username || "Writer"}!
+                Welcome, {user?.name || "Writer"}!
               </span>
             )}
           </div>
