@@ -135,9 +135,9 @@ export const getUserPublic = query({
       writerLevel: user.writerLevel || 1,
       totalFollowers: followers.length,
       totalFollowing: following.length,
-      // Add: expose username & banner image storage ID
+      // Add: expose username & banner image
       username: user.username,
-      bannerImageStorageId: (user as any).bannerImageStorageId,
+      bannerImage: (user as any).bannerImage,
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,
@@ -159,8 +159,8 @@ export const updateMe = mutation({
     image: v.optional(v.string()),
     bio: v.optional(v.string()),
     gender: v.optional(v.string()),
-    // Add: banner image storage ID
-    bannerImageStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    // Add: banner image update
+    bannerImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -181,9 +181,7 @@ export const updateMe = mutation({
     if (args.image !== undefined) updates.image = sanitizeUrl(args.image);
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
-    if (args.bannerImageStorageId !== undefined) {
-      (updates as any).bannerImageStorageId = args.bannerImageStorageId;
-    }
+    if (args.bannerImage !== undefined) (updates as any).bannerImage = sanitizeUrl(args.bannerImage);
 
     await ctx.db.patch(user._id, updates);
 
@@ -198,7 +196,7 @@ export const updateMe = mutation({
       changedAvatar,
       // lightweight echo for convenience
       image: saved?.image,
-      bannerImageStorageId: (saved as any)?.bannerImageStorageId,
+      bannerImage: (saved as any)?.bannerImage,
       name: saved?.name,
       bio: saved?.bio,
     };
