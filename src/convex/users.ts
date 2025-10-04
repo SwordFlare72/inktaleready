@@ -68,7 +68,6 @@ export const listFollowers = query({
           _id: u._id,
           name: u.name,
           bio: u.bio,
-          image: u.image,
         };
       })
     );
@@ -94,7 +93,6 @@ export const listFollowing = query({
           _id: u._id,
           name: u.name,
           bio: u.bio,
-          image: u.image,
         };
       })
     );
@@ -135,7 +133,6 @@ export const getUserPublic = query({
       totalFollowers: followers.length,
       totalFollowing: following.length,
       username: user.username,
-      image: user.image,
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,
@@ -156,7 +153,6 @@ export const updateMe = mutation({
     name: v.optional(v.string()),
     bio: v.optional(v.string()),
     gender: v.optional(v.string()),
-    image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -166,7 +162,6 @@ export const updateMe = mutation({
     if (args.name !== undefined) updates.name = args.name;
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
-    if (args.image !== undefined) updates.image = args.image;
 
     await ctx.db.patch(user._id, updates);
 
@@ -176,7 +171,6 @@ export const updateMe = mutation({
       ok: true,
       name: saved?.name,
       bio: saved?.bio,
-      image: saved?.image,
     };
   },
 });
@@ -248,7 +242,6 @@ export const searchUsers = query({
       _id: u._id,
       name: u.name,
       bio: u.bio,
-      image: u.image,
     }));
   },
 });
