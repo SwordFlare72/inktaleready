@@ -196,16 +196,25 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // 3) Optional profile fields (Display Name and Gender)
+      // 3) Set profile fields (Display Name and Gender)
+      // If no display name provided, use username as fallback
+      const payload: Record<string, string> = {};
+      payload.name = suDisplayName.trim() || desired;
+      if (suGender && suGender.trim()) payload.gender = suGender.trim();
+      
       try {
-        const payload: Record<string, string> = {};
-        if (suDisplayName.trim()) payload.name = suDisplayName.trim();
-        if (suGender && suGender.trim()) payload.gender = suGender.trim();
-        if (Object.keys(payload).length > 0) {
-          await updateMe(payload as any);
+        await updateMe(payload as any);
+      } catch (err: any) {
+        // Retry once if auth session not ready
+        const msg = String(err?.message || "").toLowerCase();
+        if (msg.includes("authenticated") || msg.includes("must be")) {
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            await updateMe(payload as any);
+          } catch {
+            // If still fails, continue anyway - user can update profile later
+          }
         }
-      } catch {
-        // ignore warmup
       }
 
       // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
