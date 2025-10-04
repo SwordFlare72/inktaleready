@@ -183,12 +183,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           saved = true;
           break;
         } catch (err: any) {
-          const msg = String(err?.message || "").toLowerCase();
-          if (msg.includes("authenticated")) {
+          const msg = String(err?.message || "");
+          if (msg.includes("authenticated") || msg.includes("Must be authenticated")) {
             await new Promise((r) => setTimeout(r, 250));
             continue;
           }
-          if (msg.includes("username is already taken")) {
+          if (msg.toLowerCase().includes("username is already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
