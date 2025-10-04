@@ -274,8 +274,13 @@ export const setUsername = mutation({
       throw new Error("Username is already taken.");
     }
 
-    // Set username only; display name is handled separately in signup flow
-    await ctx.db.patch(me._id, { username: normalized });
+    // Also set name if it's empty to avoid "Anonymous User" displays
+    const updates: Record<string, unknown> = { username: normalized };
+    if (!me.name || me.name.trim().length === 0) {
+      updates.name = raw;
+    }
+
+    await ctx.db.patch(me._id, updates);
     return true;
   },
 });
