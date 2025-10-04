@@ -196,16 +196,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // 3) Optional profile fields (Display Name and Gender)
+      // 3) Set display name and gender (with explicit fallback to username)
       try {
         const payload: Record<string, string> = {};
-        if (suDisplayName.trim()) payload.name = suDisplayName.trim();
+        // Always set display name - use provided value or fallback to username
+        payload.name = suDisplayName.trim() || desired;
         if (suGender && suGender.trim()) payload.gender = suGender.trim();
-        if (Object.keys(payload).length > 0) {
-          await updateMe(payload as any);
-        }
-      } catch {
-        // ignore warmup
+        await updateMe(payload as any);
+      } catch (err: any) {
+        console.error("Failed to set display name:", err);
+        // Don't fail signup if this fails, but log it
       }
 
       // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
