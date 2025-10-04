@@ -274,7 +274,7 @@ export const setUsername = mutation({
       throw new Error("Username is already taken.");
     }
 
-    // Set username field only - validation and uniqueness check passed
+    // Only set username field
     await ctx.db.patch(me._id, { username: normalized });
     return true;
   },
