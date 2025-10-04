@@ -22,7 +22,8 @@ export default function EditProfile() {
   const me = useQuery(api.users.currentUser, {});
   const updateMe = useMutation(api.users.updateMe);
   async function handleImageUpload(url: string) {
-    // Avatar upload removed - no longer supported
+    setImageUrl(url);
+    setPreviewImageUrl(withBust(url));
   }
   const setUsername = useMutation(api.users.setUsername);
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
@@ -126,10 +127,10 @@ export default function EditProfile() {
       setUsernameInput(me.username ?? "");
       setBio(me.bio ?? "");
       setGender(me.gender ?? "");
-      setImageUrl("");
+      setImageUrl((me as any).image ?? "");
       setBannerUrl((me as any).bannerImage ?? "");
       // Add: keep previews in sync from saved URLs (no bust initially)
-      setPreviewImageUrl("");
+      setPreviewImageUrl((me as any).image ?? "");
       setPreviewBannerUrl((me as any).bannerImage ?? "");
     }
   }, [me]);
@@ -267,8 +268,10 @@ export default function EditProfile() {
         }
       }
 
-      // After saving, if image was intended to change but backend indicates not changed
-      // Avatar change check removed
+      // After saving, refresh avatar preview if changed
+      if (res.image && res.image !== (me.image ?? "")) {
+        setPreviewImageUrl(withBust(res.image));
+      }
 
       // Refresh previews to ensure fresh fetches after save
       if (imageUrl) setPreviewImageUrl(withBust(imageUrl));
