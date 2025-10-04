@@ -72,6 +72,8 @@ const schema = defineSchema(
       gender: v.optional(v.string()),
       // Add: authEmail used by the Password provider for actual authentication
       authEmail: v.optional(v.string()),
+      // Add: avatar storage ID for user profile picture
+      avatarStorageId: v.optional(v.id("_storage")),
     })
       .index("email", ["email"]) // index for the email. do not remove or modify
       // Add: index for username uniqueness lookups
