@@ -175,30 +175,40 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 2) Try to set username (retry until session cookie is available)
+      // 2) Wait for authentication state to be established, then set username
       let saved = false;
-      // Wait a bit longer initially for auth to settle
-      await new Promise((r) => setTimeout(r, 800));
+      let authRetries = 0;
+      const maxAuthRetries = 15;
       
-      for (let i = 0; i < 10; i++) {
+      // Wait for the auth state to update (isAuthenticated and me to be available)
+      while (authRetries < maxAuthRetries) {
+        // Check if we're authenticated by trying to call the mutation
         try {
           await setUsername({ username: desired });
           saved = true;
           break;
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
-          if (msg.includes("authenticated")) {
-            // Exponential backoff: 500ms, 750ms, 1125ms, etc.
-            const delay = 500 * Math.pow(1.5, i);
+          
+          // If not authenticated yet, wait and retry
+          if (msg.includes("authenticated") || msg.includes("must be")) {
+            authRetries++;
+            // Progressive exponential backoff: start with 800ms, then increase
+            const baseDelay = 500;
+            const delay = authRetries === 1 ? 800 : baseDelay * Math.pow(1.5, authRetries - 1);
             await new Promise((r) => setTimeout(r, Math.min(delay, 3000)));
             continue;
           }
-          if (msg.includes("username is already taken")) {
+          
+          // If username is taken (shouldn't happen since we checked), show error
+          if (msg.includes("username is already taken") || msg.includes("already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
+          
           // Log the actual error for debugging
           console.error("Failed to set username:", err);
+          console.error("Error message:", msg);
           throw new Error("Failed to set username");
         }
       }
