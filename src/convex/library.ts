@@ -28,7 +28,7 @@ export const listFollows = query({
         const author = await ctx.db.get(story.authorId);
         return {
           ...story,
-          author: author ? { name: author.name, image: author.image } : null,
+          author: author ? { name: author.name } : null,
           followedAt: follow._creationTime,
           isFavorite: follow.isFavorite,
         };
@@ -82,7 +82,7 @@ export const listHistory = query({
         
         return {
           ...story,
-          author: author ? { name: author.name, image: author.image } : null,
+          author: author ? { name: author.name } : null,
           lastReadAt: prog.lastReadAt,
           lastChapter: lastChapter ? {
             _id: lastChapter._id,
@@ -186,7 +186,7 @@ export const listMyLists = query({
             const author = await ctx.db.get(story.authorId);
             return {
               ...story,
-              author: author ? { name: author.name, image: author.image } : null,
+              author: author ? { name: author.name } : null,
             };
           })
         );
@@ -220,7 +220,7 @@ export const listPublicListsByUser = query({
             const author = await ctx.db.get(story.authorId);
             return {
               ...story,
-              author: author ? { name: author.name, image: author.image } : null,
+              author: author ? { name: author.name } : null,
             };
           })
         );
@@ -283,17 +283,17 @@ export const getListById = query({
     const list = await ctx.db.get(args.listId);
     if (!list || list.userId !== user._id) return null;
 
-    const stories = await Promise.all(
-      list.storyIds.map(async (storyId) => {
-        const story = await ctx.db.get(storyId);
-        if (!story) return null;
-        const author = await ctx.db.get(story.authorId);
-        return {
-          ...story,
-          author: author ? { name: author.name, image: author.image } : null,
-        };
-      }),
-    );
+        const stories = await Promise.all(
+          list.storyIds.map(async (storyId) => {
+            const story = await ctx.db.get(storyId);
+            if (!story) return null;
+            const author = await ctx.db.get(story.authorId);
+            return {
+              ...story,
+              author: author ? { name: author.name } : null,
+            };
+          }),
+        );
 
     const validStories = stories.filter(Boolean);
     return {

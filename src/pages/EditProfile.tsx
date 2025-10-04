@@ -126,10 +126,10 @@ export default function EditProfile() {
       setUsernameInput(me.username ?? "");
       setBio(me.bio ?? "");
       setGender(me.gender ?? "");
-      setImageUrl(me.image ?? "");
+      setImageUrl("");
       setBannerUrl((me as any).bannerImage ?? "");
       // Add: keep previews in sync from saved URLs (no bust initially)
-      setPreviewImageUrl(me.image ?? "");
+      setPreviewImageUrl("");
       setPreviewBannerUrl((me as any).bannerImage ?? "");
     }
   }, [me]);

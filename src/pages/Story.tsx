@@ -248,7 +248,7 @@ export default function StoryPage() {
               className="cursor-pointer outline-none focus:ring-2 focus:ring-primary/60 rounded-full"
             >
               <Avatar className="h-6 w-6">
-                <AvatarImage src={story.author?.image || ""} />
+                <AvatarImage src={undefined} />
                 <AvatarFallback>
                   {(story.author?.name?.[0] || "A").toUpperCase()}
                 </AvatarFallback>

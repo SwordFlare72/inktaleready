@@ -67,7 +67,6 @@ export const listFollowers = query({
         return {
           _id: u._id,
           name: u.name,
-          image: u.image,
           bio: u.bio,
         };
       })
@@ -93,7 +92,6 @@ export const listFollowing = query({
         return {
           _id: u._id,
           name: u.name,
-          image: u.image,
           bio: u.bio,
         };
       })
@@ -243,7 +241,6 @@ export const searchUsers = query({
     return results.map((u) => ({
       _id: u._id,
       name: u.name,
-      image: u.image,
       bio: u.bio,
     }));
   },

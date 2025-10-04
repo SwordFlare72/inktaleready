@@ -23,7 +23,7 @@ export const listByUser = query({
         const author = await ctx.db.get(a.authorId);
         return {
           ...a,
-          author: author ? { name: author.name, image: author.image } : null,
+          author: author ? { name: author.name } : null,
         };
       })
     );
@@ -47,7 +47,7 @@ export const listReplies = query({
         const author = await ctx.db.get(r.authorId);
         return {
           ...r,
-          author: author ? { name: author.name, image: author.image } : null,
+          author: author ? { name: author.name } : null,
         };
       })
     );
