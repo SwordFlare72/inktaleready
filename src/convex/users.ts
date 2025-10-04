@@ -133,7 +133,6 @@ export const getUserPublic = query({
       totalFollowers: followers.length,
       totalFollowing: following.length,
       username: user.username,
-      avatarStorageId: (user as any).avatarStorageId,
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,
@@ -154,7 +153,6 @@ export const updateMe = mutation({
     name: v.optional(v.string()),
     bio: v.optional(v.string()),
     gender: v.optional(v.string()),
-    avatarStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -164,7 +162,6 @@ export const updateMe = mutation({
     if (args.name !== undefined) updates.name = args.name;
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
-    if (args.avatarStorageId !== undefined) updates.avatarStorageId = args.avatarStorageId;
 
     await ctx.db.patch(user._id, updates);
 

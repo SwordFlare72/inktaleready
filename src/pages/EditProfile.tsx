@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import type { Id } from "@/convex/_generated/dataModel";
-import { AvatarUploadSection } from "@/components/AvatarUploadSection";
 
 export default function EditProfile() {
   const me = useQuery(api.users.currentUser, {});
@@ -39,10 +38,11 @@ export default function EditProfile() {
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("");
 
-  const [avatarStorageId, setAvatarStorageId] = useState<Id<"_storage"> | undefined>(undefined);
+  const [imageUrl, setImageUrl] = useState<string>("");
   const [bannerUrl, setBannerUrl] = useState<string>("");
 
   // Add: preview URLs with cache-busting for immediate UI refresh after upload/save
+  const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
   const [previewBannerUrl, setPreviewBannerUrl] = useState<string>("");
 
   const [busy, setBusy] = useState(false);
@@ -126,12 +126,19 @@ export default function EditProfile() {
       setUsernameInput(me.username ?? "");
       setBio(me.bio ?? "");
       setGender(me.gender ?? "");
-      setAvatarStorageId((me as any).avatarStorageId);
+      setImageUrl("");
       setBannerUrl((me as any).bannerImage ?? "");
       // Add: keep previews in sync from saved URLs (no bust initially)
+      setPreviewImageUrl("");
       setPreviewBannerUrl((me as any).bannerImage ?? "");
     }
   }, [me]);
+
+  useEffect(() => {
+    if (imageUrl === "") {
+      setPreviewImageUrl("");
+    }
+  }, [imageUrl]);
 
   async function uploadFileAndGetUrl(file: File): Promise<string> {
     // Guard: sanity check
@@ -237,11 +244,11 @@ export default function EditProfile() {
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
-        avatarStorageId: avatarStorageId || undefined,
+        image: imageUrl || undefined, // persist only on Save
         bannerImage: bannerUrl || undefined, // persist only on Save
       };
 
-      await updateMe(payload);
+      const res = await updateMe(payload);
 
       // Update username if changed
       const desired = username.trim();
@@ -260,7 +267,11 @@ export default function EditProfile() {
         }
       }
 
+      // After saving, if image was intended to change but backend indicates not changed
+      // Avatar change check removed
+
       // Refresh previews to ensure fresh fetches after save
+      if (imageUrl) setPreviewImageUrl(withBust(imageUrl));
       if (bannerUrl) setPreviewBannerUrl(withBust(bannerUrl));
 
       toast.success("Profile updated");
@@ -358,19 +369,78 @@ export default function EditProfile() {
             </div>
 
             <div className="space-y-6">
-              <AvatarUploadSection
-                avatarStorageId={avatarStorageId}
-                busy={busy}
-                onOpenCropper={(file) => {
-                  setPendingAvatarFile(file);
-                  const src = URL.createObjectURL(file);
-                  setCropSrc(src);
-                  setCropScale(1);
-                  setCropOffset({ x: 0, y: 0 });
-                  setCropOpen(true);
-                }}
-                onClear={() => setAvatarStorageId(undefined)}
-              />
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-full overflow-hidden bg-muted flex items-center justify-center relative">
+                  {previewImageUrl ? (
+                    <img
+                      key={previewImageUrl}
+                      src={previewImageUrl}
+                      alt="Profile"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">Profile picture</div>
+                  <div className="text-xs text-muted-foreground">
+                    Tap to change
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      id="profile-file"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        // Reset file input so same file can trigger again
+                        try {
+                          (e.target as HTMLInputElement).value = "";
+                        } catch {}
+                        if (!file) return;
+                        if (!validateFile(file, { maxMB: 5 })) return;
+
+                        // Open cropper with this selection
+                        try {
+                          const src = URL.createObjectURL(file);
+                          setPendingAvatarFile(file);
+                          setCropSrc(src);
+                          setCropScale(1);
+                          setCropOffset({ x: 0, y: 0 });
+                          setCropOpen(true);
+                        } catch {
+                          toast.error("Could not open image");
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        document.getElementById("profile-file")?.click()
+                      }
+                      disabled={busy}
+                    >
+                      Choose Image
+                    </Button>
+                    {imageUrl && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setImageUrl("");
+                          setPreviewImageUrl("");
+                        }}
+                        disabled={busy}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
 
               <div className="flex items-center gap-4">
                 <div className="h-20 w-32 rounded overflow-hidden bg-muted flex items-center justify-center relative">
@@ -776,19 +846,10 @@ export default function EditProfile() {
                       { type: "image/jpeg" },
                     );
 
-                    // Upload to Convex storage
-                    const uploadUrl = await getUploadUrl({});
-                    const fd = new FormData();
-                    fd.append("file", file);
-                    const res = await fetch(uploadUrl, {
-                      method: "POST",
-                      body: fd,
-                    });
-                    if (!res.ok) throw new Error("Upload failed");
-                    const json = await res.json();
-                    const storageId = json.storageId as Id<"_storage">;
-                    
-                    setAvatarStorageId(storageId);
+                    const url = await uploadFileAndGetUrl(file);
+                    // Do NOT persist yet; wait for Save Changes
+                    setImageUrl(url);
+                    setPreviewImageUrl(withBust(url));
                     toast.success(
                       "Avatar updated. Click 'Save Changes' to apply.",
                     );
