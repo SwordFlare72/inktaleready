@@ -177,7 +177,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       // 2) Try to set username (retry until session cookie is available)
       let saved = false;
-      for (let i = 0; i < 6; i++) {
+      // Wait a bit longer initially for auth to settle
+      await new Promise((r) => setTimeout(r, 800));
+      
+      for (let i = 0; i < 10; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
@@ -185,13 +188,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
           if (msg.includes("authenticated")) {
-            await new Promise((r) => setTimeout(r, 250));
+            // Exponential backoff: 500ms, 750ms, 1125ms, etc.
+            const delay = 500 * Math.pow(1.5, i);
+            await new Promise((r) => setTimeout(r, Math.min(delay, 3000)));
             continue;
           }
           if (msg.includes("username is already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
+          // Log the actual error for debugging
+          console.error("Failed to set username:", err);
           throw new Error("Failed to set username");
         }
       }
