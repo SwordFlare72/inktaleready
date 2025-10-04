@@ -23,7 +23,7 @@ interface AuthProps {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn, signOut } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
   const navigate = useNavigate();
 
   // Mode: "login" or "signup"
@@ -168,25 +168,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         return;
       }
 
-      // 1) Sign out any existing session first to prevent cross-contamination
-      try {
-        await signOut();
-        // Wait for sign-out to complete
-        await new Promise((r) => setTimeout(r, 500));
-      } catch {
-        // Ignore sign-out errors if not signed in
-      }
-
-      // 2) Create account
+      // 1) Create account
       const fd = new FormData();
       fd.set("email", normalizedEmail);
       fd.set("password", suPassword);
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 3) Set username first (retry with longer delays until session is ready)
+      // 2) Set username first (retry until session is ready)
       let saved = false;
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 6; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
@@ -194,9 +185,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
           if (msg.includes("authenticated")) {
-            // Progressive backoff: start with 800ms, increase exponentially
-            const delay = Math.min(800 + i * 500 * Math.pow(1.5, i), 3000);
-            await new Promise((r) => setTimeout(r, delay));
+            await new Promise((r) => setTimeout(r, 250));
             continue;
           }
           if (msg.includes("username is already taken")) {
