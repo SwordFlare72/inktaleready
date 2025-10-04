@@ -177,26 +177,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       // 2) Try to set username (retry until session cookie is available)
       let saved = false;
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 6; i++) {
         try {
           await setUsername({ username: desired });
           saved = true;
           break;
         } catch (err: any) {
           const msg = String(err?.message || "");
-          // Check for authentication errors more broadly
-          if (msg.includes("authenticated") || msg.includes("Must be authenticated") || msg.includes("auth")) {
-            // Progressive exponential backoff: start with 800ms, then increase
-            const delay = i === 0 ? 800 : Math.min(500 * Math.pow(1.5, i), 3000);
-            await new Promise((r) => setTimeout(r, delay));
+          if (msg.includes("authenticated") || msg.includes("Must be authenticated")) {
+            await new Promise((r) => setTimeout(r, 250));
             continue;
           }
           if (msg.toLowerCase().includes("username is already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
-          // Log the error for debugging
-          console.error("setUsername error:", err);
           throw new Error("Failed to set username");
         }
       }
@@ -207,28 +202,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       payload.name = suDisplayName.trim() || desired;
       if (suGender && suGender.trim()) payload.gender = suGender.trim();
       
-      // Retry updateMe with similar logic
-      let profileSaved = false;
-      for (let i = 0; i < 10; i++) {
-        try {
-          await updateMe(payload as any);
-          profileSaved = true;
-          break;
-        } catch (err: any) {
-          const msg = String(err?.message || "").toLowerCase();
-          if (msg.includes("authenticated") || msg.includes("must be") || msg.includes("auth")) {
-            const delay = i === 0 ? 800 : Math.min(500 * Math.pow(1.5, i), 3000);
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
+      try {
+        await updateMe(payload as any);
+      } catch (err: any) {
+        // Retry once if auth session not ready
+        const msg = String(err?.message || "").toLowerCase();
+        if (msg.includes("authenticated") || msg.includes("must be")) {
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            await updateMe(payload as any);
+          } catch {
+            // If still fails, continue anyway - user can update profile later
           }
-          // Log the error for debugging
-          console.error("updateMe error:", err);
-          break; // Non-auth error, stop retrying
         }
-      }
-      
-      if (!profileSaved) {
-        console.warn("Profile fields not saved, user can update later");
       }
 
       // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
