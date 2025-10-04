@@ -175,7 +175,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // 2) Try to set username (retry until session cookie is available)
+      // 2) Set username first (retry until session is ready)
       let saved = false;
       for (let i = 0; i < 6; i++) {
         try {
@@ -196,7 +196,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // 3) Set display name and gender (with explicit fallback to username)
+      // 3) Set display name and gender explicitly (always set name to avoid "Anonymous User")
       try {
         const payload: Record<string, string> = {};
         // Always set display name - use provided value or fallback to username
@@ -205,7 +205,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         await updateMe(payload as any);
       } catch (err: any) {
         console.error("Failed to set display name:", err);
-        // Don't fail signup if this fails, but log it
+        // Log error but don't prevent signup completion
       }
 
       // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
