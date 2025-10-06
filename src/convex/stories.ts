@@ -34,7 +34,7 @@ export const getPublishedStories = query({
         const author = await ctx.db.get(story.authorId);
         return {
           ...story,
-          author: author ? { name: author.name } : null,
+          author: author ? { name: author.name, image: author.image } : null,
         };
       })
     );
@@ -63,7 +63,7 @@ export const getStoryById = query({
 
     return {
       ...story,
-      author: author ? { name: author.name } : null,
+      author: author ? { name: author.name, image: author.image } : null,
       chapters: chapters.map(ch => ({
         _id: ch._id,
         title: ch.title,
@@ -317,7 +317,7 @@ export const searchStories = query({
         const author = await ctx.db.get(story.authorId);
         return {
           ...story,
-          author: author ? { name: author.name } : null,
+          author: author ? { name: author.name, image: author.image } : null,
         };
       })
     );
@@ -374,7 +374,7 @@ export const listExplore = query({
         const author = await ctx.db.get(story.authorId);
         return {
           ...story,
-          author: author ? { name: author.name } : null,
+          author: author ? { name: author.name, image: author.image } : null,
         };
       })
     );
