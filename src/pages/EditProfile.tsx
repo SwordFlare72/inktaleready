@@ -152,11 +152,10 @@ export default function EditProfile() {
     const timeout = setTimeout(() => ac.abort(), 20000); // 20s timeout
 
     try {
-      const fd = new FormData();
-      fd.append("file", file);
       const res = await fetch(uploadUrl, {
         method: "POST",
-        body: fd,
+        headers: { "Content-Type": file.type },
+        body: file,
         signal: ac.signal,
       });
 
