@@ -429,7 +429,7 @@ export default function Write() {
                           className="bg-purple-600 hover:bg-purple-700 flex-1 min-w-0"
                           size="sm"
                         >
-                          <Plus className="h-4 w-4 mr-2" /> New Chapter
+                          <Plus className="h-4 w-4 mr-2 flex-shrink-0" /> <span className="truncate">New Chapter</span>
                         </Button>
                         <Button
                           variant="outline"
