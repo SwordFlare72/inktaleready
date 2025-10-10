@@ -759,7 +759,7 @@ export default function Profile() {
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={a.author?.image} />
+                          <AvatarImage src={(a.author as any)?.avatarImage || a.author?.image} />
                           <AvatarFallback>
                             {a.author?.name?.charAt(0) || "U"}
                           </AvatarFallback>
@@ -1141,7 +1141,7 @@ function AnnouncementReplies({
         return (
           <div key={r._id} className="flex items-start gap-2">
             <Avatar className="h-7 w-7">
-              <AvatarImage src={r.author?.image} />
+              <AvatarImage src={(r.author as any)?.avatarImage || r.author?.image} />
               <AvatarFallback>
                 {r.author?.name?.charAt(0) || "U"}
               </AvatarFallback>

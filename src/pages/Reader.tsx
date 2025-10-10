@@ -422,7 +422,7 @@ export default function Reader() {
                   {/* Comment row with avatar */}
                   <div className="flex items-start gap-3">
                     <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={c.author?.image || ""} />
+                      <AvatarImage src={(c.author as any)?.avatarImage || c.author?.image || ""} />
                       <AvatarFallback>
                         {(c.author?.name?.[0] || "A").toUpperCase()}
                       </AvatarFallback>
@@ -516,7 +516,7 @@ export default function Reader() {
                       {c.replies.map((r: any) => (
                         <div key={r._id} className="flex items-start gap-3">
                           <Avatar className="h-7 w-7 shrink-0">
-                            <AvatarImage src={r.author?.image || ""} />
+                            <AvatarImage src={(r.author as any)?.avatarImage || r.author?.image || ""} />
                             <AvatarFallback>
                               {(r.author?.name?.[0] || "A").toUpperCase()}
                             </AvatarFallback>
