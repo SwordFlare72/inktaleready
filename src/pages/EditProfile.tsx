@@ -239,11 +239,23 @@ export default function EditProfile() {
 
     setBusy(true);
     try {
+      // Fetch the avatar URL if we have a storage ID
+      let avatarUrl: string | undefined = undefined;
+      if (avatarStorageId) {
+        try {
+          const url = await getFileUrl({ storageId: avatarStorageId });
+          avatarUrl = url || undefined;
+        } catch (e) {
+          console.error("Failed to get avatar URL:", e);
+        }
+      }
+
       const payload: any = {
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
         avatarStorageId: avatarStorageId || undefined,
+        image: avatarUrl || undefined, // Store the URL in the image field for fallback
         bannerImage: bannerUrl || undefined,
       };
 
