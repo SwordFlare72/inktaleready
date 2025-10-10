@@ -676,18 +676,6 @@ export default function Write() {
                     </Button>
                   )}
                 </div>
-                <Input
-                  className="mt-2"
-                  value={editCover}
-                  onChange={(e) => setEditCover(e.target.value)}
-                  placeholder="https://..."
-                />
-                {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading image…</p>}
-                {editCover && (
-                  <div className="mt-2 w-24 h-32 overflow-hidden rounded border">
-                    <img src={editCover} className="w-full h-full object-cover" />
-                  </div>
-                )}
               </div>
 
               <div>
