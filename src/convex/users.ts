@@ -16,7 +16,11 @@ export const currentUser = query({
       return null;
     }
 
-    return user;
+    // Explicitly return avatarImage field to ensure it's available on the frontend
+    return {
+      ...user,
+      avatarImage: (user as any).avatarImage,
+    };
   },
 });
 
