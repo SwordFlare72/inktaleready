@@ -248,7 +248,7 @@ export default function EditProfile() {
         bannerImage: bannerUrl || undefined, // persist only on Save
       };
 
-      const res = await updateMe(payload);
+      await updateMe(payload);
 
       // Update username if changed
       const desired = username.trim();
@@ -266,15 +266,6 @@ export default function EditProfile() {
           throw e;
         }
       }
-
-      // After saving, if image was intended to change but backend indicates not changed
-      if (payload.image !== undefined && res && res.changedAvatar === false) {
-        toast.error("Avatar wasn't changed, please try again");
-      }
-
-      // Refresh previews to ensure fresh fetches after save
-      if (imageUrl) setPreviewImageUrl(withBust(imageUrl));
-      if (bannerUrl) setPreviewBannerUrl(withBust(bannerUrl));
 
       toast.success("Profile updated");
       navigate(-1);
