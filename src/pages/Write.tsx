@@ -326,8 +326,7 @@ export default function Write() {
 
         <div className="space-y-4">
           {myStories?.map((story) => (
-            <Card key={story._id} className="overflow-hidden">
-              <CardContent className="p-4">
+            <div key={story._id} className="overflow-hidden bg-card/50 backdrop-blur-sm rounded-lg p-4 hover:bg-card/70 transition-colors">
                 <div className="flex gap-4">
                   {/* Cover Image on Left */}
                   <div className="flex-shrink-0">
@@ -420,31 +419,34 @@ export default function Write() {
                     <p className="text-xs text-muted-foreground mb-3">Last updated {timeAgo(story.lastUpdated)}</p>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <Button
-                        variant="default"
-                        onClick={() => {
-                          navigate(`/write/${story._id}/chapter/new`);
-                        }}
-                        className="bg-purple-600 hover:bg-purple-700"
-                        size="sm"
-                      >
-                        <Plus className="h-4 w-4 mr-2" /> New Chapter
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/write/${story._id}/manage`)}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Manage ({story.totalChapters})
-                      </Button>
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="default"
+                          onClick={() => {
+                            navigate(`/write/${story._id}/chapter/new`);
+                          }}
+                          className="bg-purple-600 hover:bg-purple-700 flex-1"
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 mr-2" /> New Chapter
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/write/${story._id}/manage`)}
+                          className="flex-1"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Manage ({story.totalChapters})
+                        </Button>
+                      </div>
                       
                       {!story.isPublished && (
                         <Button
                           variant="default"
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 w-full"
                           onClick={async () => {
                             try {
                               await updateStory({ storyId: story._id, isPublished: true });
@@ -474,8 +476,7 @@ export default function Write() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           ))}
 
           {myStories?.length === 0 && (
