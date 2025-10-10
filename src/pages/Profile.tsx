@@ -182,6 +182,14 @@ export default function Profile() {
 
   const displayUser = isOwnProfile ? currentUser : profileUser;
 
+  // Fetch avatar URL from storage if avatarStorageId exists
+  const avatarUrl = useQuery(
+    api.fileQueries.getFileUrlQuery,
+    displayUser?.avatarStorageId
+      ? { storageId: displayUser.avatarStorageId }
+      : "skip"
+  );
+
   const readingListCount = Array.isArray(publicLists) ? publicLists.length : 0;
   // Fix follower count on own profile: compute from followersList length; otherwise use public field
   const followerCount = isOwnProfile
@@ -340,7 +348,7 @@ export default function Profile() {
               <div className="flex items-end gap-3">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-background">
                   <AvatarImage
-                    src={displayUser.image || undefined}
+                    src={avatarUrl || displayUser.image || undefined}
                   />
                   <AvatarFallback className="text-2xl">
                     {displayUser.name?.charAt(0) || "U"}

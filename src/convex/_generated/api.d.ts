@@ -19,6 +19,7 @@ import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as auth from "../auth.js";
 import type * as chapters from "../chapters.js";
 import type * as comments from "../comments.js";
+import type * as fileQueries from "../fileQueries.js";
 import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as library from "../library.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chapters: typeof chapters;
   comments: typeof comments;
+  fileQueries: typeof fileQueries;
   files: typeof files;
   http: typeof http;
   library: typeof library;

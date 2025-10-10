@@ -138,6 +138,7 @@ export const getUserPublic = query({
       // Add: expose username & banner image
       username: user.username,
       bannerImage: (user as any).bannerImage,
+      avatarStorageId: user.avatarStorageId,
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,
