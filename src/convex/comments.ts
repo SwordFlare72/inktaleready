@@ -35,6 +35,7 @@ export const getCommentsByChapter = query({
               author: replyAuthor ? { 
                 name: replyAuthor.name, 
                 image: replyAuthor.image,
+                avatarImage: (replyAuthor as any).avatarImage,
                 _id: replyAuthor._id 
               } : null,
             };
@@ -46,6 +47,7 @@ export const getCommentsByChapter = query({
           author: author ? { 
             name: author.name, 
             image: author.image,
+            avatarImage: (author as any).avatarImage,
             _id: author._id 
           } : null,
           replies: repliesWithAuthors,

@@ -259,21 +259,18 @@ export const searchUsers = query({
   handler: async (ctx, args) => {
     const me = await getCurrentUser(ctx);
     if (!me) return [];
-
     const all = await ctx.db.query("users").collect();
-
     const q = args.q.trim().toLowerCase();
     if (!q) return [];
-
     const results = all
       .filter((u) => u._id !== me._id)
       .filter((u) => (u.name || "").toLowerCase().includes(q))
       .slice(0, 20);
-
     return results.map((u) => ({
       _id: u._id,
       name: u.name,
       image: u.image,
+      avatarImage: (u as any).avatarImage,
       bio: u.bio,
     }));
   },
