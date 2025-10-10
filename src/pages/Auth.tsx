@@ -196,16 +196,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // 3) Optional profile fields (Display Name and Gender)
+      // 3) Set display name and gender (always set name to avoid "Anonymous User")
       try {
-        const payload: Record<string, string> = {};
-        if (suDisplayName.trim()) payload.name = suDisplayName.trim();
+        const payload: Record<string, string> = {
+          name: suDisplayName.trim() || desired, // Use display name or fallback to username
+        };
         if (suGender && suGender.trim()) payload.gender = suGender.trim();
-        if (Object.keys(payload).length > 0) {
-          await updateMe(payload as any);
-        }
-      } catch {
-        // ignore warmup
+        await updateMe(payload as any);
+      } catch (err: any) {
+        // Log but don't block signup if this fails
+        console.error("Failed to set display name/gender:", err);
       }
 
       // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
