@@ -314,14 +314,9 @@ export default function Write() {
           <div className="flex gap-2">
             <Button onClick={() => setShowCreateStory(true)} className="bg-purple-600 hover:bg-purple-700">
               <Plus className="w-4 h-4 mr-2" /> New Story
-                  </Button>
-                </div>
-                {editCover && (
-                  <div className="mt-2 w-24 h-32 overflow-hidden rounded border">
-                    <img src={editCover} className="w-full h-full object-cover" alt="Story cover preview" />
-                  </div>
-                )}
-              </div>
+            </Button>
+          </div>
+        </div>
 
         {/* My Stories */}
         <div className="mb-3 flex items-center justify-between">
