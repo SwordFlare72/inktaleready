@@ -419,14 +419,14 @@ export default function Write() {
                     <p className="text-xs text-muted-foreground mb-3">Last updated {timeAgo(story.lastUpdated)}</p>
 
                     {/* Action Buttons */}
-                    <div className="mb-3 space-y-2">
-                      <div className="flex items-center gap-2">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 w-full">
                         <Button
                           variant="default"
                           onClick={() => {
                             navigate(`/write/${story._id}/chapter/new`);
                           }}
-                          className="bg-purple-600 hover:bg-purple-700 flex-1"
+                          className="bg-purple-600 hover:bg-purple-700 flex-1 min-w-0"
                           size="sm"
                         >
                           <Plus className="h-4 w-4 mr-2" /> New Chapter
@@ -435,7 +435,7 @@ export default function Write() {
                           variant="outline"
                           size="sm"
                           onClick={() => navigate(`/write/${story._id}/manage`)}
-                          className="flex-1"
+                          className="flex-1 min-w-0"
                         >
                           <FileText className="h-4 w-4 mr-2" />
                           Manage ({story.totalChapters})
