@@ -190,6 +190,9 @@ export default function Profile() {
       : "skip"
   );
 
+  // Determine the actual avatar source to display
+  const avatarSrc = avatarUrl || displayUser?.image || undefined;
+
   const readingListCount = Array.isArray(publicLists) ? publicLists.length : 0;
   // Fix follower count on own profile: compute from followersList length; otherwise use public field
   const followerCount = isOwnProfile
@@ -348,7 +351,7 @@ export default function Profile() {
               <div className="flex items-end gap-3">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-background">
                   <AvatarImage
-                    src={avatarUrl || displayUser.image || undefined}
+                    src={avatarSrc}
                   />
                   <AvatarFallback className="text-2xl">
                     {displayUser.name?.charAt(0) || "U"}

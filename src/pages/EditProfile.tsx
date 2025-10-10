@@ -143,10 +143,13 @@ export default function EditProfile() {
   useEffect(() => {
     if (avatarUrl) {
       setPreviewImageUrl(avatarUrl);
+    } else if (!avatarStorageId && me?.image) {
+      // Fallback to legacy image field if no storage ID
+      setPreviewImageUrl(me.image);
     } else if (!avatarStorageId) {
       setPreviewImageUrl("");
     }
-  }, [avatarUrl, avatarStorageId]);
+  }, [avatarUrl, avatarStorageId, me?.image]);
 
   async function uploadFileAndGetStorageId(file: File): Promise<Id<"_storage">> {
     // Guard: sanity check
