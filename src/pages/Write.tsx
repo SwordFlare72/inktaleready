@@ -429,7 +429,8 @@ export default function Write() {
                           className="bg-purple-600 hover:bg-purple-700 flex-1 min-w-0"
                           size="sm"
                         >
-                          <Plus className="h-4 w-4 mr-2" /> New Chapter
+                          <Plus className="h-4 w-4 mr-2 flex-shrink-0" /> 
+                          <span className="truncate">New Chapter</span>
                         </Button>
                         <Button
                           variant="outline"
@@ -437,8 +438,8 @@ export default function Write() {
                           onClick={() => navigate(`/write/${story._id}/manage`)}
                           className="flex-1 min-w-0"
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Manage ({story.totalChapters})
+                          <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">Manage ({story.totalChapters})</span>
                         </Button>
                       </div>
                       
