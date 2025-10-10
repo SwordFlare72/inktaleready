@@ -184,14 +184,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           break;
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
+          // Check for authentication warming up
           if (msg.includes("authenticated")) {
-            await new Promise((r) => setTimeout(r, 250));
+            // Wait progressively longer on each retry
+            await new Promise((r) => setTimeout(r, 300 + i * 100));
             continue;
           }
+          // Check for username already taken
           if (msg.includes("username is already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
+          // Any other error - log and throw
+          console.error("setUsername error:", err);
           throw new Error("Failed to set username");
         }
       }
