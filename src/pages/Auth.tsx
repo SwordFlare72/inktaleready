@@ -184,15 +184,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           break;
         } catch (err: any) {
           const msg = String(err?.message || "").toLowerCase();
-          if (msg.includes("authenticated")) {
-            await new Promise((r) => setTimeout(r, 250));
-            continue;
-          }
+          // If username is already taken, exit immediately
           if (msg.includes("username is already taken")) {
             setSuUsernameError("Username is already taken");
             return;
           }
-          throw new Error("Failed to set username");
+          // For "Must be authenticated" errors, retry
+          if (msg.includes("authenticated")) {
+            await new Promise((r) => setTimeout(r, 250));
+            continue;
+          }
+          // For any other error on the last attempt, throw
+          if (i === 5) {
+            throw new Error("Failed to set username");
+          }
+          // Otherwise, retry after a short delay
+          await new Promise((r) => setTimeout(r, 250));
         }
       }
 
