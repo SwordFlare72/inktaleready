@@ -63,7 +63,7 @@ export const getStoryById = query({
 
     return {
       ...story,
-      author: author ? { name: author.name, image: author.image } : null,
+      author: author ? { name: author.name, image: author.image, avatarImage: (author as any).avatarImage } : null,
       chapters: chapters.map(ch => ({
         _id: ch._id,
         title: ch.title,

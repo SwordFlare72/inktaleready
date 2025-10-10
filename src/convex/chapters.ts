@@ -18,7 +18,7 @@ export const getChapterById = query({
       ...chapter,
       story: {
         ...story,
-        author: author ? { name: author.name, image: author.image } : null,
+        author: author ? { name: author.name, image: author.image, avatarImage: (author as any).avatarImage } : null,
       },
     };
   },
