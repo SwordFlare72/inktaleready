@@ -817,9 +817,11 @@ export default function EditProfile() {
                       canvas.toBlob(resolve, "image/jpeg", 0.92),
                     );
                     if (!blob) throw new Error("Could not create image");
+                    // Create a clean filename without double extensions
+                    const baseName = (pendingAvatarFile?.name ?? "avatar").replace(/\.[^.]+$/, "");
                     const file = new File(
                       [blob],
-                      (pendingAvatarFile?.name ?? "avatar") + ".jpg",
+                      `${baseName}.jpg`,
                       { type: "image/jpeg" },
                     );
 

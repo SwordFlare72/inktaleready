@@ -1,1 +1,5 @@
-const avatarSrc = (displayUser as any)?.avatarImage || displayUser?.image || undefined;
+const res = await fetch(uploadUrl, {
+  method: "POST",
+  headers: { "Content-Type": file.type },
+  body: file,
+});
