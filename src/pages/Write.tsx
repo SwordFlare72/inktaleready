@@ -328,10 +328,71 @@ export default function Write() {
           {myStories?.map((story) => (
             <Card key={story._id} className="overflow-hidden">
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg truncate">{story.title}</h3>
+                <div className="flex gap-4">
+                  {/* Cover Image on Left */}
+                  <div className="flex-shrink-0">
+                    {story.coverImage ? (
+                      <img
+                        src={story.coverImage}
+                        alt={story.title}
+                        className="w-24 h-32 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-24 h-32 bg-muted rounded flex items-center justify-center">
+                        <BookOpen className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Story Details on Right */}
+                  <div className="flex-1 min-w-0 flex flex-col">
+                    {/* Title and Triple Dot Menu */}
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="font-semibold text-lg truncate flex-1">{story.title}</h3>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEditStory(story)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Story
+                          </DropdownMenuItem>
+                          {story.isPublished && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  await updateStory({ storyId: story._id, isPublished: false });
+                                  toast.success("Story unpublished");
+                                } catch {
+                                  toast.error("Failed to unpublish story");
+                                }
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Unpublish
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => setConfirmDeleteId(story._id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      {story.description}
+                    </p>
+
+                    {/* Status and Genre */}
+                    <div className="flex items-center gap-2 mb-2">
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           story.isCompleted
@@ -354,99 +415,64 @@ export default function Write() {
                         {story.isPublished ? "Published" : "Draft"}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                      {story.description}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Last updated {timeAgo(story.lastUpdated)}</p>
-                  </div>
-                </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      navigate(`/write/${story._id}/chapter/new`);
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> New Chapter
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/write/${story._id}/manage`)}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Manage ({story.totalChapters})
-                  </Button>
-                  
-                  {!story.isPublished && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={async () => {
-                        try {
-                          await updateStory({ storyId: story._id, isPublished: true });
-                          toast.success("Story published");
-                        } catch {
-                          toast.error("Failed to publish story");
-                        }
-                      }}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Publish
-                    </Button>
-                  )}
+                    {/* Last Updated */}
+                    <p className="text-xs text-muted-foreground mb-3">Last updated {timeAgo(story.lastUpdated)}</p>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          navigate(`/write/${story._id}/chapter/new`);
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700"
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> New Chapter
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEditStory(story)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      {story.isPublished && (
-                        <DropdownMenuItem
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/write/${story._id}/manage`)}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Manage ({story.totalChapters})
+                      </Button>
+                      
+                      {!story.isPublished && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
                           onClick={async () => {
                             try {
-                              await updateStory({ storyId: story._id, isPublished: false });
-                              toast.success("Story unpublished");
+                              await updateStory({ storyId: story._id, isPublished: true });
+                              toast.success("Story published");
                             } catch {
-                              toast.error("Failed to unpublish story");
+                              toast.error("Failed to publish story");
                             }
                           }}
                         >
                           <FileText className="h-4 w-4 mr-2" />
-                          Unpublish
-                        </DropdownMenuItem>
+                          Publish
+                        </Button>
                       )}
-                      <DropdownMenuItem
-                        onClick={() => setConfirmDeleteId(story._id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                    </div>
 
-                <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <Eye className="w-4 h-4" /> {story.totalViews}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Heart className="w-4 h-4" /> {story.totalLikes}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MessageCircle className="w-4 h-4" /> {story.totalComments}
-                  </span>
+                    {/* Stats */}
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Eye className="w-4 h-4" /> {story.totalViews}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Heart className="w-4 h-4" /> {story.totalLikes}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MessageCircle className="w-4 h-4" /> {story.totalComments}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
