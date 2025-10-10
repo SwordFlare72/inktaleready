@@ -38,7 +38,7 @@ export default function EditProfile() {
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("");
 
-  const [avatarStorageId, setAvatarStorageId] = useState<Id<"_storage"> | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [bannerUrl, setBannerUrl] = useState<string>("");
 
   // Add: preview URLs with cache-busting for immediate UI refresh after upload/save
@@ -126,30 +126,13 @@ export default function EditProfile() {
       setUsernameInput(me.username ?? "");
       setBio(me.bio ?? "");
       setGender(me.gender ?? "");
-      setAvatarStorageId(me.avatarStorageId ?? null);
+      setAvatarUrl((me as any).avatarImage ?? me.image ?? "");
       setBannerUrl((me as any).bannerImage ?? "");
       // Add: keep previews in sync from saved URLs (no bust initially)
-      setPreviewImageUrl(me.image ?? "");
+      setPreviewImageUrl((me as any).avatarImage ?? me.image ?? "");
       setPreviewBannerUrl((me as any).bannerImage ?? "");
     }
   }, [me]);
-
-  // Fetch avatar URL from storage ID
-  const avatarUrl = useQuery(
-    api.fileQueries.getFileUrlQuery,
-    avatarStorageId ? { storageId: avatarStorageId } : "skip"
-  );
-
-  useEffect(() => {
-    if (avatarUrl) {
-      setPreviewImageUrl(avatarUrl);
-    } else if (!avatarStorageId && me?.image) {
-      // Fallback to legacy image field if no storage ID
-      setPreviewImageUrl(me.image);
-    } else if (!avatarStorageId) {
-      setPreviewImageUrl("");
-    }
-  }, [avatarUrl, avatarStorageId, me?.image]);
 
   async function uploadFileAndGetStorageId(file: File): Promise<Id<"_storage">> {
     // Guard: sanity check
@@ -239,23 +222,11 @@ export default function EditProfile() {
 
     setBusy(true);
     try {
-      // Fetch the avatar URL if we have a storage ID
-      let avatarUrl: string | undefined = undefined;
-      if (avatarStorageId) {
-        try {
-          const url = await getFileUrl({ storageId: avatarStorageId });
-          avatarUrl = url || undefined;
-        } catch (e) {
-          console.error("Failed to get avatar URL:", e);
-        }
-      }
-
       const payload: any = {
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
-        avatarStorageId: avatarStorageId || undefined,
-        image: avatarUrl || undefined, // Store the URL in the image field for fallback
+        avatarImage: avatarUrl || undefined,
         bannerImage: bannerUrl || undefined,
       };
 
@@ -430,11 +401,11 @@ export default function EditProfile() {
                     >
                       Choose Image
                     </Button>
-                    {avatarStorageId && (
+                    {avatarUrl && (
                       <Button
                         variant="ghost"
                         onClick={() => {
-                          setAvatarStorageId(null);
+                          setAvatarUrl("");
                           setPreviewImageUrl("");
                         }}
                         disabled={busy}
@@ -855,8 +826,8 @@ export default function EditProfile() {
                     const storageId = await uploadFileAndGetStorageId(file);
                     const url = await getFileUrl({ storageId });
                     if (!url) throw new Error("Could not get file URL");
-                    // Do NOT persist yet; wait for Save Changes
-                    setAvatarStorageId(storageId);
+                    // Store URL directly (matches story cover pattern)
+                    setAvatarUrl(url);
                     setPreviewImageUrl(withBust(url));
                     toast.success(
                       "Avatar updated. Click 'Save Changes' to apply.",

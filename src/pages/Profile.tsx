@@ -182,16 +182,8 @@ export default function Profile() {
 
   const displayUser = isOwnProfile ? currentUser : profileUser;
 
-  // Fetch avatar URL from storage if avatarStorageId exists
-  const avatarUrl = useQuery(
-    api.fileQueries.getFileUrlQuery,
-    displayUser?.avatarStorageId
-      ? { storageId: displayUser.avatarStorageId }
-      : "skip"
-  );
-
-  // Determine the actual avatar source to display
-  const avatarSrc = avatarUrl || displayUser?.image || undefined;
+  // Determine the actual avatar source to display (matches story cover pattern)
+  const avatarSrc = (displayUser as any)?.avatarImage || displayUser?.image || undefined;
 
   const readingListCount = Array.isArray(publicLists) ? publicLists.length : 0;
   // Fix follower count on own profile: compute from followersList length; otherwise use public field

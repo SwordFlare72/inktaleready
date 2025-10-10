@@ -75,8 +75,8 @@ const schema = defineSchema(
       bannerImage: v.optional(v.string()),
       // Add: authEmail used by the Password provider for actual authentication
       authEmail: v.optional(v.string()),
-      // Add: avatarStorageId for storing avatar in Convex Storage
-      avatarStorageId: v.optional(v.id("_storage")),
+      // Avatar image URL (matches story cover pattern)
+      avatarImage: v.optional(v.string()),
     })
       .index("email", ["email"]) // index for the email. do not remove or modify
       // Add: index for username uniqueness lookups

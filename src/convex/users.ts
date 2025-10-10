@@ -138,7 +138,7 @@ export const getUserPublic = query({
       // Add: expose username & banner image
       username: user.username,
       bannerImage: (user as any).bannerImage,
-      avatarStorageId: user.avatarStorageId,
+      avatarImage: (user as any).avatarImage,
       stories: stories.map(story => ({
         _id: story._id,
         title: story.title,
@@ -158,7 +158,7 @@ export const updateMe = mutation({
   args: {
     name: v.optional(v.string()),
     image: v.optional(v.string()),
-    avatarStorageId: v.optional(v.id("_storage")),
+    avatarImage: v.optional(v.string()),
     bio: v.optional(v.string()),
     gender: v.optional(v.string()),
     // Add: banner image update
@@ -181,7 +181,7 @@ export const updateMe = mutation({
     const updates: any = {};
     if (args.name !== undefined) updates.name = args.name;
     if (args.image !== undefined) updates.image = sanitizeUrl(args.image);
-    if (args.avatarStorageId !== undefined) updates.avatarStorageId = args.avatarStorageId;
+    if (args.avatarImage !== undefined) updates.avatarImage = sanitizeUrl(args.avatarImage);
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
     if (args.bannerImage !== undefined) (updates as any).bannerImage = sanitizeUrl(args.bannerImage);
@@ -194,7 +194,7 @@ export const updateMe = mutation({
     return {
       ok: true,
       image: saved?.image,
-      avatarStorageId: saved?.avatarStorageId,
+      avatarImage: (saved as any)?.avatarImage,
       bannerImage: (saved as any)?.bannerImage,
       name: saved?.name,
       bio: saved?.bio,
