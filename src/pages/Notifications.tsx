@@ -289,7 +289,7 @@ export default function Notifications() {
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={c.partner?.image || undefined} />
+                        <AvatarImage src={(c.partner as any)?.avatarImage || c.partner?.image || undefined} />
                         <AvatarFallback>{c.partner?.name?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
@@ -347,7 +347,7 @@ export default function Notifications() {
                       className={`w-full text-left p-2 rounded-md hover:bg-muted flex items-center gap-2 ${selectedUser?._id === (u as any)._id ? "bg-muted" : ""}`}
                     >
                       <Avatar className="h-7 w-7">
-                        <AvatarImage src={(u as any).image || undefined} />
+                        <AvatarImage src={(u as any).avatarImage || (u as any).image || undefined} />
                         <AvatarFallback>{(u as any).name?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                       <div>
@@ -369,7 +369,7 @@ export default function Notifications() {
                 {selectedUser ? (
                   <>
                     <Avatar className="h-7 w-7">
-                      <AvatarImage src={selectedUser.image || undefined} />
+                      <AvatarImage src={(selectedUser as any).avatarImage || selectedUser.image || undefined} />
                       <AvatarFallback>{selectedUser.name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm">{selectedUser.name || "Anonymous"}</span>

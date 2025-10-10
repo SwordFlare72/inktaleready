@@ -391,7 +391,7 @@ export default function Search() {
                       >
                         <CardContent className="p-4 flex items-center gap-3">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={u.image || ""} />
+                            <AvatarImage src={(u as any).avatarImage || u.image || ""} />
                             <AvatarFallback>
                               {(u.name?.[0] || "U").toUpperCase()}
                             </AvatarFallback>

@@ -163,7 +163,7 @@ export default function Messages() {
                 </button>
                 <div className="flex items-center gap-1">
                   <Avatar className="h-9 w-9 ring-[0.5px] ring-border/70">
-                    <AvatarImage src={selectedConversation?.partner?.image} />
+                    <AvatarImage src={(selectedConversation?.partner as any)?.avatarImage || selectedConversation?.partner?.image} />
                     <AvatarFallback>
                       {selectedConversation?.partner?.name?.charAt(0) || "U"}
                     </AvatarFallback>
@@ -332,7 +332,7 @@ export default function Messages() {
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={conversation.partner?.image} />
+                        <AvatarImage src={(conversation.partner as any)?.avatarImage || conversation.partner?.image} />
                         <AvatarFallback>
                           {conversation.partner?.name?.charAt(0) || "U"}
                         </AvatarFallback>

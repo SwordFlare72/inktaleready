@@ -23,7 +23,7 @@ function UserRow({ u, onOpen, isFollowing, onToggle }: {
       <div className="flex items-center gap-3">
         <button className="flex items-center gap-3 flex-1 text-left" onClick={() => onOpen(u._id)}>
           <Avatar className="h-10 w-10">
-            <AvatarImage src={u.image} />
+            <AvatarImage src={(u as any).avatarImage || u.image} />
             <AvatarFallback>{u.name?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
