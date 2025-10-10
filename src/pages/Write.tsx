@@ -566,10 +566,12 @@ export default function Write() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowCreateStory(false)}>
+                <Button variant="outline" onClick={() => setShowCreateStory(false)} disabled={uploadingCover}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateStory}>Create Story</Button>
+                <Button onClick={handleCreateStory} disabled={uploadingCover}>
+                  {uploadingCover ? "Uploading..." : "Create Story"}
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -710,10 +712,12 @@ export default function Write() {
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowEditStory(false)}>
+                <Button variant="outline" onClick={() => setShowEditStory(false)} disabled={uploadingCover}>
                   Cancel
                 </Button>
-                <Button onClick={handleSaveEditStory}>Save</Button>
+                <Button onClick={handleSaveEditStory} disabled={uploadingCover}>
+                  {uploadingCover ? "Uploading..." : "Save"}
+                </Button>
               </div>
             </div>
           </DialogContent>
