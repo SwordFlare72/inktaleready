@@ -158,6 +158,7 @@ export const updateMe = mutation({
   args: {
     name: v.optional(v.string()),
     image: v.optional(v.string()),
+    avatarStorageId: v.optional(v.id("_storage")),
     bio: v.optional(v.string()),
     gender: v.optional(v.string()),
     // Add: banner image update
@@ -180,6 +181,7 @@ export const updateMe = mutation({
     const updates: any = {};
     if (args.name !== undefined) updates.name = args.name;
     if (args.image !== undefined) updates.image = sanitizeUrl(args.image);
+    if (args.avatarStorageId !== undefined) updates.avatarStorageId = args.avatarStorageId;
     if (args.bio !== undefined) updates.bio = args.bio;
     if (args.gender !== undefined) updates.gender = args.gender;
     if (args.bannerImage !== undefined) (updates as any).bannerImage = sanitizeUrl(args.bannerImage);
@@ -192,6 +194,7 @@ export const updateMe = mutation({
     return {
       ok: true,
       image: saved?.image,
+      avatarStorageId: saved?.avatarStorageId,
       bannerImage: (saved as any)?.bannerImage,
       name: saved?.name,
       bio: saved?.bio,

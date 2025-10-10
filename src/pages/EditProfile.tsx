@@ -38,7 +38,7 @@ export default function EditProfile() {
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("");
 
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const [avatarStorageId, setAvatarStorageId] = useState<Id<"_storage"> | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string>("");
 
   // Add: preview URLs with cache-busting for immediate UI refresh after upload/save
@@ -126,7 +126,7 @@ export default function EditProfile() {
       setUsernameInput(me.username ?? "");
       setBio(me.bio ?? "");
       setGender(me.gender ?? "");
-      setImageUrl(me.image ?? "");
+      setAvatarStorageId(me.avatarStorageId ?? null);
       setBannerUrl((me as any).bannerImage ?? "");
       // Add: keep previews in sync from saved URLs (no bust initially)
       setPreviewImageUrl(me.image ?? "");
@@ -134,13 +134,21 @@ export default function EditProfile() {
     }
   }, [me]);
 
+  // Fetch avatar URL from storage ID
+  const avatarUrl = useQuery(
+    api.fileQueries.getFileUrlQuery,
+    avatarStorageId ? { storageId: avatarStorageId } : "skip"
+  );
+
   useEffect(() => {
-    if (imageUrl === "") {
+    if (avatarUrl) {
+      setPreviewImageUrl(avatarUrl);
+    } else if (!avatarStorageId) {
       setPreviewImageUrl("");
     }
-  }, [imageUrl]);
+  }, [avatarUrl, avatarStorageId]);
 
-  async function uploadFileAndGetUrl(file: File): Promise<string> {
+  async function uploadFileAndGetStorageId(file: File): Promise<Id<"_storage">> {
     // Guard: sanity check
     if (!(file instanceof File)) {
       throw new Error("No file selected");
@@ -187,19 +195,7 @@ export default function EditProfile() {
       if (!storageIdRaw || typeof storageIdRaw !== "string") {
         throw new Error("Upload failed: missing storage id");
       }
-      const storageId = storageIdRaw as Id<"_storage">;
-
-      // Resolve a public URL with small retry
-      for (let i = 0; i < 3; i++) {
-        try {
-          const url = await getFileUrl({ storageId });
-          if (url && typeof url === "string") return url;
-        } catch {
-          // swallow and retry
-        }
-        await new Promise((r) => setTimeout(r, 200));
-      }
-      throw new Error("Could not get file URL");
+      return storageIdRaw as Id<"_storage">;
     } catch (e: any) {
       if (e?.name === "AbortError") {
         throw new Error("Upload timed out");
@@ -244,7 +240,7 @@ export default function EditProfile() {
         name: name.trim(),
         bio: bio.trim(),
         gender: gender.trim() || undefined,
-        image: imageUrl || undefined, // persist only on Save
+        avatarStorageId: avatarStorageId || undefined, // persist only on Save
         bannerImage: bannerUrl || undefined, // persist only on Save
       };
 
@@ -419,11 +415,11 @@ export default function EditProfile() {
                     >
                       Choose Image
                     </Button>
-                    {imageUrl && (
+                    {avatarStorageId && (
                       <Button
                         variant="ghost"
                         onClick={() => {
-                          setImageUrl("");
+                          setAvatarStorageId(null);
                           setPreviewImageUrl("");
                         }}
                         disabled={busy}
@@ -473,7 +469,9 @@ export default function EditProfile() {
                         // Upload now; persist on Save
                         try {
                           setBusy(true);
-                          const url = await uploadFileAndGetUrl(file);
+                          const storageId = await uploadFileAndGetStorageId(file);
+                          const url = await getFileUrl({ storageId });
+                          if (!url) throw new Error("Could not get file URL");
                           setBannerUrl(url); // raw signed URL
                           setPreviewBannerUrl(withBust(url)); // ensure immediate preview
                           toast.success(
@@ -839,9 +837,11 @@ export default function EditProfile() {
                       { type: "image/jpeg" },
                     );
 
-                    const url = await uploadFileAndGetUrl(file);
+                    const storageId = await uploadFileAndGetStorageId(file);
+                    const url = await getFileUrl({ storageId });
+                    if (!url) throw new Error("Could not get file URL");
                     // Do NOT persist yet; wait for Save Changes
-                    setImageUrl(url);
+                    setAvatarStorageId(storageId);
                     setPreviewImageUrl(withBust(url));
                     toast.success(
                       "Avatar updated. Click 'Save Changes' to apply.",
