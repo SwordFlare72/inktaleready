@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle, MoreVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const GENRES = [
   { value: "romance", label: "Romance" },
@@ -379,38 +380,61 @@ export default function Write() {
                     <FileText className="h-4 w-4 mr-2" />
                     Manage ({story.totalChapters})
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditStory(story)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant={story.isPublished ? "outline" : "default"}
-                    size="sm"
-                    className={story.isPublished ? "" : "bg-green-600 hover:bg-green-700"}
-                    onClick={async () => {
-                      try {
-                        await updateStory({ storyId: story._id, isPublished: !story.isPublished });
-                        toast.success(story.isPublished ? "Story unpublished" : "Story published");
-                      } catch {
-                        toast.error("Failed to update publish status");
-                      }
-                    }}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    {story.isPublished ? "Unpublish" : "Publish"}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setConfirmDeleteId(story._id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
+                  
+                  {!story.isPublished && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={async () => {
+                        try {
+                          await updateStory({ storyId: story._id, isPublished: true });
+                          toast.success("Story published");
+                        } catch {
+                          toast.error("Failed to publish story");
+                        }
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Publish
+                    </Button>
+                  )}
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEditStory(story)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      {story.isPublished && (
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            try {
+                              await updateStory({ storyId: story._id, isPublished: false });
+                              toast.success("Story unpublished");
+                            } catch {
+                              toast.error("Failed to unpublish story");
+                            }
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Unpublish
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        onClick={() => setConfirmDeleteId(story._id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">
