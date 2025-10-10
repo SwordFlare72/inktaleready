@@ -23,7 +23,7 @@ interface AuthProps {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, signIn, signOut } = useAuth();
   const navigate = useNavigate();
 
   // Mode: "login" or "signup"
@@ -168,6 +168,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         return;
       }
 
+      // Sign out any existing session to prevent conflicts
+      try {
+        await signOut();
+      } catch {
+        // Ignore signout errors if not signed in
+      }
+
       // 1) Create account
       const fd = new FormData();
       fd.set("email", normalizedEmail);
@@ -194,12 +201,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             await new Promise((r) => setTimeout(r, 250));
             continue;
           }
-          // For any other error on the last attempt, throw
-          if (i === 5) {
-            throw new Error("Failed to set username");
+          // For any other unexpected error, retry unless it's the last attempt
+          if (i < 5) {
+            await new Promise((r) => setTimeout(r, 250));
+            continue;
           }
-          // Otherwise, retry after a short delay
-          await new Promise((r) => setTimeout(r, 250));
+          // On the last attempt, throw with the actual error message
+          throw new Error("Failed to set username");
         }
       }
 
@@ -227,6 +235,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
+      // Only show success and navigate if username was successfully saved
       toast.success("Account created");
       navigate(redirectAfterAuth || "/");
     } catch (err: any) {
