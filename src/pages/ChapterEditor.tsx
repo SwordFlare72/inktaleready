@@ -9,11 +9,13 @@ import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Image as I
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 export default function ChapterEditor() {
   const { storyId, chapterId } = useParams();
   const navigate = useNavigate();
-  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<ReactQuill | null>(null);
 
   const createChapter = useMutation(api.chapters.createChapter);
   const updateChapter = useMutation(api.chapters.updateChapter);
@@ -21,11 +23,10 @@ export default function ChapterEditor() {
   const getFileUrl = useAction(api.files.getFileUrl);
 
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [kbOffset, setKbOffset] = useState(0);
-  const [contentEmpty, setContentEmpty] = useState(true);
-  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const updateKB = () => {
@@ -70,53 +71,11 @@ export default function ChapterEditor() {
   })();
 
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
-  }, []);
-
-  useEffect(() => {
     if (existing) {
       setTitle(existing.title);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = existing.content || "";
-        const txt = editorRef.current.textContent || "";
-        setContentEmpty(txt.trim().length === 0);
-      }
+      setContent(existing.content || "");
     }
   }, [existing]);
-
-  const exec = (cmd: string, value?: string) => {
-    if (!editorRef.current) return;
-    
-    // Save current selection
-    const selection = window.getSelection();
-    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-    
-    // Execute command
-    document.execCommand(cmd, false, value);
-    
-    // Restore selection and focus
-    if (range && selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-    editorRef.current.focus();
-    
-    // Update button states
-    setTimeout(() => updateActiveFormats(), 10);
-  };
-
-  const updateActiveFormats = () => {
-    const formats = new Set<string>();
-    if (document.queryCommandState('bold')) formats.add('bold');
-    if (document.queryCommandState('italic')) formats.add('italic');
-    if (document.queryCommandState('underline')) formats.add('underline');
-    if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
-    if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
-    if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
-    setActiveFormats(formats);
-  };
 
   const insertImageFromFile = async (file: File) => {
     try {
@@ -131,7 +90,12 @@ export default function ChapterEditor() {
       const storageId = json.storageId as string;
       const url = await getFileUrl({ storageId: storageId as any });
       if (!url) throw new Error("Could not resolve image URL");
-      exec("insertImage", url);
+      
+      const quill = quillRef.current?.getEditor();
+      if (quill) {
+        const range = quill.getSelection();
+        quill.insertEmbed(range?.index || 0, "image", url);
+      }
       toast.success("Image inserted");
     } catch (e) {
       toast.error("Failed to insert image");
@@ -154,8 +118,8 @@ export default function ChapterEditor() {
       toast.error("Missing story");
       return;
     }
-    const content = editorRef.current?.innerHTML?.trim() || "";
-    if (!title.trim() || !content) {
+    const trimmedContent = content.trim();
+    if (!title.trim() || !trimmedContent || trimmedContent === "<p><br></p>") {
       toast.error("Please add a title and content");
       return;
     }
@@ -169,7 +133,7 @@ export default function ChapterEditor() {
         await updateChapter({
           chapterId: chapterId as Id<"chapters">,
           title: title.trim(),
-          content,
+          content: trimmedContent,
           isDraft: !publish,
           isPublished: publish,
         });
@@ -178,7 +142,7 @@ export default function ChapterEditor() {
         await createChapter({
           storyId: storyId as Id<"stories">,
           title: title.trim(),
-          content,
+          content: trimmedContent,
           isDraft: !publish,
         });
         toast.success(publish ? "Chapter published!" : "Draft saved!");
@@ -190,6 +154,55 @@ export default function ChapterEditor() {
       setIsSaving(false);
     }
   };
+
+  const modules = {
+    toolbar: false,
+  };
+
+  const formats = [
+    "bold",
+    "italic",
+    "underline",
+    "align",
+    "image",
+  ];
+
+  const handleFormat = (format: string, value?: string) => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+
+    if (format === "align") {
+      quill.format("align", value || false);
+    } else {
+      const currentFormat = quill.getFormat();
+      quill.format(format, !currentFormat[format]);
+    }
+  };
+
+  const getActiveFormats = () => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return {};
+    return quill.getFormat();
+  };
+
+  const [activeFormats, setActiveFormats] = useState<any>({});
+
+  useEffect(() => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+
+    const updateFormats = () => {
+      setActiveFormats(quill.getFormat());
+    };
+
+    quill.on("selection-change", updateFormats);
+    quill.on("text-change", updateFormats);
+
+    return () => {
+      quill.off("selection-change", updateFormats);
+      quill.off("text-change", updateFormats);
+    };
+  }, []);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
@@ -219,28 +232,21 @@ export default function ChapterEditor() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="w-full bg-transparent border-0 border-b rounded-none text-center text-2xl sm:text-3xl font-semibold focus-visible:ring-0 focus:outline-none"
+          onFocus={() => setIsFocused(false)}
         />
 
         <div className="relative">
-          {contentEmpty && (
-            <span className="pointer-events-none absolute left-3 top-3 text-muted-foreground/70 select-none">
-              Tap here to start writing
-            </span>
-          )}
-          <div
-            ref={editorRef}
-            contentEditable
-            className="min-h-[55vh] rounded-md bg-transparent p-3 focus:outline-none text-base leading-7"
-            suppressContentEditableWarning
-            aria-label="Chapter editor"
+          <ReactQuill
+            ref={quillRef}
+            theme="snow"
+            value={content}
+            onChange={setContent}
+            modules={modules}
+            formats={formats}
+            placeholder="Tap here to start writing"
+            className="min-h-[55vh] rounded-md bg-transparent [&_.ql-editor]:min-h-[55vh] [&_.ql-editor]:p-3 [&_.ql-editor]:text-base [&_.ql-editor]:leading-7 [&_.ql-container]:border-0"
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            onInput={() => {
-              const txt = editorRef.current?.textContent || "";
-              setContentEmpty(txt.trim().length === 0);
-            }}
-            onMouseUp={updateActiveFormats}
-            onKeyUp={updateActiveFormats}
           />
         </div>
       </div>
@@ -256,31 +262,31 @@ export default function ChapterEditor() {
                          flex flex-wrap items-center gap-2"
             >
               <Button
-                variant={activeFormats.has('bold') ? "default" : "outline"}
+                variant={activeFormats.bold ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault();
-                  exec("bold");
+                  handleFormat("bold");
                 }}
               >
                 <Bold className="h-4 w-4" />
               </Button>
               <Button
-                variant={activeFormats.has('italic') ? "default" : "outline"}
+                variant={activeFormats.italic ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault();
-                  exec("italic");
+                  handleFormat("italic");
                 }}
               >
                 <Italic className="h-4 w-4" />
               </Button>
               <Button
-                variant={activeFormats.has('underline') ? "default" : "outline"}
+                variant={activeFormats.underline ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault();
-                  exec("underline");
+                  handleFormat("underline");
                 }}
               >
                 <Underline className="h-4 w-4" />
@@ -289,31 +295,31 @@ export default function ChapterEditor() {
               <span className="w-px h-6 bg-border" />
 
               <Button
-                variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
+                variant={activeFormats.align === "left" || !activeFormats.align ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault();
-                  exec("justifyLeft");
+                  handleFormat("align", "left");
                 }}
               >
                 <AlignLeft className="h-4 w-4" />
               </Button>
               <Button
-                variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
+                variant={activeFormats.align === "center" ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault();
-                  exec("justifyCenter");
+                  handleFormat("align", "center");
                 }}
               >
                 <AlignCenter className="h-4 w-4" />
               </Button>
               <Button
-                variant={activeFormats.has('justifyRight') ? "default" : "outline"}
+                variant={activeFormats.align === "right" ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault();
-                  exec("justifyRight");
+                  handleFormat("align", "right");
                 }}
               >
                 <AlignRight className="h-4 w-4" />
