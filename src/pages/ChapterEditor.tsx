@@ -5,15 +5,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Image as ImageIcon, Save, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { Image as ImageIcon, Save } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 export default function ChapterEditor() {
   const { storyId, chapterId } = useParams();
   const navigate = useNavigate();
-  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<ReactQuill | null>(null);
 
   const createChapter = useMutation(api.chapters.createChapter);
   const updateChapter = useMutation(api.chapters.updateChapter);
@@ -33,46 +35,41 @@ export default function ChapterEditor() {
   const canPublish = story?.isPublished ?? false;
 
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [activeFormats, setActiveFormats] = useState({
-    bold: false,
-    italic: false,
-    underline: false,
-    justifyLeft: false,
-    justifyCenter: false,
-    justifyRight: false,
-  });
 
   useEffect(() => {
-    if (existing && editorRef.current) {
+    if (existing) {
       setTitle(existing.title);
-      editorRef.current.innerHTML = existing.content || "";
+      setContent(existing.content || "");
     }
   }, [existing]);
 
-  const updateActiveFormats = () => {
-    setActiveFormats({
-      bold: document.queryCommandState("bold"),
-      italic: document.queryCommandState("italic"),
-      underline: document.queryCommandState("underline"),
-      justifyLeft: document.queryCommandState("justifyLeft"),
-      justifyCenter: document.queryCommandState("justifyCenter"),
-      justifyRight: document.queryCommandState("justifyRight"),
-    });
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ 'align': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ],
   };
 
-  const applyFormat = (command: string) => {
-    document.execCommand(command, false);
-    editorRef.current?.focus();
-    updateActiveFormats();
-  };
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline',
+    'align',
+    'list', 'bullet',
+    'link', 'image'
+  ];
 
   const save = async (publish: boolean) => {
     if (!storyId) {
       toast.error("Missing story");
       return;
     }
-    if (!title.trim() || !editorRef.current?.innerHTML.trim()) {
+    if (!title.trim() || !content.trim()) {
       toast.error("Please add a title and content");
       return;
     }
@@ -82,7 +79,6 @@ export default function ChapterEditor() {
     }
     setIsSaving(true);
     try {
-      const content = editorRef.current.innerHTML;
       if (chapterId) {
         await updateChapter({
           chapterId: chapterId as Id<"chapters">,
@@ -139,86 +135,18 @@ export default function ChapterEditor() {
           className="w-full bg-transparent border-0 border-b rounded-none text-center text-2xl sm:text-3xl font-semibold focus-visible:ring-0 focus:outline-none"
         />
 
-        {/* Formatting Toolbar */}
-        <div className="flex items-center gap-1 p-2 border rounded-md bg-muted/30">
-          <Button
-            variant={activeFormats.bold ? "default" : "outline"}
-            size="sm"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              applyFormat("bold");
-            }}
-            className="h-8 w-8 p-0"
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={activeFormats.italic ? "default" : "outline"}
-            size="sm"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              applyFormat("italic");
-            }}
-            className="h-8 w-8 p-0"
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={activeFormats.underline ? "default" : "outline"}
-            size="sm"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              applyFormat("underline");
-            }}
-            className="h-8 w-8 p-0"
-          >
-            <Underline className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-border mx-1" />
-          <Button
-            variant={activeFormats.justifyLeft ? "default" : "outline"}
-            size="sm"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              applyFormat("justifyLeft");
-            }}
-            className="h-8 w-8 p-0"
-          >
-            <AlignLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={activeFormats.justifyCenter ? "default" : "outline"}
-            size="sm"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              applyFormat("justifyCenter");
-            }}
-            className="h-8 w-8 p-0"
-          >
-            <AlignCenter className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={activeFormats.justifyRight ? "default" : "outline"}
-            size="sm"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              applyFormat("justifyRight");
-            }}
-            className="h-8 w-8 p-0"
-          >
-            <AlignRight className="h-4 w-4" />
-          </Button>
+        <div className="min-h-[60vh]">
+          <ReactQuill
+            ref={quillRef}
+            theme="snow"
+            value={content}
+            onChange={setContent}
+            modules={modules}
+            formats={formats}
+            placeholder="Start writing your chapter..."
+            className="h-full"
+          />
         </div>
-
-        <div
-          ref={editorRef}
-          contentEditable
-          onInput={updateActiveFormats}
-          onKeyUp={updateActiveFormats}
-          onMouseUp={updateActiveFormats}
-          className="min-h-[60vh] p-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring prose prose-sm max-w-none dark:prose-invert"
-          style={{ whiteSpace: "pre-wrap" }}
-        />
       </div>
     </motion.div>
   );
