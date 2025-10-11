@@ -118,7 +118,43 @@ export default function ChapterEditor() {
     }
   }, [title, existing]);
 
-  // Auto-save draft when navigating away
+  // Auto-save on component unmount (when navigating away)
+  useEffect(() => {
+    return () => {
+      // This cleanup runs when component unmounts (navigation away)
+      if (hasUnsavedChanges && !isAutoSaving && storyId) {
+        const content = editorRef.current?.innerHTML?.trim() || "";
+        if (title.trim() && content) {
+          // Fire and forget - save in background
+          (async () => {
+            try {
+              if (chapterId) {
+                await updateChapter({
+                  chapterId: chapterId as Id<"chapters">,
+                  title: title.trim(),
+                  content,
+                  isDraft: true,
+                  isPublished: false,
+                });
+              } else {
+                await createChapter({
+                  storyId: storyId as Id<"stories">,
+                  title: title.trim(),
+                  content,
+                  isDraft: true,
+                });
+              }
+              toast.success("Saved as Draft");
+            } catch (err) {
+              console.error("Auto-save on unmount failed:", err);
+            }
+          })();
+        }
+      }
+    };
+  }, [hasUnsavedChanges, isAutoSaving, storyId, title, chapterId]);
+
+  // Auto-save draft when navigating away (for explicit back button)
   const autoSaveDraft = async () => {
     if (!storyId || !hasUnsavedChanges || isAutoSaving) return;
     
@@ -151,6 +187,31 @@ export default function ChapterEditor() {
       setIsAutoSaving(false);
     }
   };
+
+  // Listen for browser back button / navigation attempts
+  useEffect(() => {
+    const handlePopState = async (e: PopStateEvent) => {
+      if (hasUnsavedChanges && !isAutoSaving) {
+        // Prevent immediate navigation
+        e.preventDefault();
+        window.history.pushState(null, "", window.location.href);
+        
+        // Auto-save then navigate
+        await autoSaveDraft();
+        
+        // Now allow navigation
+        window.history.back();
+      }
+    };
+
+    // Push a state to detect back navigation
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [hasUnsavedChanges, isAutoSaving, autoSaveDraft]);
 
   const exec = (cmd: string, value?: string) => {
     // Ensure the editor keeps focus and the selection is active before executing
