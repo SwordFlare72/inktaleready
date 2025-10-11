@@ -115,21 +115,12 @@ export default function ChapterEditor() {
   };
 
   const toggleFormat = (cmd: string) => {
-    // Save current selection
-    const selection = window.getSelection();
-    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-    
-    // Execute command
+    // Execute command first
     document.execCommand(cmd, false, undefined);
     
-    // Restore selection and focus
-    if (range && editorRef.current) {
+    // Then refocus the editor to keep keyboard visible
+    if (editorRef.current) {
       editorRef.current.focus();
-      const newSelection = window.getSelection();
-      if (newSelection) {
-        newSelection.removeAllRanges();
-        newSelection.addRange(range);
-      }
     }
     
     // Update active formats
