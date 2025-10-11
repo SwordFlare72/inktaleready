@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, FilePlus2, Pencil, Rows, UploadCloud } from "lucide-react";
+import { BookOpen, FilePlus2, Pencil, Rows, UploadCloud, ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
@@ -29,7 +29,17 @@ export default function StoryChaptersManage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-3 py-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold">Manage Chapters</h1>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate("/write")}
+              className="h-8 w-8 p-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl font-extrabold">Manage Chapters</h1>
+          </div>
           <Button onClick={() => navigate(`/write/${storyId}/chapter/new`)} className="bg-purple-600 hover:bg-purple-700">
             <FilePlus2 className="h-4 w-4 mr-2" /> New Chapter
           </Button>
