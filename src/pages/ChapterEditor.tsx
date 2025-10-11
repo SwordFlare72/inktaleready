@@ -219,21 +219,30 @@ export default function ChapterEditor() {
               <Button
                 variant={editor.isActive('bold') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().toggleBold().run()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().toggleBold().run();
+                }}
               >
                 <Bold className="h-4 w-4" />
               </Button>
               <Button
                 variant={editor.isActive('italic') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().toggleItalic().run()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().toggleItalic().run();
+                }}
               >
                 <Italic className="h-4 w-4" />
               </Button>
               <Button
                 variant={editor.isActive('underline') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().toggleUnderline().run();
+                }}
               >
                 <Underline className="h-4 w-4" />
               </Button>
@@ -243,21 +252,30 @@ export default function ChapterEditor() {
               <Button
                 variant={editor.isActive({ textAlign: 'left' }) ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().setTextAlign('left').run();
+                }}
               >
                 <AlignLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant={editor.isActive({ textAlign: 'center' }) ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().setTextAlign('center').run();
+                }}
               >
                 <AlignCenter className="h-4 w-4" />
               </Button>
               <Button
                 variant={editor.isActive({ textAlign: 'right' }) ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().setTextAlign('right').run();
+                }}
               >
                 <AlignRight className="h-4 w-4" />
               </Button>
@@ -267,7 +285,10 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handlePickImage}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handlePickImage();
+                }}
               >
                 <ImageIcon className="h-4 w-4 mr-2" /> Image
               </Button>
