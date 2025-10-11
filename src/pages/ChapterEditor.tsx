@@ -7,7 +7,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Save, ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useBlocker } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 export default function ChapterEditor() {
@@ -98,6 +98,26 @@ export default function ChapterEditor() {
     }
   }, [existing]);
 
+  // Track content changes
+  useEffect(() => {
+    const handleContentChange = () => {
+      setHasUnsavedChanges(true);
+    };
+
+    const editor = editorRef.current;
+    if (editor) {
+      editor.addEventListener('input', handleContentChange);
+      return () => editor.removeEventListener('input', handleContentChange);
+    }
+  }, []);
+
+  // Track title changes
+  useEffect(() => {
+    if (title && existing && title !== existing.title) {
+      setHasUnsavedChanges(true);
+    }
+  }, [title, existing]);
+
   // Auto-save draft when navigating away
   const autoSaveDraft = async () => {
     if (!storyId || !hasUnsavedChanges || isAutoSaving) return;
@@ -131,21 +151,6 @@ export default function ChapterEditor() {
       setIsAutoSaving(false);
     }
   };
-
-  // Block navigation if there are unsaved changes and auto-save
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      hasUnsavedChanges &&
-      currentLocation.pathname !== nextLocation.pathname
-  );
-
-  useEffect(() => {
-    if (blocker.state === "blocked") {
-      autoSaveDraft().then(() => {
-        blocker.proceed();
-      });
-    }
-  }, [blocker.state]);
 
   const exec = (cmd: string, value?: string) => {
     // Ensure the editor keeps focus and the selection is active before executing
@@ -234,7 +239,22 @@ export default function ChapterEditor() {
       {/* Slim header row with actions, keep minimal */}
       <div className="max-w-2xl mx-auto px-3 pt-4 pb-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold"> {chapterId ? "Edit Chapter" : "New Chapter"} </h1>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={async () => {
+                if (hasUnsavedChanges) {
+                  await autoSaveDraft();
+                }
+                navigate(`/write/${storyId}/manage`);
+              }}
+              className="h-8 w-8 p-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-lg font-semibold"> {chapterId ? "Edit Chapter" : "New Chapter"} </h1>
+          </div>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => save(false)} disabled={isSaving} className="h-8 px-3">
               <Save className="h-4 w-4 mr-1" /> Draft
@@ -258,7 +278,10 @@ export default function ChapterEditor() {
         <Input
           placeholder="Title your Story Part"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setHasUnsavedChanges(true);
+          }}
           className="w-full bg-transparent border-0 border-b rounded-none text-center text-2xl sm:text-3xl font-semibold focus-visible:ring-0 focus:outline-none"
         />
 
@@ -281,6 +304,7 @@ export default function ChapterEditor() {
             onInput={() => {
               const txt = editorRef.current?.textContent || "";
               setContentEmpty(txt.trim().length === 0);
+              setHasUnsavedChanges(true);
             }}
           />
         </div>
