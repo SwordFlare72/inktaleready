@@ -376,34 +376,38 @@ export default function Search() {
                     Found {userResults.length} user{userResults.length !== 1 ? "s" : ""} for "{debouncedSearchTerm}"
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-3">
                   {userResults.map((u) => (
                     <motion.div
                       key={u._id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ duration: 0.2 }}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors rounded-lg p-4 border border-border"
+                      onClick={() => navigate(`/profile/${u._id}`)}
                     >
-                      <Card
-                        className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => navigate(`/profile/${u._id}`)}
-                      >
-                        <CardContent className="p-4 flex items-center gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={(u as any).avatarImage || u.image || ""} />
-                            <AvatarFallback>
-                              {(u.name?.[0] || "U").toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <h3 className="font-semibold truncate">{u.name || "Anonymous"}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {u.bio || "—"}
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-16 w-16 flex-shrink-0">
+                          <AvatarImage src={(u as any).avatarImage || u.image || ""} />
+                          <AvatarFallback className="text-lg font-semibold">
+                            {(u.name?.[0] || "U").toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-lg mb-1 truncate">
+                            {u.name || "Anonymous"}
+                          </h3>
+                          {u.bio && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                              {u.bio}
                             </p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <UsersIcon className="h-3.5 w-3.5" />
+                            <span>View Profile</span>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
