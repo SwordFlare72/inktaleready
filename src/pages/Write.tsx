@@ -419,34 +419,31 @@ export default function Write() {
                     <p className="text-xs text-muted-foreground mb-3">Last updated {timeAgo(story.lastUpdated)}</p>
 
                     {/* Action Buttons */}
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 w-full">
-                        <Button
-                          variant="default"
-                          onClick={() => {
-                            navigate(`/write/${story._id}/chapter/new`);
-                          }}
-                          className="bg-purple-600 hover:bg-purple-700 flex-1 min-w-0"
-                          size="sm"
-                        >
-                          <Plus className="h-4 w-4 mr-2 flex-shrink-0" /> <span className="truncate">New Chapter</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/write/${story._id}/manage`)}
-                          className="flex-1 min-w-0"
-                        >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Manage ({story.totalChapters})
-                        </Button>
-                      </div>
-                      
+                    <div className="mb-3 flex items-center gap-2 w-full">
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          navigate(`/write/${story._id}/chapter/new`);
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 flex-1 min-w-0"
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-2 flex-shrink-0" /> <span className="truncate">New</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/write/${story._id}/manage`)}
+                        className="flex-1 min-w-0"
+                      >
+                        <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">Manage</span>
+                      </Button>
                       {!story.isPublished && (
                         <Button
                           variant="default"
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700 w-full"
+                          className="bg-green-600 hover:bg-green-700 flex-1 min-w-0"
                           onClick={async () => {
                             try {
                               await updateStory({ storyId: story._id, isPublished: true });
@@ -456,8 +453,8 @@ export default function Write() {
                             }
                           }}
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Publish
+                          <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">Publish</span>
                         </Button>
                       )}
                     </div>
