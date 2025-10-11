@@ -46,6 +46,7 @@
     "@tailwindcss/vite": "^4.1.8",
     "@tiptap/extension-image": "^3.6.6",
     "@tiptap/extension-text-align": "^3.6.6",
+    "@tiptap/extension-underline": "^3.6.6",
     "@tiptap/react": "^3.6.6",
     "@tiptap/starter-kit": "^3.6.6",
     "@types/three": "^0.177.0",

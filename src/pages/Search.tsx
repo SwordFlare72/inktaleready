@@ -383,8 +383,8 @@ export default function Search() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      whileHover={{ scale: 1.015, y: -2 }}
-                      className="cursor-pointer rounded-2xl p-6 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 border border-border/50"
+                      whileHover={{ scale: 1.02, y: -4 }}
+                      className="cursor-pointer rounded-xl p-5 bg-card/60 backdrop-blur-md shadow-sm hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary/60 hover:border-l-primary"
                       onClick={() => navigate(`/profile/${u._id}`)}
                     >
                       <div className="flex items-center gap-5">
