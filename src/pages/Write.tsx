@@ -329,7 +329,7 @@ export default function Write() {
             <div key={story._id} className="overflow-hidden bg-card/50 backdrop-blur-sm rounded-lg p-4 hover:bg-card/70 transition-colors">
                 <div className="flex gap-4">
                   {/* Cover Image on Left */}
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 flex flex-col gap-2">
                     {story.coverImage ? (
                       <img
                         src={story.coverImage}
@@ -340,6 +340,24 @@ export default function Write() {
                       <div className="w-24 h-32 bg-muted rounded flex items-center justify-center">
                         <BookOpen className="h-8 w-8 text-muted-foreground" />
                       </div>
+                    )}
+                    {!story.isPublished && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 w-full"
+                        onClick={async () => {
+                          try {
+                            await updateStory({ storyId: story._id, isPublished: true });
+                            toast.success("Story published");
+                          } catch {
+                            toast.error("Failed to publish story");
+                          }
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-1 flex-shrink-0" />
+                        <span className="truncate">Publish</span>
+                      </Button>
                     )}
                   </div>
 
@@ -439,24 +457,6 @@ export default function Write() {
                         <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span className="truncate">Manage</span>
                       </Button>
-                      {!story.isPublished && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 flex-1 min-w-0"
-                          onClick={async () => {
-                            try {
-                              await updateStory({ storyId: story._id, isPublished: true });
-                              toast.success("Story published");
-                            } catch {
-                              toast.error("Failed to publish story");
-                            }
-                          }}
-                        >
-                          <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
-                          <span className="truncate">Publish</span>
-                        </Button>
-                      )}
                     </div>
 
                     {/* Stats */}
