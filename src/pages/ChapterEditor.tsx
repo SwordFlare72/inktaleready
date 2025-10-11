@@ -138,21 +138,8 @@ export default function ChapterEditor() {
 
   // Add: cleanup effect for navigation away
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      // Only auto-save if there are unsaved changes and we're actually navigating
-      if (hasUnsavedChanges.current) {
-        // Prevent the navigation temporarily
-        e.preventDefault();
-        autoSaveDraft();
-      }
-    };
-
-    // Listen for browser back button
-    window.addEventListener("popstate", handlePopState);
-    
+    // Only auto-save when the component actually unmounts (leaving the page)
     return () => {
-      window.removeEventListener("popstate", handlePopState);
-      // Auto-save on component unmount if there are unsaved changes
       if (hasUnsavedChanges.current) {
         autoSaveDraft();
       }
