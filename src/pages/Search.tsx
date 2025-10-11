@@ -376,35 +376,40 @@ export default function Search() {
                     Found {userResults.length} user{userResults.length !== 1 ? "s" : ""} for "{debouncedSearchTerm}"
                   </p>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {userResults.map((u) => (
                     <motion.div
                       key={u._id}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors rounded-lg p-4 border border-border"
+                      transition={{ duration: 0.2 }}
+                      whileHover={{ scale: 1.01 }}
+                      className="cursor-pointer rounded-xl p-5 border-2 border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-200"
                       onClick={() => navigate(`/profile/${u._id}`)}
                     >
-                      <div className="flex items-start gap-4">
-                        <Avatar className="h-16 w-16 flex-shrink-0">
+                      <div className="flex items-center gap-5">
+                        <Avatar className="h-20 w-20 flex-shrink-0 ring-2 ring-border">
                           <AvatarImage src={(u as any).avatarImage || u.image || ""} />
-                          <AvatarFallback className="text-lg font-semibold">
+                          <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white">
                             {(u.name?.[0] || "U").toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg mb-1 truncate">
+                          <h3 className="font-bold text-xl mb-1.5 truncate">
                             {u.name || "Anonymous"}
                           </h3>
-                          {u.bio && (
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {u.bio ? (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
                               {u.bio}
                             </p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground/60 italic mb-3">
+                              No bio available
+                            </p>
                           )}
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <UsersIcon className="h-3.5 w-3.5" />
-                            <span>View Profile</span>
+                          <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                            <UsersIcon className="h-4 w-4" />
+                            <span>View Profile →</span>
                           </div>
                         </div>
                       </div>
