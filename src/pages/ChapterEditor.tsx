@@ -23,10 +23,11 @@ export default function ChapterEditor() {
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  // Add: dynamic keyboard offset so the toolbar sits on top of the keyboard (not screen bottom)
   const [kbOffset, setKbOffset] = useState(0);
-  // Add: track whether the main editor is empty to show a lightweight placeholder
   const [contentEmpty, setContentEmpty] = useState(true);
+  // Add: track if content has been modified
+  const hasUnsavedChanges = useRef(false);
+  const isAutoSaving = useRef(false);
 
   useEffect(() => {
     const updateKB = () => {
@@ -90,8 +91,76 @@ export default function ChapterEditor() {
         const txt = editorRef.current.textContent || "";
         setContentEmpty(txt.trim().length === 0);
       }
+      // Reset unsaved changes flag when loading existing content
+      hasUnsavedChanges.current = false;
     }
   }, [existing]);
+
+  // Add: auto-save function
+  const autoSaveDraft = async () => {
+    if (!storyId || isAutoSaving.current || isSaving) return;
+    
+    const content = editorRef.current?.innerHTML?.trim() || "";
+    const currentTitle = title.trim();
+    
+    // Only auto-save if there's actual content
+    if (!currentTitle && !content) return;
+    
+    isAutoSaving.current = true;
+    
+    try {
+      if (chapterId) {
+        // Update existing chapter as draft
+        await updateChapter({
+          chapterId: chapterId as Id<"chapters">,
+          title: currentTitle || "Untitled Chapter",
+          content,
+          isDraft: true,
+          isPublished: false,
+        });
+      } else {
+        // Create new chapter as draft
+        await createChapter({
+          storyId: storyId as Id<"stories">,
+          title: currentTitle || "Untitled Chapter",
+          content,
+          isDraft: true,
+        });
+      }
+      toast.success("Saved as Draft");
+      hasUnsavedChanges.current = false;
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+    } finally {
+      isAutoSaving.current = false;
+    }
+  };
+
+  // Add: cleanup effect for navigation away
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (hasUnsavedChanges.current) {
+        autoSaveDraft();
+      }
+    };
+
+    const handlePopState = () => {
+      if (hasUnsavedChanges.current) {
+        autoSaveDraft();
+      }
+    };
+
+    // Listen for browser back button
+    window.addEventListener("popstate", handlePopState);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      // Auto-save on component unmount if there are unsaved changes
+      if (hasUnsavedChanges.current) {
+        autoSaveDraft();
+      }
+    };
+  }, [storyId, chapterId, title]);
 
   const exec = (cmd: string, value?: string) => {
     // Ensure the editor keeps focus and the selection is active before executing
@@ -114,6 +183,7 @@ export default function ChapterEditor() {
       if (!url) throw new Error("Could not resolve image URL");
       exec("insertImage", url);
       toast.success("Image inserted");
+      hasUnsavedChanges.current = true;
     } catch (e) {
       toast.error("Failed to insert image");
     }
@@ -167,12 +237,25 @@ export default function ChapterEditor() {
         });
         toast.success(publish ? "Chapter published!" : "Draft saved!");
       }
+      hasUnsavedChanges.current = false;
       navigate(`/write/${storyId}/manage`);
     } catch {
       toast.error("Failed to save chapter");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Add: track content changes
+  const handleContentChange = () => {
+    const txt = editorRef.current?.textContent || "";
+    setContentEmpty(txt.trim().length === 0);
+    hasUnsavedChanges.current = true;
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+    hasUnsavedChanges.current = true;
   };
 
   return (
@@ -204,7 +287,7 @@ export default function ChapterEditor() {
         <Input
           placeholder="Title your Story Part"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={handleTitleChange}
           className="w-full bg-transparent border-0 border-b rounded-none text-center text-2xl sm:text-3xl font-semibold focus-visible:ring-0 focus:outline-none"
         />
 
@@ -224,10 +307,7 @@ export default function ChapterEditor() {
             aria-label="Chapter editor"
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            onInput={() => {
-              const txt = editorRef.current?.textContent || "";
-              setContentEmpty(txt.trim().length === 0);
-            }}
+            onInput={handleContentChange}
           />
         </div>
       </div>
