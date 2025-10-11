@@ -383,12 +383,12 @@ export default function Search() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      whileHover={{ scale: 1.01 }}
-                      className="cursor-pointer rounded-xl p-5 border-2 border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-200"
+                      whileHover={{ scale: 1.015, y: -2 }}
+                      className="cursor-pointer rounded-2xl p-6 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 border border-border/50"
                       onClick={() => navigate(`/profile/${u._id}`)}
                     >
                       <div className="flex items-center gap-5">
-                        <Avatar className="h-20 w-20 flex-shrink-0 ring-2 ring-border">
+                        <Avatar className="h-20 w-20 flex-shrink-0 ring-2 ring-primary/20 shadow-lg">
                           <AvatarImage src={(u as any).avatarImage || u.image || ""} />
                           <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white">
                             {(u.name?.[0] || "U").toUpperCase()}
