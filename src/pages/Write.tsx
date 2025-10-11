@@ -509,6 +509,7 @@ export default function Write() {
                   onChange={(e) => setStoryDescription(e.target.value)}
                   placeholder="Enter story description..."
                   rows={4}
+                  className="resize-none break-words"
                 />
               </div>
               <div>
@@ -635,6 +636,7 @@ export default function Write() {
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   rows={4}
+                  className="resize-none break-words"
                 />
               </div>
               <div>
