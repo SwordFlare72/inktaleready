@@ -247,22 +247,14 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  editorRef.current?.focus();
-                  setTimeout(() => exec("bold"), 0);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
               >
                 <Bold className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  editorRef.current?.focus();
-                  setTimeout(() => exec("italic"), 0);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
               >
                 <Italic className="h-4 w-4" />
               </Button>
@@ -272,33 +264,21 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  editorRef.current?.focus();
-                  setTimeout(() => exec("justifyLeft"), 0);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
               >
                 <AlignLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  editorRef.current?.focus();
-                  setTimeout(() => exec("justifyCenter"), 0);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
               >
                 <AlignCenter className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  editorRef.current?.focus();
-                  setTimeout(() => exec("justifyRight"), 0);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
               >
                 <AlignRight className="h-4 w-4" />
               </Button>
@@ -308,10 +288,7 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  handlePickImage(); 
-                }}
+                onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
               >
                 <ImageIcon className="h-4 w-4 mr-2" /> Image
               </Button>
