@@ -1,21 +1,19 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import TextAlign from "@tiptap/extension-text-align";
-import Image from "@tiptap/extension-image";
 
 export default function ChapterEditor() {
   const { storyId, chapterId } = useParams();
   const navigate = useNavigate();
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
   const createChapter = useMutation(api.chapters.createChapter);
   const updateChapter = useMutation(api.chapters.updateChapter);
@@ -26,24 +24,8 @@ export default function ChapterEditor() {
   const [isSaving, setIsSaving] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [kbOffset, setKbOffset] = useState(0);
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Image,
-    ],
-    content: "",
-    editorProps: {
-      attributes: {
-        class: "min-h-[55vh] rounded-md bg-transparent p-3 focus:outline-none text-base leading-7",
-      },
-    },
-    onFocus: () => setIsFocused(true),
-    onBlur: () => setIsFocused(false),
-  });
+  const [contentEmpty, setContentEmpty] = useState(true);
+  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const updateKB = () => {
@@ -88,11 +70,38 @@ export default function ChapterEditor() {
   })();
 
   useEffect(() => {
-    if (existing && editor) {
-      setTitle(existing.title);
-      editor.commands.setContent(existing.content || "");
+    if (editorRef.current) {
+      editorRef.current.focus();
     }
-  }, [existing, editor]);
+  }, []);
+
+  useEffect(() => {
+    if (existing) {
+      setTitle(existing.title);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = existing.content || "";
+        const txt = editorRef.current.textContent || "";
+        setContentEmpty(txt.trim().length === 0);
+      }
+    }
+  }, [existing]);
+
+  const exec = (cmd: string, value?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false, value);
+    updateActiveFormats();
+  };
+
+  const updateActiveFormats = () => {
+    const formats = new Set<string>();
+    if (document.queryCommandState('bold')) formats.add('bold');
+    if (document.queryCommandState('italic')) formats.add('italic');
+    if (document.queryCommandState('underline')) formats.add('underline');
+    if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
+    if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
+    if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
+    setActiveFormats(formats);
+  };
 
   const insertImageFromFile = async (file: File) => {
     try {
@@ -107,7 +116,7 @@ export default function ChapterEditor() {
       const storageId = json.storageId as string;
       const url = await getFileUrl({ storageId: storageId as any });
       if (!url) throw new Error("Could not resolve image URL");
-      editor?.chain().focus().setImage({ src: url }).run();
+      exec("insertImage", url);
       toast.success("Image inserted");
     } catch (e) {
       toast.error("Failed to insert image");
@@ -126,12 +135,12 @@ export default function ChapterEditor() {
   };
 
   const save = async (publish: boolean) => {
-    if (!storyId || !editor) {
+    if (!storyId) {
       toast.error("Missing story");
       return;
     }
-    const content = editor.getHTML();
-    if (!title.trim() || !content || content === "<p></p>") {
+    const content = editorRef.current?.innerHTML?.trim() || "";
+    if (!title.trim() || !content) {
       toast.error("Please add a title and content");
       return;
     }
@@ -167,10 +176,6 @@ export default function ChapterEditor() {
     }
   };
 
-  if (!editor) {
-    return null;
-  }
-
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-3 pt-4 pb-2">
@@ -202,7 +207,26 @@ export default function ChapterEditor() {
         />
 
         <div className="relative">
-          <EditorContent editor={editor} />
+          {contentEmpty && (
+            <span className="pointer-events-none absolute left-3 top-3 text-muted-foreground/70 select-none">
+              Tap here to start writing
+            </span>
+          )}
+          <div
+            ref={editorRef}
+            contentEditable
+            className="min-h-[55vh] rounded-md bg-transparent p-3 focus:outline-none text-base leading-7"
+            suppressContentEditableWarning
+            aria-label="Chapter editor"
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onInput={() => {
+              const txt = editorRef.current?.textContent || "";
+              setContentEmpty(txt.trim().length === 0);
+            }}
+            onMouseUp={updateActiveFormats}
+            onKeyUp={updateActiveFormats}
+          />
         </div>
       </div>
 
@@ -217,23 +241,38 @@ export default function ChapterEditor() {
                          flex flex-wrap items-center gap-2"
             >
               <Button
-                variant={editor.isActive('bold') ? "default" : "outline"}
+                variant={activeFormats.has('bold') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().toggleBold().run()}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("bold", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <Bold className="h-4 w-4" />
               </Button>
               <Button
-                variant={editor.isActive('italic') ? "default" : "outline"}
+                variant={activeFormats.has('italic') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().toggleItalic().run()}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("italic", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <Italic className="h-4 w-4" />
               </Button>
               <Button
-                variant={editor.isActive('underline') ? "default" : "outline"}
+                variant={activeFormats.has('underline') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("underline", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <Underline className="h-4 w-4" />
               </Button>
@@ -241,23 +280,38 @@ export default function ChapterEditor() {
               <span className="w-px h-6 bg-border" />
 
               <Button
-                variant={editor.isActive({ textAlign: 'left' }) ? "default" : "outline"}
+                variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("justifyLeft", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <AlignLeft className="h-4 w-4" />
               </Button>
               <Button
-                variant={editor.isActive({ textAlign: 'center' }) ? "default" : "outline"}
+                variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("justifyCenter", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <AlignCenter className="h-4 w-4" />
               </Button>
               <Button
-                variant={editor.isActive({ textAlign: 'right' }) ? "default" : "outline"}
+                variant={activeFormats.has('justifyRight') ? "default" : "outline"}
                 size="sm"
-                onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("justifyRight", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <AlignRight className="h-4 w-4" />
               </Button>
@@ -267,7 +321,7 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handlePickImage}
+                onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
               >
                 <ImageIcon className="h-4 w-4 mr-2" /> Image
               </Button>
