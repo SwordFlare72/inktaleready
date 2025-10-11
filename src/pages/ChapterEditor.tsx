@@ -138,14 +138,11 @@ export default function ChapterEditor() {
 
   // Add: cleanup effect for navigation away
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      // Only auto-save if there are unsaved changes and we're actually navigating
       if (hasUnsavedChanges.current) {
-        autoSaveDraft();
-      }
-    };
-
-    const handlePopState = () => {
-      if (hasUnsavedChanges.current) {
+        // Prevent the navigation temporarily
+        e.preventDefault();
         autoSaveDraft();
       }
     };
