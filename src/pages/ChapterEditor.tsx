@@ -5,9 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Save } from "lucide-react";
+import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Save, ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useBlocker } from "react-router";
 import { toast } from "sonner";
 
 export default function ChapterEditor() {
@@ -27,6 +27,9 @@ export default function ChapterEditor() {
   const [kbOffset, setKbOffset] = useState(0);
   // Add: track whether the main editor is empty to show a lightweight placeholder
   const [contentEmpty, setContentEmpty] = useState(true);
+  // Track if content has changed
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
 
   useEffect(() => {
     const updateKB = () => {
@@ -90,8 +93,59 @@ export default function ChapterEditor() {
         const txt = editorRef.current.textContent || "";
         setContentEmpty(txt.trim().length === 0);
       }
+      // Reset unsaved changes flag when loading existing content
+      setHasUnsavedChanges(false);
     }
   }, [existing]);
+
+  // Auto-save draft when navigating away
+  const autoSaveDraft = async () => {
+    if (!storyId || !hasUnsavedChanges || isAutoSaving) return;
+    
+    const content = editorRef.current?.innerHTML?.trim() || "";
+    if (!title.trim() || !content) return;
+
+    setIsAutoSaving(true);
+    try {
+      if (chapterId) {
+        await updateChapter({
+          chapterId: chapterId as Id<"chapters">,
+          title: title.trim(),
+          content,
+          isDraft: true,
+          isPublished: false,
+        });
+      } else {
+        await createChapter({
+          storyId: storyId as Id<"stories">,
+          title: title.trim(),
+          content,
+          isDraft: true,
+        });
+      }
+      toast.success("Saved as Draft");
+      setHasUnsavedChanges(false);
+    } catch (err) {
+      console.error("Auto-save failed:", err);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  };
+
+  // Block navigation if there are unsaved changes and auto-save
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      hasUnsavedChanges &&
+      currentLocation.pathname !== nextLocation.pathname
+  );
+
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      autoSaveDraft().then(() => {
+        blocker.proceed();
+      });
+    }
+  }, [blocker.state]);
 
   const exec = (cmd: string, value?: string) => {
     // Ensure the editor keeps focus and the selection is active before executing
