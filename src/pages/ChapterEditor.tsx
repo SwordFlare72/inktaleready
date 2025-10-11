@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Save } from "lucide-react";
+import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Save } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -107,6 +107,7 @@ export default function ChapterEditor() {
     const formats = new Set<string>();
     if (document.queryCommandState('bold')) formats.add('bold');
     if (document.queryCommandState('italic')) formats.add('italic');
+    if (document.queryCommandState('underline')) formats.add('underline');
     if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
     if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
     if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
@@ -114,8 +115,24 @@ export default function ChapterEditor() {
   };
 
   const toggleFormat = (cmd: string) => {
-    editorRef.current?.focus();
+    // Save current selection
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    
+    // Execute command
     document.execCommand(cmd, false, undefined);
+    
+    // Restore selection and focus
+    if (range && editorRef.current) {
+      editorRef.current.focus();
+      const newSelection = window.getSelection();
+      if (newSelection) {
+        newSelection.removeAllRanges();
+        newSelection.addRange(range);
+      }
+    }
+    
+    // Update active formats
     updateActiveFormats();
   };
 
@@ -257,7 +274,6 @@ export default function ChapterEditor() {
       {/* Floating tools: appear above keyboard only when body editor is focused */}
       {isFocused && (
         <div
-          // Position the toolbar directly above the keyboard using VisualViewport overlap + safe area inset
           className="fixed left-0 right-0 z-50 transition-opacity pointer-events-none"
           style={{ bottom: `calc(env(safe-area-inset-bottom) + ${Math.max(8, kbOffset + 8)}px)` }}
         >
@@ -279,6 +295,13 @@ export default function ChapterEditor() {
                 onMouseDown={(e) => { e.preventDefault(); toggleFormat("italic"); }}
               >
                 <Italic className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={activeFormats.has('underline') ? "default" : "outline"}
+                size="sm"
+                onMouseDown={(e) => { e.preventDefault(); toggleFormat("underline"); }}
+              >
+                <Underline className="h-4 w-4" />
               </Button>
 
               <span className="w-px h-6 bg-border" />
