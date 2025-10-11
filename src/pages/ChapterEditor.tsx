@@ -27,6 +27,8 @@ export default function ChapterEditor() {
   const [kbOffset, setKbOffset] = useState(0);
   // Add: track whether the main editor is empty to show a lightweight placeholder
   const [contentEmpty, setContentEmpty] = useState(true);
+  // Add: track active formatting states
+  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const updateKB = () => {
@@ -97,6 +99,24 @@ export default function ChapterEditor() {
     // Ensure the editor keeps focus and the selection is active before executing
     editorRef.current?.focus();
     document.execCommand(cmd, false, value);
+    // Update active formats after command
+    updateActiveFormats();
+  };
+
+  const updateActiveFormats = () => {
+    const formats = new Set<string>();
+    if (document.queryCommandState('bold')) formats.add('bold');
+    if (document.queryCommandState('italic')) formats.add('italic');
+    if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
+    if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
+    if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
+    setActiveFormats(formats);
+  };
+
+  const toggleFormat = (cmd: string) => {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false, undefined);
+    updateActiveFormats();
   };
 
   const insertImageFromFile = async (file: File) => {
@@ -228,6 +248,8 @@ export default function ChapterEditor() {
               const txt = editorRef.current?.textContent || "";
               setContentEmpty(txt.trim().length === 0);
             }}
+            onMouseUp={updateActiveFormats}
+            onKeyUp={updateActiveFormats}
           />
         </div>
       </div>
@@ -245,16 +267,16 @@ export default function ChapterEditor() {
                          flex flex-wrap items-center gap-2"
             >
               <Button
-                variant="outline"
+                variant={activeFormats.has('bold') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                onMouseDown={(e) => { e.preventDefault(); toggleFormat("bold"); }}
               >
                 <Bold className="h-4 w-4" />
               </Button>
               <Button
-                variant="outline"
+                variant={activeFormats.has('italic') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+                onMouseDown={(e) => { e.preventDefault(); toggleFormat("italic"); }}
               >
                 <Italic className="h-4 w-4" />
               </Button>
@@ -262,23 +284,23 @@ export default function ChapterEditor() {
               <span className="w-px h-6 bg-border" />
 
               <Button
-                variant="outline"
+                variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
+                onMouseDown={(e) => { e.preventDefault(); toggleFormat("justifyLeft"); }}
               >
                 <AlignLeft className="h-4 w-4" />
               </Button>
               <Button
-                variant="outline"
+                variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
+                onMouseDown={(e) => { e.preventDefault(); toggleFormat("justifyCenter"); }}
               >
                 <AlignCenter className="h-4 w-4" />
               </Button>
               <Button
-                variant="outline"
+                variant={activeFormats.has('justifyRight') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
+                onMouseDown={(e) => { e.preventDefault(); toggleFormat("justifyRight"); }}
               >
                 <AlignRight className="h-4 w-4" />
               </Button>
