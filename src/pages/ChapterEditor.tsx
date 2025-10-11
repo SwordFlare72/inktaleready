@@ -243,21 +243,36 @@ export default function ChapterEditor() {
               <Button
                 variant={activeFormats.has('bold') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("bold", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <Bold className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('italic') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("italic", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <Italic className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('underline') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("underline"); }}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("underline", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <Underline className="h-4 w-4" />
               </Button>
@@ -267,21 +282,36 @@ export default function ChapterEditor() {
               <Button
                 variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("justifyLeft", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <AlignLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("justifyCenter", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <AlignCenter className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('justifyRight') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
+                onMouseDown={(e) => { 
+                  e.preventDefault(); 
+                  document.execCommand("justifyRight", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
+                }}
               >
                 <AlignRight className="h-4 w-4" />
               </Button>
