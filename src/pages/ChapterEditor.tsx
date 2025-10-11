@@ -23,11 +23,8 @@ export default function ChapterEditor() {
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  // Add: dynamic keyboard offset so the toolbar sits on top of the keyboard (not screen bottom)
   const [kbOffset, setKbOffset] = useState(0);
-  // Add: track whether the main editor is empty to show a lightweight placeholder
   const [contentEmpty, setContentEmpty] = useState(true);
-  // Add: track active formatting states
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -37,7 +34,6 @@ export default function ChapterEditor() {
         setKbOffset(0);
         return;
       }
-      // How much of the viewport is covered by the keyboard (approx)
       const overlap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       setKbOffset(overlap);
     };
@@ -57,19 +53,16 @@ export default function ChapterEditor() {
     };
   }, []);
 
-  // Load chapter when editing
   const existing = useQuery(
     api.chapters.getChapterById,
     chapterId ? { chapterId: chapterId as Id<"chapters"> } : "skip"
   );
 
-  // When creating a new chapter, fetch the story to know publish status
   const storyForNew = useQuery(
     api.stories.getStoryById,
     !chapterId && storyId ? { storyId: storyId as Id<"stories"> } : "skip"
   );
 
-  // Determine if publish is allowed (parent story must be published)
   const canPublish = (() => {
     if (chapterId && existing) return !!existing.story?.isPublished;
     if (!chapterId && storyForNew) return !!storyForNew.isPublished;
@@ -77,7 +70,6 @@ export default function ChapterEditor() {
   })();
 
   useEffect(() => {
-    // basic editor defaults
     if (editorRef.current) {
       editorRef.current.focus();
     }
@@ -88,7 +80,6 @@ export default function ChapterEditor() {
       setTitle(existing.title);
       if (editorRef.current) {
         editorRef.current.innerHTML = existing.content || "";
-        // Update placeholder state based on loaded content
         const txt = editorRef.current.textContent || "";
         setContentEmpty(txt.trim().length === 0);
       }
@@ -96,10 +87,8 @@ export default function ChapterEditor() {
   }, [existing]);
 
   const exec = (cmd: string, value?: string) => {
-    // Ensure the editor keeps focus and the selection is active before executing
     editorRef.current?.focus();
     document.execCommand(cmd, false, value);
-    // Update active formats after command
     updateActiveFormats();
   };
 
@@ -114,19 +103,6 @@ export default function ChapterEditor() {
     setActiveFormats(formats);
   };
 
-  const toggleFormat = (cmd: string) => {
-    // Execute command first
-    document.execCommand(cmd, false, undefined);
-    
-    // Then refocus the editor to keep keyboard visible
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
-    
-    // Update active formats
-    updateActiveFormats();
-  };
-
   const insertImageFromFile = async (file: File) => {
     try {
       const uploadUrl = await getUploadUrl({});
@@ -138,7 +114,7 @@ export default function ChapterEditor() {
       if (!res.ok) throw new Error("Upload failed");
       const json = await res.json();
       const storageId = json.storageId as string;
-      const url = await getFileUrl({ storageId: storageId as any }); // Id<"_storage">
+      const url = await getFileUrl({ storageId: storageId as any });
       if (!url) throw new Error("Could not resolve image URL");
       exec("insertImage", url);
       toast.success("Image inserted");
@@ -168,7 +144,6 @@ export default function ChapterEditor() {
       toast.error("Please add a title and content");
       return;
     }
-    // Prevent publishing if parent story isn't published
     if (publish && !canPublish) {
       toast.error("Publish the story first to publish chapters.");
       return;
@@ -176,7 +151,6 @@ export default function ChapterEditor() {
     setIsSaving(true);
     try {
       if (chapterId) {
-        // Editing existing chapter
         await updateChapter({
           chapterId: chapterId as Id<"chapters">,
           title: title.trim(),
@@ -186,7 +160,6 @@ export default function ChapterEditor() {
         });
         toast.success(publish ? "Chapter updated & published!" : "Draft updated!");
       } else {
-        // Creating new chapter
         await createChapter({
           storyId: storyId as Id<"stories">,
           title: title.trim(),
@@ -205,7 +178,6 @@ export default function ChapterEditor() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background">
-      {/* Slim header row with actions, keep minimal */}
       <div className="max-w-2xl mx-auto px-3 pt-4 pb-2">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold"> {chapterId ? "Edit Chapter" : "New Chapter"} </h1>
@@ -226,9 +198,7 @@ export default function ChapterEditor() {
         )}
       </div>
 
-      {/* Plain editor surface */}
       <div className="max-w-2xl mx-auto px-3 space-y-4">
-        {/* Title input: plain, centered, underline */}
         <Input
           placeholder="Title your Story Part"
           value={title}
@@ -236,9 +206,7 @@ export default function ChapterEditor() {
           className="w-full bg-transparent border-0 border-b rounded-none text-center text-2xl sm:text-3xl font-semibold focus-visible:ring-0 focus:outline-none"
         />
 
-        {/* Content editor: plain surface with lightweight placeholder */}
         <div className="relative">
-          {/* Placeholder */}
           {contentEmpty && (
             <span className="pointer-events-none absolute left-3 top-3 text-muted-foreground/70 select-none">
               Tap here to start writing
@@ -262,7 +230,6 @@ export default function ChapterEditor() {
         </div>
       </div>
 
-      {/* Floating tools: appear above keyboard only when body editor is focused */}
       {isFocused && (
         <div
           className="fixed left-0 right-0 z-50 transition-opacity pointer-events-none"
@@ -276,21 +243,21 @@ export default function ChapterEditor() {
               <Button
                 variant={activeFormats.has('bold') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); toggleFormat("bold"); }}
+                onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
               >
                 <Bold className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('italic') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); toggleFormat("italic"); }}
+                onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
               >
                 <Italic className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('underline') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); toggleFormat("underline"); }}
+                onMouseDown={(e) => { e.preventDefault(); exec("underline"); }}
               >
                 <Underline className="h-4 w-4" />
               </Button>
@@ -300,21 +267,21 @@ export default function ChapterEditor() {
               <Button
                 variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); toggleFormat("justifyLeft"); }}
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
               >
                 <AlignLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); toggleFormat("justifyCenter"); }}
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
               >
                 <AlignCenter className="h-4 w-4" />
               </Button>
               <Button
                 variant={activeFormats.has('justifyRight') ? "default" : "outline"}
                 size="sm"
-                onMouseDown={(e) => { e.preventDefault(); toggleFormat("justifyRight"); }}
+                onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
               >
                 <AlignRight className="h-4 w-4" />
               </Button>
