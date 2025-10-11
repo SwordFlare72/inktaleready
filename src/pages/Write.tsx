@@ -326,7 +326,7 @@ export default function Write() {
 
         <div className="space-y-4">
           {myStories?.map((story) => (
-            <div key={story._id} className="overflow-hidden bg-card/50 backdrop-blur-sm rounded-lg p-4 hover:bg-card/70 transition-colors">
+            <div key={story._id} className="overflow-hidden bg-card/50 backdrop-blur-sm rounded-lg p-4 hover:bg-card/70 transition-colors border border-border">
                 <div className="flex gap-4">
                   {/* Cover Image on Left */}
                   <div className="flex-shrink-0 flex flex-col gap-2">
