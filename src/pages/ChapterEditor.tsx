@@ -247,13 +247,10 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onMouseDown={(e) => { 
-                  e.preventDefault();
-                }}
                 onClick={(e) => { 
                   e.preventDefault(); 
-                  exec("bold");
                   editorRef.current?.focus();
+                  setTimeout(() => exec("bold"), 0);
                 }}
               >
                 <Bold className="h-4 w-4" />
@@ -261,13 +258,10 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onMouseDown={(e) => { 
-                  e.preventDefault();
-                }}
                 onClick={(e) => { 
                   e.preventDefault(); 
-                  exec("italic");
                   editorRef.current?.focus();
+                  setTimeout(() => exec("italic"), 0);
                 }}
               >
                 <Italic className="h-4 w-4" />
@@ -278,13 +272,10 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onMouseDown={(e) => { 
-                  e.preventDefault();
-                }}
                 onClick={(e) => { 
                   e.preventDefault(); 
-                  exec("justifyLeft");
                   editorRef.current?.focus();
+                  setTimeout(() => exec("justifyLeft"), 0);
                 }}
               >
                 <AlignLeft className="h-4 w-4" />
@@ -292,13 +283,10 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onMouseDown={(e) => { 
-                  e.preventDefault();
-                }}
                 onClick={(e) => { 
                   e.preventDefault(); 
-                  exec("justifyCenter");
                   editorRef.current?.focus();
+                  setTimeout(() => exec("justifyCenter"), 0);
                 }}
               >
                 <AlignCenter className="h-4 w-4" />
@@ -306,13 +294,10 @@ export default function ChapterEditor() {
               <Button
                 variant="outline"
                 size="sm"
-                onMouseDown={(e) => { 
-                  e.preventDefault();
-                }}
                 onClick={(e) => { 
                   e.preventDefault(); 
-                  exec("justifyRight");
                   editorRef.current?.focus();
+                  setTimeout(() => exec("justifyRight"), 0);
                 }}
               >
                 <AlignRight className="h-4 w-4" />
