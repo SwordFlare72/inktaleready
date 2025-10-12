@@ -21,6 +21,7 @@ import type * as chapters from "../chapters.js";
 import type * as comments from "../comments.js";
 import type * as fileQueries from "../fileQueries.js";
 import type * as files from "../files.js";
+import type * as groupChats from "../groupChats.js";
 import type * as http from "../http.js";
 import type * as library from "../library.js";
 import type * as messages from "../messages.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   comments: typeof comments;
   fileQueries: typeof fileQueries;
   files: typeof files;
+  groupChats: typeof groupChats;
   http: typeof http;
   library: typeof library;
   messages: typeof messages;

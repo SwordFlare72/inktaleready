@@ -249,6 +249,24 @@ const schema = defineSchema(
       .index("by_recipient", ["recipientId"])
       .index("by_user_pair", ["senderId", "recipientId"]),
 
+    // Add: Group chats table
+    groupChats: defineTable({
+      name: v.string(),
+      creatorId: v.id("users"),
+      memberIds: v.array(v.id("users")),
+    })
+      .index("by_creator", ["creatorId"]),
+
+    // Add: Group messages table
+    groupMessages: defineTable({
+      groupChatId: v.id("groupChats"),
+      senderId: v.id("users"),
+      body: v.string(),
+      imageStorageId: v.optional(v.id("_storage")),
+    })
+      .index("by_group", ["groupChatId"])
+      .index("by_sender", ["senderId"]),
+
     // Add: announcements tables
     announcements: defineTable({
       authorId: v.id("users"),
