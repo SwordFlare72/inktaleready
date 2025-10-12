@@ -285,7 +285,7 @@ export default function StoryPage() {
                 disabled={!story.chapters || story.chapters.length === 0}
               >
                 <Play className="w-4 h-4 mr-2" />
-                {readingProgress ? "Continue Reading" : "Start Reading"}
+                {readingProgress ? "Continue" : "Start Reading"}
               </Button>
               <Button
                 onClick={handleFollow}
