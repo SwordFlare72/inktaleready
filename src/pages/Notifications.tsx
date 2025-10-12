@@ -50,67 +50,65 @@ function NotificationItem({
     undefined;
 
   return (
-    <Card
-      className={`cursor-pointer transition-colors ${!n.isRead ? "bg-muted/50" : ""}`}
+    <div
+      className={`cursor-pointer transition-colors py-4 px-4 ${!n.isRead ? "bg-muted/30" : ""}`}
       onClick={() => onOpen(n)}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          {/* Left: Author avatar or type icon */}
-          <div className="flex-shrink-0">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={authorImage} />
-              <AvatarFallback>
-                {/* Fallback by type */}
-                {n.type === "new_chapter" ? "C" : n.type === "new_story" ? "S" : "U"}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-
-          {/* Middle: Text */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start gap-2">
-              <h3 className="font-semibold leading-snug flex-1">{n.title}</h3>
-              {!n.isRead && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkRead(n._id);
-                  }}
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-2">{n.message}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {new Date(n._creationTime).toLocaleString()}
-            </p>
-          </div>
-
-          {/* Right: Cover thumbnail if available */}
-          {coverImage ? (
-            <div className="flex-shrink-0">
-              <div className="h-12 w-9 overflow-hidden rounded-md border bg-muted">
-                <img
-                  src={coverImage}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  crossOrigin="anonymous"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    const el = e.currentTarget as HTMLImageElement;
-                    el.style.display = "none";
-                  }}
-                />
-              </div>
-            </div>
-          ) : null}
+      <div className="flex items-center gap-3">
+        {/* Left: Author avatar or type icon */}
+        <div className="flex-shrink-0">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={authorImage} />
+            <AvatarFallback>
+              {/* Fallback by type */}
+              {n.type === "new_chapter" ? "C" : n.type === "new_story" ? "S" : "U"}
+            </AvatarFallback>
+          </Avatar>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Middle: Text */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-2">
+            <h3 className="font-semibold leading-snug flex-1">{n.title}</h3>
+            {!n.isRead && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkRead(n._id);
+                }}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground line-clamp-2">{n.message}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {new Date(n._creationTime).toLocaleString()}
+          </p>
+        </div>
+
+        {/* Right: Cover thumbnail if available */}
+        {coverImage ? (
+          <div className="flex-shrink-0">
+            <div className="h-12 w-9 overflow-hidden rounded-md border bg-muted">
+              <img
+                src={coverImage}
+                alt=""
+                className="h-full w-full object-cover"
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const el = e.currentTarget as HTMLImageElement;
+                  el.style.display = "none";
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -261,7 +259,7 @@ export default function Notifications() {
           </TabsList>
 
           <TabsContent value="notifications" className="mt-6">
-            <div className="space-y-4">
+            <div className="divide-y divide-border">
               {notifications?.page.map((notification) => (
                 <NotificationItem
                   key={notification._id}
@@ -281,36 +279,34 @@ export default function Notifications() {
           </TabsContent>
 
           <TabsContent value="messages" className="mt-6">
-            <div className="space-y-2">
+            <div className="divide-y divide-border">
               {(conversations || []).map((c: any) => (
-                <Card
+                <div
                   key={c.partnerId}
-                  className="cursor-pointer hover:bg-muted/70 transition-colors"
+                  className="cursor-pointer hover:bg-muted/50 transition-colors py-4 px-4"
                   onClick={() => navigate("/messages", { state: { partnerId: c.partnerId } })}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={(c.partner as any)?.avatarImage || c.partner?.image || undefined} />
-                        <AvatarFallback>{c.partner?.name?.charAt(0) || "U"}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className="font-semibold truncate">
-                            {c.partner?.name || "Anonymous"}
-                          </h4>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {new Date(c.lastMessageTime).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {c.isLastMessageFromMe ? "You: " : ""}
-                          {c.lastMessage}
-                        </p>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={(c.partner as any)?.avatarImage || c.partner?.image || undefined} />
+                      <AvatarFallback>{c.partner?.name?.charAt(0) || "U"}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-semibold truncate">
+                          {c.partner?.name || "Anonymous"}
+                        </h4>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(c.lastMessageTime).toLocaleDateString()}
+                        </span>
                       </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {c.isLastMessageFromMe ? "You: " : ""}
+                        {c.lastMessage}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
 
