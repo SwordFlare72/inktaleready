@@ -38,12 +38,14 @@ function NotificationItem({
   );
 
   const authorImage =
+    (chapter as any)?.story?.author?.avatarImage ||
     (chapter as any)?.story?.author?.image ||
+    (story as any)?.author?.avatarImage ||
     (story as any)?.author?.image ||
     undefined;
 
   const coverImage =
-    (chapter as any)?.coverImage ||
+    (chapter as any)?.story?.coverImage ||
     (story as any)?.coverImage ||
     undefined;
 
