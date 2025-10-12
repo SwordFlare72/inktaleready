@@ -50,7 +50,6 @@ export const listConversations = query({
         lastMessage: string;
         lastMessageTime: number;
         isLastMessageFromMe: boolean;
-        hasUnread: boolean;
       }
     > = new Map();
 
@@ -65,17 +64,11 @@ export const listConversations = query({
 
       const existing = conversationMap.get(partnerId);
       if (!existing || message._creationTime > existing.lastMessageTime) {
-        // Check if there are any unread messages from this partner
-        const unreadFromPartner = receivedMessages.some(
-          m => m.senderId === partnerId && !m.isRead
-        );
-        
         conversationMap.set(partnerId, {
           partnerId,
           lastMessage: preview,
           lastMessageTime: message._creationTime,
           isLastMessageFromMe: message.senderId === user._id,
-          hasUnread: unreadFromPartner,
         });
       }
     }
@@ -90,7 +83,6 @@ export const listConversations = query({
                 _id: partner._id,
                 name: partner.name,
                 image: partner.image,
-                avatarImage: (partner as any).avatarImage,
               }
             : null,
         };
