@@ -57,7 +57,7 @@ function NotificationItem({
       <div className="flex items-center gap-3">
         {/* Left: Author avatar or type icon */}
         <div className="flex-shrink-0">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-12 w-12">
             <AvatarImage src={authorImage} />
             <AvatarFallback>
               {/* Fallback by type */}
@@ -92,7 +92,7 @@ function NotificationItem({
         {/* Right: Cover thumbnail if available */}
         {coverImage ? (
           <div className="flex-shrink-0">
-            <div className="h-12 w-9 overflow-hidden rounded-md border bg-muted">
+            <div className="h-16 w-12 overflow-hidden rounded-md border bg-muted">
               <img
                 src={coverImage}
                 alt=""
