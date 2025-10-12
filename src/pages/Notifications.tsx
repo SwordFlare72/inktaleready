@@ -214,6 +214,7 @@ export default function Notifications() {
   };
 
   const unreadCount = notifications?.page.filter(n => !n.isRead).length || 0;
+  const unreadMessagesCount = conversations?.filter((c: any) => c.hasUnread).length || 0;
 
   return (
     <motion.div
@@ -245,8 +246,22 @@ export default function Notifications() {
 
         <Tabs defaultValue="notifications" className="w-full">
           <TabsList className="grid grid-cols-2 w-full max-w-sm">
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger value="notifications" className="relative">
+              Notifications
+              {unreadCount > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="relative">
+              Messages
+              {unreadMessagesCount > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="notifications" className="mt-6">
