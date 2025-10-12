@@ -231,24 +231,24 @@ export default function Notifications() {
       className="min-h-screen bg-background"
     >
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Updates</h1>
-            <p className="text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {unreadCount > 0 && (
-              <Button onClick={handleMarkAllRead} variant="outline">
-                <CheckCheck className="h-4 w-4 mr-2" />
-                Mark All Read
-              </Button>
-            )}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold">Updates</h1>
             <Button onClick={() => setOpenCompose(true)}>
               <MessageCircle className="h-4 w-4 mr-2" />
               New Message
             </Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-muted-foreground">
+              {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
+            </p>
+            {unreadCount > 0 && (
+              <Button onClick={handleMarkAllRead} variant="outline" size="sm">
+                <CheckCheck className="h-4 w-4 mr-2" />
+                Mark All Read
+              </Button>
+            )}
           </div>
         </div>
 
