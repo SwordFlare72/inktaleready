@@ -220,7 +220,7 @@ export default function StoryPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 pb-28">
+      <div className="container mx-auto px-4 py-6 pb-20">
         {/* Hero Section - Centered Layout */}
         <div className="mb-8">
           {/* Cover Image - Centered */}
