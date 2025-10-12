@@ -205,7 +205,7 @@ export default function StoryPage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20"
+      className="min-h-screen bg-background"
     >
       {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-lg border-b shadow-sm">
