@@ -340,9 +340,9 @@ export default function StoryPage() {
         </div>
 
         {/* Description */}
-        <Card className="mb-8 border-border/50 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-3">About this story</h3>
+        <div className="mb-8">
+          <h3 className="text-xl font-bold mb-4">About this story</h3>
+          <div className="bg-muted/30 rounded-2xl p-6">
             <p className="text-muted-foreground leading-relaxed">
               {expandDesc || (story.description?.length || 0) <= 200
                 ? story.description
@@ -356,27 +356,25 @@ export default function StoryPage() {
                 {expandDesc ? "Show less" : "Read more"}
               </button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Chapters List */}
-        <Card className="mb-8 border-border/50 shadow-sm" id="chapters-list">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold">Chapters ({story.chapters?.length || 0})</h3>
-            </div>
+        <div className="mb-8" id="chapters-list">
+          <h3 className="text-xl font-bold mb-4">Chapters ({story.chapters?.length || 0})</h3>
+          <div className="space-y-3">
             {!story.chapters || story.chapters.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12 bg-muted/30 rounded-2xl">
                 <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No chapters available yet</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <>
                 {story.chapters.map((chapter) => (
                   <motion.div
                     key={chapter._id}
                     whileHover={{ scale: 1.005 }}
-                    className="p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-accent/30 cursor-pointer transition-all"
+                    className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 cursor-pointer transition-all"
                     onClick={() => handleChapterClick(chapter._id)}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -410,10 +408,10 @@ export default function StoryPage() {
                     </div>
                   </motion.div>
                 ))}
-              </div>
+              </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Similar Stories - Horizontal Scroll */}
         {similar && similar.page && similar.page.filter(s => s._id !== (story as any)._id).length > 0 && (
