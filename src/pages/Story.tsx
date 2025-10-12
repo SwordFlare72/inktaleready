@@ -356,7 +356,7 @@ export default function StoryPage() {
         {/* Description */}
         <div className="mb-8">
           <h3 className="text-xl font-bold mb-4">About this story</h3>
-          <div className="bg-muted/30 rounded-2xl p-6">
+          <div className="p-6">
             <p className="text-muted-foreground leading-relaxed">
               {expandDesc || (story.description?.length || 0) <= 200
                 ? story.description
@@ -378,7 +378,7 @@ export default function StoryPage() {
           <h3 className="text-xl font-bold mb-4">Chapters ({story.chapters?.length || 0})</h3>
           <div className="space-y-3">
             {!story.chapters || story.chapters.length === 0 ? (
-              <div className="text-center py-12 bg-muted/30 rounded-2xl">
+              <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No chapters available yet</p>
               </div>
@@ -388,7 +388,7 @@ export default function StoryPage() {
                   <motion.div
                     key={chapter._id}
                     whileHover={{ scale: 1.005 }}
-                    className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 cursor-pointer transition-all"
+                    className="p-4 rounded-xl hover:bg-muted/50 cursor-pointer transition-all"
                     onClick={() => handleChapterClick(chapter._id)}
                   >
                     <div className="flex items-start justify-between gap-3">
