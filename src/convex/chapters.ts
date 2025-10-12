@@ -104,7 +104,7 @@ export const createChapter = mutation({
         lastUpdated: Date.now(),
       });
 
-      // Notify story followers about new chapter
+      // Notify story followers about new chapter (including author if they follow their own story)
       const followers = await ctx.db
         .query("storyFollows")
         .withIndex("by_story", (q) => q.eq("storyId", args.storyId))
@@ -180,6 +180,7 @@ export const updateChapter = mutation({
         totalChapters: story.totalChapters + 1,
       });
 
+      // Notify story followers about new chapter (including author if they follow their own story)
       const followers = await ctx.db
         .query("storyFollows")
         .withIndex("by_story", (q) => q.eq("storyId", chapter.storyId))
