@@ -44,6 +44,8 @@ export default function StoryPage() {
   const [newListName, setNewListName] = useState("");
   const [newListPublic, setNewListPublic] = useState(false);
   const [showCreateSection, setShowCreateSection] = useState(false);
+  const [expandDesc, setExpandDesc] = useState(false);
+  const [showTags, setShowTags] = useState(false);
 
   // Load similar stories by genre (exclude current later in render)
   const similar = useQuery(
@@ -57,8 +59,6 @@ export default function StoryPage() {
         }
       : "skip",
   );
-
-  const [expandDesc, setExpandDesc] = useState(false);
 
   if (!id) {
     navigate("/explore");
@@ -330,12 +330,26 @@ export default function StoryPage() {
               >
                 {story.isCompleted ? "Completed" : "Ongoing"}
               </span>
-              {story.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="px-3 py-1 rounded-full bg-muted/60 text-muted-foreground text-xs">
-                  #{tag}
-                </span>
-              ))}
+              {story.tags && story.tags.length > 0 && (
+                <button
+                  onClick={() => setShowTags(!showTags)}
+                  className="px-4 py-1.5 rounded-full bg-muted/60 text-muted-foreground text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  {showTags ? "Hide Tags" : "View Tags"}
+                </button>
+              )}
             </div>
+
+            {/* Tags Display - Shown when toggled */}
+            {showTags && story.tags && story.tags.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-3">
+                {story.tags.map((tag) => (
+                  <span key={tag} className="px-3 py-1 rounded-full bg-muted/60 text-muted-foreground text-xs">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
