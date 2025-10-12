@@ -221,10 +221,10 @@ export default function StoryPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6 pb-28">
-        {/* Hero Section - Improved Layout */}
-        <div className="grid md:grid-cols-[auto,1fr] gap-6 mb-8">
-          {/* Cover Image */}
-          <div className="flex justify-center md:justify-start">
+        {/* Hero Section - Centered Layout */}
+        <div className="mb-8">
+          {/* Cover Image - Centered */}
+          <div className="flex justify-center mb-6">
             <div className="w-48 h-64 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-muted">
               {story.coverImage ? (
                 <img src={story.coverImage} alt={story.title} className="w-full h-full object-cover" />
@@ -236,53 +236,52 @@ export default function StoryPage() {
             </div>
           </div>
 
-          {/* Story Info */}
-          <div className="flex flex-col justify-center space-y-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">{story.title}</h1>
-              
-              {/* Author */}
-              <div 
-                onClick={handleAuthorClick}
-                className="inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity group"
-              >
-                <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                  <AvatarImage src={(story.author as any)?.avatarImage || story.author?.image || ""} />
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                    {(story.author?.name?.[0] || "A").toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="font-semibold text-lg group-hover:underline">
-                  {(story as any)?.author?.name || (story as any)?.authorName || "Anonymous"}
-                </span>
-              </div>
+          {/* Story Info - Centered */}
+          <div className="text-center space-y-4">
+            {/* Title */}
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{story.title}</h1>
+            
+            {/* Author */}
+            <div 
+              onClick={handleAuthorClick}
+              className="inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity group"
+            >
+              <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                <AvatarImage src={(story.author as any)?.avatarImage || story.author?.image || ""} />
+                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                  {(story.author?.name?.[0] || "A").toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-semibold text-lg group-hover:underline">
+                {(story as any)?.author?.name || (story as any)?.authorName || "Anonymous"}
+              </span>
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60">
                 <Eye className="w-4 h-4 text-primary" />
                 <span className="font-medium">{story.totalViews.toLocaleString()}</span>
                 <span className="text-muted-foreground">Reads</span>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60">
                 <Heart className="w-4 h-4 text-red-500" />
                 <span className="font-medium">{story.totalLikes.toLocaleString()}</span>
                 <span className="text-muted-foreground">Votes</span>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60">
                 <BookOpen className="w-4 h-4 text-blue-500" />
                 <span className="font-medium">{story.totalChapters}</span>
                 <span className="text-muted-foreground">Parts</span>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
+            {/* Action Buttons - Single Line */}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <Button
                 onClick={handleStartReading}
                 size="lg"
-                className="rounded-full px-8 shadow-lg hover:shadow-xl transition-shadow"
+                className="rounded-full px-8 shadow-lg hover:shadow-xl transition-all"
                 disabled={!story.chapters || story.chapters.length === 0}
               >
                 <Play className="w-4 h-4 mr-2" />
@@ -298,27 +297,27 @@ export default function StoryPage() {
                 {isFollowing ? (
                   <>
                     <BookmarkCheck className="w-4 h-4 mr-2" />
-                    In Library
+                    Library
                   </>
                 ) : (
                   <>
                     <BookmarkPlus className="w-4 h-4 mr-2" />
-                    Add to Library
+                    Library
                   </>
                 )}
               </Button>
               <Button
                 variant="outline"
                 size="lg"
-                className="rounded-full"
+                className="rounded-full w-12 h-12 p-0"
                 onClick={openAddToList}
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </Button>
             </div>
 
             {/* Tags & Status */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <span className="px-4 py-1.5 rounded-full bg-primary/15 text-primary text-sm font-semibold capitalize">
                 {story.genre}
               </span>
@@ -332,7 +331,7 @@ export default function StoryPage() {
                 {story.isCompleted ? "Completed" : "Ongoing"}
               </span>
               {story.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs">
+                <span key={tag} className="px-3 py-1 rounded-full bg-muted/60 text-muted-foreground text-xs">
                   #{tag}
                 </span>
               ))}
