@@ -205,191 +205,169 @@ export default function StoryPage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen overflow-y-auto bg-background"
+      className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20"
     >
-      {/* Top bar */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-lg border-b shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleBack}>
-              <ChevronLeft className="w-4 h-4 mr-1" /> Back
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </Button>
-          </div>
+          <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleShare} className="gap-2">
+            <Share2 className="w-4 h-4" />
+            Share
+          </Button>
         </div>
       </div>
 
-      {/* Header hero */}
-      <div className="container mx-auto px-4 pt-6">
-        <div className="flex flex-col items-center text-center">
-          <div className="w-48 h-64 rounded-xl overflow-hidden shadow-md bg-muted">
-            {story.coverImage ? (
-              <img src={story.coverImage} alt={story.title} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <BookOpen className="w-10 h-10 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-
-          <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{story.title}</h1>
-
-          {/* Author row */}
-          <div className="mt-2 flex items-center gap-3">
-            <div
-              onClick={handleAuthorClick}
-              role="button"
-              tabIndex={0}
-              className="cursor-pointer outline-none focus:ring-2 focus:ring-primary/60 rounded-full"
-            >
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={(story.author as any)?.avatarImage || story.author?.image || ""} />
-                <AvatarFallback>
-                  {(story.author?.name?.[0] || "A").toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div className="min-w-0">
-              <button
-                type="button"
-                onClick={handleAuthorClick}
-                className="font-semibold hover:underline cursor-pointer text-base md:text-lg"
-              >
-                {(story as any)?.author?.name || (story as any)?.authorName || "Anonymous"}
-              </button>
-            </div>
-          </div>
-
-          {/* Metrics */}
-          <div className="mt-3 flex items-center gap-4 text-sm">
-            <span className="inline-flex items-center gap-1">
-              <Eye className="w-4 h-4" /> {story.totalViews.toLocaleString()} Reads
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Heart className="w-4 h-4" /> {story.totalLikes.toLocaleString()} Votes
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <BookOpen className="w-4 h-4" /> {story.totalChapters} Parts
-            </span>
-          </div>
-
-          {/* Actions */}
-          <div className="mt-4 flex gap-3">
-            <Button
-              onClick={handleStartReading}
-              className="rounded-full px-6 bg-foreground text-background hover:opacity-90"
-              disabled={!story.chapters || story.chapters.length === 0}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              {readingProgress ? "Continue" : "Start"}
-            </Button>
-            <Button
-              onClick={handleFollow}
-              variant={isFollowing ? "default" : "outline"}
-              className="rounded-full px-6"
-              disabled={!isAuthenticated}
-            >
-              {isFollowing ? (
-                <>
-                  <BookmarkCheck className="w-4 h-4 mr-2" />
-                  Library
-                </>
+      <div className="container mx-auto px-4 py-6 pb-28">
+        {/* Hero Section - Improved Layout */}
+        <div className="grid md:grid-cols-[auto,1fr] gap-6 mb-8">
+          {/* Cover Image */}
+          <div className="flex justify-center md:justify-start">
+            <div className="w-48 h-64 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-muted">
+              {story.coverImage ? (
+                <img src={story.coverImage} alt={story.title} className="w-full h-full object-cover" />
               ) : (
-                <>
-                  <BookmarkPlus className="w-4 h-4 mr-2" />
-                  Library
-                </>
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-400">
+                  <BookOpen className="w-12 h-12 text-white" />
+                </div>
               )}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full"
-              onClick={openAddToList}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
+            </div>
           </div>
 
-          {/* Status + genre */}
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium capitalize">
-              {story.genre}
-            </span>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                story.isCompleted
-                  ? "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200"
-                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-              }`}
-            >
-              {story.isCompleted ? "Completed" : "Ongoing"}
-            </span>
-          </div>
+          {/* Story Info */}
+          <div className="flex flex-col justify-center space-y-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">{story.title}</h1>
+              
+              {/* Author */}
+              <div 
+                onClick={handleAuthorClick}
+                className="inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity group"
+              >
+                <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                  <AvatarImage src={(story.author as any)?.avatarImage || story.author?.image || ""} />
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                    {(story.author?.name?.[0] || "A").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-semibold text-lg group-hover:underline">
+                  {(story as any)?.author?.name || (story as any)?.authorName || "Anonymous"}
+                </span>
+              </div>
+            </div>
 
-          {/* Tags */}
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {story.tags.map((tag) => (
-              <span key={tag} className="px-3 py-1 rounded-full bg-muted text-foreground/80 text-xs">
-                {tag}
+            {/* Stats */}
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted">
+                <Eye className="w-4 h-4 text-primary" />
+                <span className="font-medium">{story.totalViews.toLocaleString()}</span>
+                <span className="text-muted-foreground">Reads</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted">
+                <Heart className="w-4 h-4 text-red-500" />
+                <span className="font-medium">{story.totalLikes.toLocaleString()}</span>
+                <span className="text-muted-foreground">Votes</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted">
+                <BookOpen className="w-4 h-4 text-blue-500" />
+                <span className="font-medium">{story.totalChapters}</span>
+                <span className="text-muted-foreground">Parts</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={handleStartReading}
+                size="lg"
+                className="rounded-full px-8 shadow-lg hover:shadow-xl transition-shadow"
+                disabled={!story.chapters || story.chapters.length === 0}
+              >
+                <Play className="w-4 h-4 mr-2" />
+                {readingProgress ? "Continue Reading" : "Start Reading"}
+              </Button>
+              <Button
+                onClick={handleFollow}
+                variant={isFollowing ? "default" : "outline"}
+                size="lg"
+                className="rounded-full px-6"
+                disabled={!isAuthenticated}
+              >
+                {isFollowing ? (
+                  <>
+                    <BookmarkCheck className="w-4 h-4 mr-2" />
+                    In Library
+                  </>
+                ) : (
+                  <>
+                    <BookmarkPlus className="w-4 h-4 mr-2" />
+                    Add to Library
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full"
+                onClick={openAddToList}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Tags & Status */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-4 py-1.5 rounded-full bg-primary/15 text-primary text-sm font-semibold capitalize">
+                {story.genre}
               </span>
-            ))}
+              <span
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+                  story.isCompleted
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                }`}
+              >
+                {story.isCompleted ? "Completed" : "Ongoing"}
+              </span>
+              {story.tags.slice(0, 3).map((tag) => (
+                <span key={tag} className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs">
+                  #{tag}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Description card */}
-        <div className="mt-6 rounded-xl border bg-card">
-          <div className="p-4">
-            <p className="text-sm text-muted-foreground">
-              {expandDesc || (story.description?.length || 0) <= 180
+        {/* Description */}
+        <Card className="mb-8 border-border/50 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-3">About this story</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              {expandDesc || (story.description?.length || 0) <= 200
                 ? story.description
-                : `${story.description.slice(0, 180)}...`}
+                : `${story.description.slice(0, 200)}...`}
             </p>
-            {story.description && story.description.length > 180 && (
+            {story.description && story.description.length > 200 && (
               <button
                 onClick={() => setExpandDesc((v) => !v)}
-                className="mt-2 text-primary text-sm font-semibold"
+                className="mt-3 text-primary text-sm font-semibold hover:underline"
               >
                 {expandDesc ? "Show less" : "Read more"}
               </button>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Parts header */}
-        <div className="mt-8 flex items-center justify-between">
-          <h3 className="text-base font-semibold">{
-            `${story.totalChapters} parts`
-          }</h3>
-          <button
-            className="text-primary text-sm font-medium"
-            onClick={() => {
-              if (story.chapters?.length) {
-                // Scroll to chapters list
-                const el = document.getElementById("chapters-list");
-                el?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
-            }}
-          >
-            See all
-          </button>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 pb-28">
         {/* Chapters List */}
-        <Card className="mt-3" id="chapters-list">
-          <div className="px-6 pt-6 pb-0 text-base font-semibold">
-            Chapters ({story.chapters?.length || 0})
-          </div>
-          <CardContent>
+        <Card className="mb-8 border-border/50 shadow-sm" id="chapters-list">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold">Chapters ({story.chapters?.length || 0})</h3>
+            </div>
             {!story.chapters || story.chapters.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No chapters available yet</p>
               </div>
@@ -398,33 +376,38 @@ export default function StoryPage() {
                 {story.chapters.map((chapter) => (
                   <motion.div
                     key={chapter._id}
-                    whileHover={{ scale: 1.01 }}
-                    className="grid grid-cols-[1fr,auto] items-center gap-3 p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors"
+                    whileHover={{ scale: 1.005 }}
+                    className="p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-accent/30 cursor-pointer transition-all"
                     onClick={() => handleChapterClick(chapter._id)}
                   >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium truncate">{chapter.title}</h3>
-                        {readingProgress?.lastChapterId === chapter._id && (
-                          <span className="shrink-0 px-2 py-0.5 bg-primary/10 text-primary text-[10px] rounded-full">
-                            Last Read
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-base truncate">{chapter.title}</h4>
+                          {readingProgress?.lastChapterId === chapter._id && (
+                            <span className="shrink-0 px-2 py-0.5 bg-primary/15 text-primary text-xs rounded-full font-medium">
+                              Last Read
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>{chapter.wordCount} words</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            {chapter.views}
                           </span>
-                        )}
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3 h-3" />
+                            {chapter.likes}
+                          </span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="hidden sm:inline">
+                            {chapter._creationTime ? new Date(chapter._creationTime).toLocaleDateString() : ""}
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>{chapter.wordCount} words</span>
-                        <span className="inline-flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          {chapter.views}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Heart className="w-3 h-3" />
-                          {chapter.likes}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="hidden sm:block text-xs text-muted-foreground text-right">
-                      {chapter._creationTime ? new Date(chapter._creationTime).toDateString() : ""}
                     </div>
                   </motion.div>
                 ))}
@@ -433,48 +416,51 @@ export default function StoryPage() {
           </CardContent>
         </Card>
 
-        {/* Similar Stories */}
+        {/* Similar Stories - Horizontal Scroll */}
         {similar && similar.page && similar.page.filter(s => s._id !== (story as any)._id).length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-3">Similar Stories</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {similar.page
-                .filter((s) => s._id !== (story as any)._id)
-                .map((s) => (
-                  <div
-                    key={s._id}
-                    onClick={() => navigate(`/story/${s._id}`)}
-                    className="cursor-pointer rounded-lg border hover:bg-accent/50 transition-colors overflow-hidden"
-                  >
-                    <div className="aspect-[3/4] w-full bg-muted">
-                      {s.coverImage ? (
-                        <img src={s.coverImage} alt={s.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <BookOpen className="w-8 h-8 text-muted-foreground" />
+          <div className="mb-8">
+            <h3 className="text-xl font-bold mb-4">Similar Stories</h3>
+            <div className="relative">
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+                {similar.page
+                  .filter((s) => s._id !== (story as any)._id)
+                  .map((s) => (
+                    <motion.div
+                      key={s._id}
+                      whileHover={{ scale: 1.03 }}
+                      onClick={() => navigate(`/story/${s._id}`)}
+                      className="flex-shrink-0 w-36 cursor-pointer snap-start"
+                    >
+                      <div className="rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all shadow-sm hover:shadow-md">
+                        <div className="aspect-[3/4] w-full bg-muted">
+                          {s.coverImage ? (
+                            <img src={s.coverImage} alt={s.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-400">
+                              <BookOpen className="w-8 h-8 text-white" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="p-2">
-                      <div className="text-sm font-medium line-clamp-2">{s.title}</div>
-                      <div className="mt-1 text-xs text-muted-foreground capitalize">
-                        {s.genre}
+                        <div className="p-3 bg-card">
+                          <div className="text-sm font-semibold line-clamp-2 mb-1">{s.title}</div>
+                          <div className="text-xs text-muted-foreground capitalize">{s.genre}</div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    </motion.div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
       </div>
 
+      {/* Reading List Dialog - Keep existing */}
       <Dialog open={showAddToList} onOpenChange={setShowAddToList}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add to Reading List</DialogTitle>
           </DialogHeader>
 
-          {/* Loading state */}
           {readingLists === undefined ? (
             <div className="py-6 text-sm text-muted-foreground">Loading your lists…</div>
           ) : readingLists.length > 0 ? (
@@ -516,7 +502,6 @@ export default function StoryPage() {
                 })}
               </div>
 
-              {/* Create list entry row */}
               <div className="pt-2">
                 <button
                   className="text-sm text-primary hover:underline inline-flex items-center gap-2"
@@ -549,7 +534,6 @@ export default function StoryPage() {
               )}
             </div>
           ) : (
-            // No lists yet
             <div className="space-y-3">
               <div className="text-sm">
                 You don't have any reading lists yet. Create one to add this story.
