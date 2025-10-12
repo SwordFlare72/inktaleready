@@ -581,27 +581,31 @@ export default function Messages() {
           
           {/* Initial choice screen */}
           {messageType === null && (
-            <div className="space-y-3 py-4">
+            <div className="space-y-4 py-4">
               <Button
-                className="w-full justify-start h-auto py-4"
+                className="w-full justify-start h-auto py-6 text-left"
                 variant="outline"
                 onClick={() => setMessageType("direct")}
               >
-                <MessageCircle className="h-5 w-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Direct Message</div>
-                  <div className="text-xs text-muted-foreground">Send a message to one person</div>
+                <div className="flex items-center gap-4 w-full">
+                  <MessageCircle className="h-6 w-6 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="font-semibold text-base">Direct Message</div>
+                    <div className="text-sm text-muted-foreground mt-1">Send a message to one person</div>
+                  </div>
                 </div>
               </Button>
               <Button
-                className="w-full justify-start h-auto py-4"
+                className="w-full justify-start h-auto py-6 text-left"
                 variant="outline"
                 onClick={() => setMessageType("group")}
               >
-                <Users className="h-5 w-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Create Group Chat</div>
-                  <div className="text-xs text-muted-foreground">Start a conversation with multiple people</div>
+                <div className="flex items-center gap-4 w-full">
+                  <Users className="h-6 w-6 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="font-semibold text-base">Create Group Chat</div>
+                    <div className="text-sm text-muted-foreground mt-1">Start a conversation with multiple people</div>
+                  </div>
                 </div>
               </Button>
             </div>
