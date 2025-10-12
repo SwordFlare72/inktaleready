@@ -559,45 +559,55 @@ export default function Messages() {
       </div>
 
       {/* New Message Dialog */}
-      <Dialog open={newMessageOpen} onOpenChange={(open) => {
-        setNewMessageOpen(open);
-        if (!open) {
-          setMessageType(null);
-          setGroupName("");
-          setSelectedGroupMembers([]);
-          setGroupMemberSearch("");
-        }
-      }}>
+      <Dialog 
+        open={newMessageOpen} 
+        onOpenChange={(open) => {
+          setNewMessageOpen(open);
+          if (!open) {
+            // Reset all states when dialog closes
+            setMessageType(null);
+            setGroupName("");
+            setSelectedGroupMembers([]);
+            setGroupMemberSearch("");
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {messageType === null && "New Message"}
-              {messageType === "direct" && "Send Direct Message"}
-              {messageType === "group" && "Create Group Chat"}
+              {messageType === null ? "New Message" : messageType === "direct" ? "Send Direct Message" : "Create Group Chat"}
             </DialogTitle>
           </DialogHeader>
           
+          {/* Initial choice screen */}
           {messageType === null && (
-            <div className="space-y-3">
+            <div className="space-y-3 py-4">
               <Button
-                className="w-full justify-start"
+                className="w-full justify-start h-auto py-4"
                 variant="outline"
                 onClick={() => setMessageType("direct")}
               >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Direct Message
+                <MessageCircle className="h-5 w-5 mr-3" />
+                <div className="text-left">
+                  <div className="font-semibold">Direct Message</div>
+                  <div className="text-xs text-muted-foreground">Send a message to one person</div>
+                </div>
               </Button>
               <Button
-                className="w-full justify-start"
+                className="w-full justify-start h-auto py-4"
                 variant="outline"
                 onClick={() => setMessageType("group")}
               >
-                <Users className="h-4 w-4 mr-2" />
-                Create Group Chat
+                <Users className="h-5 w-5 mr-3" />
+                <div className="text-left">
+                  <div className="font-semibold">Create Group Chat</div>
+                  <div className="text-xs text-muted-foreground">Start a conversation with multiple people</div>
+                </div>
               </Button>
             </div>
           )}
 
+          {/* Direct message screen */}
           {messageType === "direct" && (
             <div className="space-y-4">
               <div>
@@ -650,6 +660,7 @@ export default function Messages() {
             </div>
           )}
 
+          {/* Group chat creation screen */}
           {messageType === "group" && (
             <div className="space-y-4">
               <div>
