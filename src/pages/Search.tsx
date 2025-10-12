@@ -5,10 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, Search as SearchIcon, Users as UsersIcon, Filter } from "lucide-react";
+import { BookOpen, Eye, Heart, Search as SearchIcon, Users as UsersIcon, Filter, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { Switch } from "@/components/ui/switch";
 
 const GENRES = [
@@ -120,25 +120,24 @@ function StoryRow({
 
 export default function Search() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [genre, setGenre] = useState("all");
-  // Add: toggle between stories and users
-  const [mode, setMode] = useState<"stories" | "users">("stories");
-
-  // Add: show/hide filters and tags filter
-  const [showFilters, setShowFilters] = useState(false);
-  const [tagsInput, setTagsInput] = useState<string>("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Initialize state from URL params
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchParams.get("q") || "");
+  const [genre, setGenre] = useState(searchParams.get("genre") || "all");
+  const [mode, setMode] = useState<"stories" | "users">((searchParams.get("mode") as "stories" | "users") || "stories");
+  const [showFilters, setShowFilters] = useState(searchParams.get("showFilters") === "true");
+  const [tagsInput, setTagsInput] = useState<string>(searchParams.get("tags") || "");
   const parsedTags = tagsInput
     .split(",")
     .map((t) => t.trim().toLowerCase())
     .filter(Boolean)
     .slice(0, 5);
 
-  // Add: advanced filter state
-  const [sortBy, setSortBy] = useState<"recent" | "popular" | "views">("recent");
-  const [hasCover, setHasCover] = useState(false);
-  const [minChapters, setMinChapters] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"recent" | "popular" | "views">((searchParams.get("sortBy") as "recent" | "popular" | "views") || "recent");
+  const [hasCover, setHasCover] = useState(searchParams.get("hasCover") === "true");
+  const [minChapters, setMinChapters] = useState<string>(searchParams.get("minChapters") || "");
 
   // Add: simple relative time formatter for "Uploaded X ago"
   const relTime = (ts?: number) => {
@@ -156,6 +155,21 @@ export default function Search() {
     const years = Math.floor(months / 12);
     return `${years} year${years === 1 ? "" : "s"} ago`;
   };
+
+  // Update URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set("q", searchTerm);
+    if (genre !== "all") params.set("genre", genre);
+    if (mode !== "stories") params.set("mode", mode);
+    if (showFilters) params.set("showFilters", "true");
+    if (tagsInput) params.set("tags", tagsInput);
+    if (sortBy !== "recent") params.set("sortBy", sortBy);
+    if (hasCover) params.set("hasCover", "true");
+    if (minChapters) params.set("minChapters", minChapters);
+    
+    setSearchParams(params, { replace: true });
+  }, [searchTerm, genre, mode, showFilters, tagsInput, sortBy, hasCover, minChapters, setSearchParams]);
 
   // Debounce search term
   useEffect(() => {
@@ -191,6 +205,14 @@ export default function Search() {
 
   const handleStoryClick = (storyId: string) => {
     navigate(`/story/${storyId}`);
+  };
+
+  const clearFilters = () => {
+    setGenre("all");
+    setSortBy("recent");
+    setHasCover(false);
+    setMinChapters("");
+    setTagsInput("");
   };
 
   return (
@@ -333,6 +355,18 @@ export default function Search() {
                   <span className="text-xs text-muted-foreground">Max 5 tags</span>
                 )}
               </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Clear Filters
+              </Button>
             </div>
           </div>
         )}
