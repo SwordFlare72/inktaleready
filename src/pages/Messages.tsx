@@ -600,15 +600,53 @@ export default function Messages() {
 
           {messageType === "direct" && (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Search for a user from the Notifications page to start a direct message.
-              </p>
-              <Button onClick={() => {
-                setNewMessageOpen(false);
-                navigate("/notifications");
-              }}>
-                Go to Notifications
-              </Button>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Search User</label>
+                <Input
+                  value={groupMemberSearch}
+                  onChange={(e) => setGroupMemberSearch(e.target.value)}
+                  placeholder="Search users..."
+                />
+                
+                {/* Search results */}
+                {groupMemberSearch.trim().length >= 2 && (
+                  <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+                    {searchResults?.map((u) => (
+                      <button
+                        key={u._id}
+                        onClick={() => {
+                          setSelectedPartnerId(u._id as Id<"users">);
+                          setSelectedGroupId(null);
+                          setNewMessageOpen(false);
+                          setMessageType(null);
+                          setGroupMemberSearch("");
+                        }}
+                        className="w-full text-left p-2 rounded-md hover:bg-muted flex items-center gap-2"
+                      >
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage src={(u as any).avatarImage || (u as any).image || undefined} />
+                          <AvatarFallback>{(u as any).name?.charAt(0) || "U"}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{(u as any).name || "Anonymous"}</div>
+                        </div>
+                      </button>
+                    ))}
+                    {searchResults && searchResults.length === 0 && (
+                      <div className="text-sm text-muted-foreground p-2">No users found</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => {
+                  setMessageType(null);
+                  setGroupMemberSearch("");
+                }}>
+                  Back
+                </Button>
+              </div>
             </div>
           )}
 
