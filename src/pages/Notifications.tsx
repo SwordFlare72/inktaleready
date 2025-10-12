@@ -51,9 +51,14 @@ function NotificationItem({
 
   return (
     <div
-      className={`cursor-pointer transition-colors py-4 px-4 ${!n.isRead ? "bg-muted/30" : ""}`}
+      className={`cursor-pointer transition-colors py-4 px-4 relative ${!n.isRead ? "bg-muted/30" : ""}`}
       onClick={() => onOpen(n)}
     >
+      {/* Left colored indicator for unread */}
+      {!n.isRead && (
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
+      )}
+      
       <div className="flex items-center gap-3">
         {/* Left: Author avatar or type icon */}
         <div className="flex-shrink-0">
@@ -68,21 +73,7 @@ function NotificationItem({
 
         {/* Middle: Text */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2">
-            <h3 className="font-semibold leading-snug flex-1">{n.title}</h3>
-            {!n.isRead && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkRead(n._id);
-                }}
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+          <h3 className="font-semibold leading-snug">{n.title}</h3>
           <p className="text-sm text-muted-foreground line-clamp-2">{n.message}</p>
           <p className="text-xs text-muted-foreground mt-1">
             {new Date(n._creationTime).toLocaleString()}
