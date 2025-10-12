@@ -355,9 +355,9 @@ export default function StoryPage() {
 
         {/* Description */}
         <div className="mb-8">
-          <h3 className="text-xl font-bold mb-4">About this story</h3>
-          <div className="bg-muted/30 rounded-2xl p-6">
-            <p className="text-muted-foreground leading-relaxed">
+          <h3 className="text-lg font-bold mb-4">About this story</h3>
+          <div className="bg-muted/30 rounded-2xl p-6 border border-border/40">
+            <p className="text-muted-foreground leading-relaxed text-base">
               {expandDesc || (story.description?.length || 0) <= 200
                 ? story.description
                 : `${story.description.slice(0, 200)}...`}
@@ -375,8 +375,8 @@ export default function StoryPage() {
 
         {/* Chapters List */}
         <div className="mb-8" id="chapters-list">
-          <h3 className="text-xl font-bold mb-4">Chapters ({story.chapters?.length || 0})</h3>
-          <div className="space-y-3">
+          <h3 className="text-lg font-bold mb-4">Chapters ({story.chapters?.length || 0})</h3>
+          <div className="space-y-3 border border-border/40 rounded-2xl p-4 bg-muted/20">
             {!story.chapters || story.chapters.length === 0 ? (
               <div className="text-center py-12 bg-muted/30 rounded-2xl">
                 <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
