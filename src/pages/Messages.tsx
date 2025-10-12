@@ -26,9 +26,9 @@ export default function Messages() {
   const [selectedPartnerId, setSelectedPartnerId] = useState<Id<"users"> | null>(null);
   const [messageText, setMessageText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false); // Add: delete confirm dialog
-  const [deleteId, setDeleteId] = useState<Id<"messages"> | null>(null); // Add: which message to delete
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Add: hold picked images
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<Id<"messages"> | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   // Add: initialize selected partner from navigation state
   // This lets Alerts > Messages tab open a specific thread
@@ -79,7 +79,6 @@ export default function Messages() {
     fileInputRef.current?.click();
   };
 
-  // Change: only select files; send on pressing Send
   const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length > 0) {
@@ -151,24 +150,23 @@ export default function Messages() {
         {selectedPartnerId ? (
           <Card className="sm:rounded-lg rounded-none border-0 sm:border">
             {/* Compact chat header with Back + partner info */}
-            <CardHeader className="py-3 px-3 sm:px-6 border-b">
-              <div className="flex items-center gap-1">
+            <CardHeader className="py-2 px-2 sm:px-4 border-b">
+              <div className="flex items-center gap-0.5">
                 <button
-                  // Redirect to Alerts page (Messages tab) instead of returning to Messages list
                   onClick={() => navigate("/notifications", { state: { tab: "messages" } })}
                   aria-label="Go back"
-                  className="inline-flex items-center justify-center h-8 w-8 rounded-full border-[0.5px] border-muted/60 hover:bg-muted"
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-full border-[0.5px] border-muted/60 hover:bg-muted"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
-                <div className="flex items-center gap-1">
-                  <Avatar className="h-9 w-9 ring-[0.5px] ring-border/70">
+                <div className="flex items-center gap-0.5 border-[0.5px] border-muted/60 rounded-full px-2 py-0.5">
+                  <Avatar className="h-10 w-10 ring-[0.5px] ring-border/70">
                     <AvatarImage src={(selectedConversation?.partner as any)?.avatarImage || selectedConversation?.partner?.image} />
                     <AvatarFallback>
                       {selectedConversation?.partner?.name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <CardTitle className="text-lg md:text-xl font-semibold">
+                  <CardTitle className="text-lg md:text-xl font-semibold px-2">
                     {selectedPartnerName}
                   </CardTitle>
                 </div>
@@ -260,7 +258,7 @@ export default function Messages() {
                             await deleteMessageMut({ _id: deleteId });
                           }
                         } catch {
-                          // non-blocking; errors surfaced via failed promise if needed
+                          // non-blocking
                         } finally {
                           setDeleteOpen(false);
                           setDeleteId(null);
