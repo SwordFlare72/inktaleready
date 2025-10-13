@@ -322,37 +322,49 @@ export default function Messages() {
                   return (
                     <div
                       key={message._id}
-                      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                      className="flex items-start gap-3"
                     >
-                      <div className="flex items-start gap-2 max-w-[80%]">
-                        {/* Show avatar for group messages from others */}
-                        {isGroupChat && !isOwnMessage && (
-                          <Avatar className="h-8 w-8 flex-shrink-0">
-                            <AvatarImage src={(message.sender as any)?.avatarImage || message.sender?.image} />
-                            <AvatarFallback>
-                              {message.sender?.name?.charAt(0) || "U"}
-                            </AvatarFallback>
-                          </Avatar>
+                      {/* Always show avatar for group chats */}
+                      {isGroupChat && (
+                        <Avatar className="h-10 w-10 flex-shrink-0">
+                          <AvatarImage src={(message.sender as any)?.avatarImage || message.sender?.image} />
+                          <AvatarFallback>
+                            {message.sender?.name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      
+                      <div className="flex-1 min-w-0">
+                        {/* Show sender name and timestamp for group messages */}
+                        {isGroupChat && (
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className="font-semibold text-sm">
+                              {message.sender?.name || "Anonymous"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(message._creationTime).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
+                          </div>
                         )}
                         
-                        <div className="flex flex-col">
-                          {/* Show sender name for group messages from others */}
-                          {isGroupChat && !isOwnMessage && (
-                            <p className="text-xs text-muted-foreground mb-1 ml-1">
-                              {message.sender?.name || "Anonymous"}
-                            </p>
-                          )}
-                          
-                          {/* Bubble */}
+                        {/* Message content */}
+                        <div className={isGroupChat ? "" : `flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                           <div
-                            className={`px-3 py-2 rounded-lg ${
-                              isOwnMessage
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
+                            className={`${
+                              isGroupChat 
+                                ? 'bg-muted/50 rounded-md px-3 py-2' 
+                                : `px-3 py-2 rounded-lg max-w-[80%] ${
+                                    isOwnMessage
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'bg-muted'
+                                  }`
                             }`}
                           >
                             {message.body && message.body.trim().length > 0 && (
-                              <p className="text-sm">{message.body}</p>
+                              <p className="text-sm break-words">{message.body}</p>
                             )}
                             {message.imageUrl && (
                               <div className="mt-1">
@@ -363,40 +375,42 @@ export default function Messages() {
                                 />
                               </div>
                             )}
-                            <p className="text-xs opacity-70 mt-1">
-                              {new Date(message._creationTime).toLocaleTimeString()}
-                            </p>
+                            {!isGroupChat && (
+                              <p className="text-xs opacity-70 mt-1">
+                                {new Date(message._creationTime).toLocaleTimeString()}
+                              </p>
+                            )}
                           </div>
                         </div>
-
-                        {/* Actions: three-dot on the right side for own messages */}
-                        {isOwnMessage && (
-                          <div className="self-center">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  aria-label="Message options"
-                                  className="inline-flex items-center justify-center h-8 w-8 rounded-full border-[0.5px] border-muted/60 hover:bg-muted"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  className="text-red-600 focus:text-red-600 cursor-pointer"
-                                  onClick={() => {
-                                    setDeleteId(message._id as any);
-                                    setDeleteOpen(true);
-                                  }}
-                                >
-                                  <Trash className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        )}
                       </div>
+
+                      {/* Actions: three-dot menu for own messages */}
+                      {isOwnMessage && (
+                        <div className="self-start pt-1">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                aria-label="Message options"
+                                className="inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                                onClick={() => {
+                                  setDeleteId(message._id as any);
+                                  setDeleteOpen(true);
+                                }}
+                              >
+                                <Trash className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
