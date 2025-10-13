@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { MessageCircle, Send, Users } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 // Add: Rich notification item with author avatar and cover thumbnail
 function NotificationItem({
@@ -107,9 +108,15 @@ export default function Notifications() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [openCompose, setOpenCompose] = useState(false);
+  const [messageType, setMessageType] = useState<"direct" | "group" | null>(null);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<{ _id: string; name?: string | null; image?: string | null } | null>(null);
   const [messageBody, setMessageBody] = useState("");
+  
+  // Group chat states
+  const [groupName, setGroupName] = useState("");
+  const [groupMemberSearch, setGroupMemberSearch] = useState("");
+  const [selectedGroupMembers, setSelectedGroupMembers] = useState<Array<{ _id: string; name?: string | null; image?: string | null }>>([]);
 
   const notifications = useQuery(api.notifications.listForUser,
     isAuthenticated ? {
@@ -120,7 +127,9 @@ export default function Notifications() {
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
   const searchResults = useQuery(api.users.searchUsers, isAuthenticated && search.trim().length >= 2 ? { q: search.trim() } : "skip");
+  const groupSearchResults = useQuery(api.users.searchUsers, isAuthenticated && groupMemberSearch.trim().length >= 2 ? { q: groupMemberSearch.trim() } : "skip");
   const sendMessage = useMutation(api.messages.sendMessage);
+  const createGroupChat = useMutation(api.groupChats.createGroupChat);
   const conversations = useQuery(api.messages.listConversations, isAuthenticated ? {} : "skip");
   const groupChats = useQuery(api.groupChats.listUserGroupChats, isAuthenticated ? {} : "skip");
 
@@ -206,11 +215,34 @@ export default function Notifications() {
       await sendMessage({ recipientId: selectedUser._id as any, body: messageBody.trim() });
       toast.success("Message sent");
       setOpenCompose(false);
+      setMessageType(null);
       setSearch("");
       setSelectedUser(null);
       setMessageBody("");
     } catch {
       toast.error("Failed to send message");
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName.trim() || selectedGroupMembers.length < 2) {
+      toast.error("Group name and at least 2 members required");
+      return;
+    }
+    try {
+      const groupId = await createGroupChat({
+        name: groupName.trim(),
+        memberIds: selectedGroupMembers.map((m) => m._id as any),
+      });
+      toast.success("Group chat created");
+      setOpenCompose(false);
+      setMessageType(null);
+      setGroupName("");
+      setGroupMemberSearch("");
+      setSelectedGroupMembers([]);
+      navigate("/messages", { state: { groupChatId: groupId } });
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to create group");
     }
   };
 
@@ -227,7 +259,10 @@ export default function Notifications() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold">Updates</h1>
-            <Button onClick={() => navigate("/messages")}>
+            <Button onClick={() => {
+              setOpenCompose(true);
+              setMessageType(null);
+            }}>
               <MessageCircle className="h-4 w-4 mr-2" />
               New Message
             </Button>
@@ -356,87 +391,218 @@ export default function Notifications() {
         </Tabs>
       </div>
 
-      <Dialog open={openCompose} onOpenChange={setOpenCompose}>
+      <Dialog open={openCompose} onOpenChange={(open) => {
+        setOpenCompose(open);
+        if (!open) {
+          setMessageType(null);
+          setSearch("");
+          setSelectedUser(null);
+          setMessageBody("");
+          setGroupName("");
+          setGroupMemberSearch("");
+          setSelectedGroupMembers([]);
+        }
+      }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Send Direct Message</DialogTitle>
+            <DialogTitle>
+              {messageType === null ? "New Message" : messageType === "direct" ? "Send Direct Message" : "Create Group Chat"}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Search user</label>
-              <Input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setSelectedUser(null);
-                }}
-                placeholder="Type at least 2 characters..."
-              />
-              {search.trim().length >= 2 && (
-                <div className="mt-2 max-h-56 overflow-y-auto space-y-1">
-                  {searchResults?.map((u) => (
-                    <button
-                      key={u._id}
-                      onClick={() => setSelectedUser(u as any)}
-                      className={`w-full text-left p-2 rounded-md hover:bg-muted flex items-center gap-2 ${selectedUser?._id === (u as any)._id ? "bg-muted" : ""}`}
-                    >
-                      <Avatar className="h-7 w-7">
-                        <AvatarImage src={(u as any).avatarImage || (u as any).image || undefined} />
-                        <AvatarFallback>{(u as any).name?.charAt(0) || "U"}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="text-sm font-medium">{(u as any).name || "Anonymous"}</div>
-                        {(u as any).bio && <div className="text-xs text-muted-foreground line-clamp-1">{(u as any).bio}</div>}
-                      </div>
-                    </button>
-                  ))}
-                  {searchResults && searchResults.length === 0 && (
-                    <div className="text-sm text-muted-foreground p-2">No users found</div>
-                  )}
-                </div>
-              )}
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">To</label>
-              <div className="flex items-center gap-2">
-                {selectedUser ? (
-                  <>
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={(selectedUser as any).avatarImage || selectedUser.image || undefined} />
-                      <AvatarFallback>{selectedUser.name?.charAt(0) || "U"}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{selectedUser.name || "Anonymous"}</span>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>Change</Button>
-                  </>
-                ) : (
-                  <span className="text-sm text-muted-foreground">Select a user from search</span>
+          {/* Initial choice screen */}
+          {messageType === null && (
+            <div className="space-y-4 py-4">
+              <button
+                onClick={() => setMessageType("direct")}
+                className="w-full p-6 rounded-xl border-2 border-border hover:border-primary hover:bg-muted/50 transition-all text-left group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <MessageCircle className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-lg font-semibold mb-1">Direct Message</div>
+                    <div className="text-sm text-muted-foreground">Send a private message to another user</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setMessageType("group")}
+                className="w-full p-6 rounded-xl border-2 border-border hover:border-primary hover:bg-muted/50 transition-all text-left group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Users className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-lg font-semibold mb-1">Create Group Chat</div>
+                    <div className="text-sm text-muted-foreground">Start a conversation with multiple users</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Direct Message form */}
+          {messageType === "direct" && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Search user</label>
+                <Input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setSelectedUser(null);
+                  }}
+                  placeholder="Type at least 2 characters..."
+                />
+                {search.trim().length >= 2 && (
+                  <div className="mt-2 max-h-56 overflow-y-auto space-y-1">
+                    {searchResults?.map((u) => (
+                      <button
+                        key={u._id}
+                        onClick={() => setSelectedUser(u as any)}
+                        className={`w-full text-left p-2 rounded-md hover:bg-muted flex items-center gap-2 ${selectedUser?._id === (u as any)._id ? "bg-muted" : ""}`}
+                      >
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage src={(u as any).avatarImage || (u as any).image || undefined} />
+                          <AvatarFallback>{(u as any).name?.charAt(0) || "U"}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="text-sm font-medium">{(u as any).name || "Anonymous"}</div>
+                          {(u as any).bio && <div className="text-xs text-muted-foreground line-clamp-1">{(u as any).bio}</div>}
+                        </div>
+                      </button>
+                    ))}
+                    {searchResults && searchResults.length === 0 && (
+                      <div className="text-sm text-muted-foreground p-2">No users found</div>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Message</label>
-              <Input
-                value={messageBody}
-                onChange={(e) => setMessageBody(e.target.value)}
-                placeholder="Type your message..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && messageBody.trim() && selectedUser) {
-                    handleSendDirect();
-                  }
-                }}
-              />
-            </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">To</label>
+                <div className="flex items-center gap-2">
+                  {selectedUser ? (
+                    <>
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={(selectedUser as any).avatarImage || selectedUser.image || undefined} />
+                        <AvatarFallback>{selectedUser.name?.charAt(0) || "U"}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{selectedUser.name || "Anonymous"}</span>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>Change</Button>
+                    </>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Select a user from search</span>
+                  )}
+                </div>
+              </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setOpenCompose(false)}>Cancel</Button>
-              <Button onClick={handleSendDirect} disabled={!selectedUser || !messageBody.trim()}>
-                <Send className="h-4 w-4 mr-2" />
-                Send
-              </Button>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Message</label>
+                <Input
+                  value={messageBody}
+                  onChange={(e) => setMessageBody(e.target.value)}
+                  placeholder="Type your message..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && messageBody.trim() && selectedUser) {
+                      handleSendDirect();
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setMessageType(null)}>Back</Button>
+                <Button onClick={handleSendDirect} disabled={!selectedUser || !messageBody.trim()}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Group Chat form */}
+          {messageType === "group" && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Group Name</label>
+                <Input
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Enter group name..."
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Add Members (at least 2)</label>
+                <Input
+                  value={groupMemberSearch}
+                  onChange={(e) => setGroupMemberSearch(e.target.value)}
+                  placeholder="Search users..."
+                />
+                {groupMemberSearch.trim().length >= 2 && (
+                  <div className="mt-2 max-h-40 overflow-y-auto space-y-1">
+                    {groupSearchResults?.map((u) => {
+                      const isSelected = selectedGroupMembers.some((m) => m._id === (u as any)._id);
+                      return (
+                        <button
+                          key={u._id}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedGroupMembers((prev) => prev.filter((m) => m._id !== (u as any)._id));
+                            } else {
+                              setSelectedGroupMembers((prev) => [...prev, u as any]);
+                            }
+                          }}
+                          className={`w-full text-left p-2 rounded-md hover:bg-muted flex items-center gap-2 ${isSelected ? "bg-muted" : ""}`}
+                        >
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={(u as any).avatarImage || (u as any).image || undefined} />
+                            <AvatarFallback>{(u as any).name?.charAt(0) || "U"}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{(u as any).name || "Anonymous"}</div>
+                          </div>
+                          {isSelected && <div className="text-primary">✓</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {selectedGroupMembers.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Selected Members ({selectedGroupMembers.length})</label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedGroupMembers.map((m) => (
+                      <div key={m._id} className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
+                        <span className="text-sm">{m.name || "Anonymous"}</span>
+                        <button
+                          onClick={() => setSelectedGroupMembers((prev) => prev.filter((mem) => mem._id !== m._id))}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setMessageType(null)}>Back</Button>
+                <Button onClick={handleCreateGroup} disabled={!groupName.trim() || selectedGroupMembers.length < 2}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Create Group
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </motion.div>
