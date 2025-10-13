@@ -87,9 +87,24 @@ export default function ChapterEditor() {
   }, [existing]);
 
   const exec = (cmd: string, value?: string) => {
+    // Save the current selection before executing command
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    
+    // Focus the editor
     editorRef.current?.focus();
+    
+    // Restore selection if it was lost
+    if (range && selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    
+    // Execute the command
     document.execCommand(cmd, false, value);
-    updateActiveFormats();
+    
+    // Update active formats
+    setTimeout(() => updateActiveFormats(), 10);
   };
 
   const updateActiveFormats = () => {
