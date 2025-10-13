@@ -87,24 +87,9 @@ export default function ChapterEditor() {
   }, [existing]);
 
   const exec = (cmd: string, value?: string) => {
-    // Save the current selection before executing command
-    const selection = window.getSelection();
-    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-    
-    // Focus the editor
     editorRef.current?.focus();
-    
-    // Restore selection if it was lost
-    if (range && selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-    
-    // Execute the command
     document.execCommand(cmd, false, value);
-    
-    // Update active formats
-    setTimeout(() => updateActiveFormats(), 10);
+    updateActiveFormats();
   };
 
   const updateActiveFormats = () => {
@@ -259,12 +244,10 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('bold') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  exec("bold");
+                  e.preventDefault(); 
+                  document.execCommand("bold", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
                 }}
               >
                 <Bold className="h-4 w-4" />
@@ -273,12 +256,10 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('italic') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  exec("italic");
+                  e.preventDefault(); 
+                  document.execCommand("italic", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
                 }}
               >
                 <Italic className="h-4 w-4" />
@@ -287,12 +268,10 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('underline') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  exec("underline");
+                  e.preventDefault(); 
+                  document.execCommand("underline", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
                 }}
               >
                 <Underline className="h-4 w-4" />
@@ -304,12 +283,10 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  exec("justifyLeft");
+                  e.preventDefault(); 
+                  document.execCommand("justifyLeft", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
                 }}
               >
                 <AlignLeft className="h-4 w-4" />
@@ -318,12 +295,10 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  exec("justifyCenter");
+                  e.preventDefault(); 
+                  document.execCommand("justifyCenter", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
                 }}
               >
                 <AlignCenter className="h-4 w-4" />
@@ -332,12 +307,10 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyRight') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  exec("justifyRight");
+                  e.preventDefault(); 
+                  document.execCommand("justifyRight", false);
+                  editorRef.current?.focus();
+                  updateActiveFormats();
                 }}
               >
                 <AlignRight className="h-4 w-4" />
