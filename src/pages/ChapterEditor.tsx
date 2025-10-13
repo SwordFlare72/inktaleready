@@ -244,10 +244,12 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('bold') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("bold", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("bold");
                 }}
               >
                 <Bold className="h-4 w-4" />
@@ -256,10 +258,12 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('italic') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("italic", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("italic");
                 }}
               >
                 <Italic className="h-4 w-4" />
@@ -268,10 +272,12 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('underline') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("underline", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("underline");
                 }}
               >
                 <Underline className="h-4 w-4" />
@@ -283,10 +289,12 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("justifyLeft", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("justifyLeft");
                 }}
               >
                 <AlignLeft className="h-4 w-4" />
@@ -295,10 +303,12 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("justifyCenter", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("justifyCenter");
                 }}
               >
                 <AlignCenter className="h-4 w-4" />
@@ -307,10 +317,12 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyRight') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("justifyRight", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("justifyRight");
                 }}
               >
                 <AlignRight className="h-4 w-4" />
