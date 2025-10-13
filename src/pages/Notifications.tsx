@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send, Users } from "lucide-react";
 
 // Add: Rich notification item with author avatar and cover thumbnail
 function NotificationItem({
@@ -122,6 +122,7 @@ export default function Notifications() {
   const searchResults = useQuery(api.users.searchUsers, isAuthenticated && search.trim().length >= 2 ? { q: search.trim() } : "skip");
   const sendMessage = useMutation(api.messages.sendMessage);
   const conversations = useQuery(api.messages.listConversations, isAuthenticated ? {} : "skip");
+  const groupChats = useQuery(api.groupChats.listUserGroupChats, isAuthenticated ? {} : "skip");
 
   if (!isAuthenticated) {
     return (
@@ -286,6 +287,35 @@ export default function Notifications() {
 
           <TabsContent value="messages" className="mt-6">
             <div className="divide-y divide-border">
+              {/* Group chats */}
+              {(groupChats || []).map((group: any) => (
+                <div
+                  key={group._id}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors py-4 px-4"
+                  onClick={() => navigate("/messages", { state: { groupChatId: group._id } })}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-semibold truncate">
+                          {group.name}
+                        </h4>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {group.memberCount} members
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {group.lastMessage}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Direct messages */}
               {(conversations || []).map((c: any) => (
                 <div
                   key={c.partnerId}
@@ -316,7 +346,7 @@ export default function Notifications() {
               ))}
             </div>
 
-            {conversations && conversations.length === 0 && (
+            {conversations && conversations.length === 0 && (!groupChats || groupChats.length === 0) && (
               <div className="text-center py-12">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground">No messages yet</p>
