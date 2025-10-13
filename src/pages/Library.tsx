@@ -195,7 +195,7 @@ export default function Library() {
   const { isAuthenticated, user } = useAuth();
   
   const [followsSort, setFollowsSort] = useState<"recent" | "oldest" | "alphabetical">("recent");
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [newListName, setNewListName] = useState("");
   const [newListPublic, setNewListPublic] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
