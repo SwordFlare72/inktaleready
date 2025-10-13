@@ -15,7 +15,7 @@ import { useState } from "react";
 import { MessageCircle, Send, Users } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
-// Add: Rich notification item with author avatar and cover thumbnail
+// Enhanced notification item with professional styling
 function NotificationItem({
   n,
   onOpen,
@@ -52,39 +52,38 @@ function NotificationItem({
 
   return (
     <div
-      className={`cursor-pointer transition-colors py-4 px-4 relative ${!n.isRead ? "bg-muted/30" : ""}`}
+      className={`cursor-pointer transition-all hover:bg-muted/50 py-4 px-4 relative ${!n.isRead ? "bg-muted/20" : ""}`}
       onClick={() => onOpen(n)}
     >
-      {/* Left colored indicator for unread */}
+      {/* Left colored indicator for unread - more subtle */}
       {!n.isRead && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
       )}
       
-      <div className="flex items-center gap-3">
-        {/* Left: Author avatar or type icon */}
-        <div className="flex-shrink-0">
-          <Avatar className="h-12 w-12">
+      <div className="flex items-start gap-4">
+        {/* Left: Author avatar */}
+        <div className="flex-shrink-0 pt-1">
+          <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
             <AvatarImage src={authorImage} />
-            <AvatarFallback>
-              {/* Fallback by type */}
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {n.type === "new_chapter" ? "C" : n.type === "new_story" ? "S" : "U"}
             </AvatarFallback>
           </Avatar>
         </div>
 
-        {/* Middle: Text */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold leading-snug">{n.title}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">{n.message}</p>
-          <p className="text-xs text-muted-foreground mt-1">
+        {/* Middle: Text content */}
+        <div className="flex-1 min-w-0 space-y-1">
+          <h3 className="font-semibold text-base leading-snug line-clamp-1">{n.title}</h3>
+          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{n.message}</p>
+          <p className="text-xs text-muted-foreground/80 pt-0.5">
             {new Date(n._creationTime).toLocaleString()}
           </p>
         </div>
 
         {/* Right: Cover thumbnail if available */}
-        {coverImage ? (
+        {coverImage && (
           <div className="flex-shrink-0">
-            <div className="h-16 w-12 overflow-hidden rounded-md border bg-muted">
+            <div className="h-16 w-12 overflow-hidden rounded-lg border-2 border-border/50 bg-muted shadow-sm">
               <img
                 src={coverImage}
                 alt=""
@@ -98,7 +97,7 @@ function NotificationItem({
               />
             </div>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
@@ -188,7 +187,6 @@ export default function Notifications() {
       case "new_follower":
         if (n.relatedId) navigate(`/profile/${n.relatedId}`);
         break;
-      // Add: announcements deep link handling
       case "announcement":
       case "announcement_reply": {
         try {
@@ -255,33 +253,36 @@ export default function Notifications() {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-background"
     >
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold">Updates</h1>
-            <Button onClick={() => {
-              setOpenCompose(true);
-              setMessageType(null);
-            }}>
-              <MessageCircle className="h-4 w-4 mr-2" />
-              New Message
-            </Button>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
-            </p>
-            {unreadCount > 0 && (
-              <Button onClick={handleMarkAllRead} variant="outline" size="sm">
-                <CheckCheck className="h-4 w-4 mr-2" />
-                Mark All Read
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
+        {/* Enhanced header with better spacing */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl md:text-4xl font-bold mb-1">Updates</h1>
+              <p className="text-sm text-muted-foreground">
+                {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : "All caught up!"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {unreadCount > 0 && (
+                <Button onClick={handleMarkAllRead} variant="outline" size="sm" className="whitespace-nowrap">
+                  <CheckCheck className="h-4 w-4 mr-2" />
+                  Mark All Read
+                </Button>
+              )}
+              <Button onClick={() => {
+                setOpenCompose(true);
+                setMessageType(null);
+              }} size="sm">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                New
               </Button>
-            )}
+            </div>
           </div>
         </div>
 
         <Tabs defaultValue="notifications" className="w-full">
-          <TabsList className="grid grid-cols-2 w-full max-w-sm">
+          <TabsList className="grid grid-cols-2 w-full max-w-md mb-6">
             <TabsTrigger value="notifications" className="relative">
               Notifications
               {unreadCount > 0 && (
@@ -300,91 +301,98 @@ export default function Notifications() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="notifications" className="mt-6">
-            <div className="divide-y divide-border">
-              {notifications?.page.map((notification) => (
-                <NotificationItem
-                  key={notification._id}
-                  n={notification}
-                  onOpen={openNotification}
-                  onMarkRead={handleMarkRead}
-                />
-              ))}
-            </div>
+          <TabsContent value="notifications" className="mt-0">
+            {/* Professional card container with separator lines */}
+            <Card className="border-0 shadow-sm">
+              <div className="divide-y divide-border">
+                {notifications?.page.map((notification) => (
+                  <NotificationItem
+                    key={notification._id}
+                    n={notification}
+                    onOpen={openNotification}
+                    onMarkRead={handleMarkRead}
+                  />
+                ))}
+              </div>
+            </Card>
 
             {notifications?.page.length === 0 && (
-              <div className="text-center py-12">
-                <BellOff className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No notifications yet</p>
+              <div className="text-center py-16">
+                <BellOff className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                <p className="text-muted-foreground text-lg">No notifications yet</p>
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="messages" className="mt-6">
-            <div className="divide-y divide-border">
-              {/* Group chats */}
-              {(groupChats || []).map((group: any) => (
-                <div
-                  key={group._id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors py-4 px-4"
-                  onClick={() => navigate("/messages", { state: { groupChatId: group._id } })}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-semibold truncate">
-                          {group.name}
-                        </h4>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {group.memberCount} members
-                        </span>
+          <TabsContent value="messages" className="mt-0">
+            <Card className="border-0 shadow-sm">
+              <div className="divide-y divide-border">
+                {/* Group chats */}
+                {(groupChats || []).map((group: any) => (
+                  <div
+                    key={group._id}
+                    className="cursor-pointer hover:bg-muted/50 transition-all py-4 px-4"
+                    onClick={() => navigate("/messages", { state: { groupChatId: group._id } })}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 ring-2 ring-background shadow-sm">
+                        <Users className="h-6 w-6 text-primary" />
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {group.lastMessage}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h4 className="font-semibold text-base truncate">
+                            {group.name}
+                          </h4>
+                          <span className="text-xs text-muted-foreground/80 whitespace-nowrap">
+                            {group.memberCount} members
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate leading-relaxed">
+                          {group.lastMessage}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {/* Direct messages */}
-              {(conversations || []).map((c: any) => (
-                <div
-                  key={c.partnerId}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors py-4 px-4"
-                  onClick={() => navigate("/messages", { state: { partnerId: c.partnerId } })}
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={(c.partner as any)?.avatarImage || c.partner?.image || undefined} />
-                      <AvatarFallback>{c.partner?.name?.charAt(0) || "U"}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-semibold truncate">
-                          {c.partner?.name || "Anonymous"}
-                        </h4>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(c.lastMessageTime).toLocaleDateString()}
-                        </span>
+                {/* Direct messages */}
+                {(conversations || []).map((c: any) => (
+                  <div
+                    key={c.partnerId}
+                    className="cursor-pointer hover:bg-muted/50 transition-all py-4 px-4"
+                    onClick={() => navigate("/messages", { state: { partnerId: c.partnerId } })}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
+                        <AvatarImage src={(c.partner as any)?.avatarImage || c.partner?.image || undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {c.partner?.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h4 className="font-semibold text-base truncate">
+                            {c.partner?.name || "Anonymous"}
+                          </h4>
+                          <span className="text-xs text-muted-foreground/80 whitespace-nowrap">
+                            {new Date(c.lastMessageTime).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate leading-relaxed">
+                          {c.isLastMessageFromMe ? "You: " : ""}
+                          {c.lastMessage}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {c.isLastMessageFromMe ? "You: " : ""}
-                        {c.lastMessage}
-                      </p>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </Card>
 
             {conversations && conversations.length === 0 && (!groupChats || groupChats.length === 0) && (
-              <div className="text-center py-12">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No messages yet</p>
+              <div className="text-center py-16">
+                <MessageCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                <p className="text-muted-foreground text-lg">No messages yet</p>
               </div>
             )}
           </TabsContent>
