@@ -87,34 +87,96 @@ export default function ChapterEditor() {
   }, [existing]);
 
   const exec = (cmd: string, value?: string) => {
-    // Save the current selection before executing command
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
+    
     const selection = window.getSelection();
-    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
     
-    // Focus the editor
-    editorRef.current?.focus();
-    
-    // Restore selection if it was lost
-    if (range && selection) {
+    if (cmd === "insertImage" && value) {
+      const img = document.createElement("img");
+      img.src = value;
+      img.style.maxWidth = "100%";
+      img.style.height = "auto";
+      range.deleteContents();
+      range.insertNode(img);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      updateActiveFormats();
+      return;
+    }
+
+    const selectedText = range.toString();
+    if (!selectedText) {
+      updateActiveFormats();
+      return;
+    }
+
+    let wrapper: HTMLElement | null = null;
+    switch (cmd) {
+      case "bold":
+        wrapper = document.createElement("strong");
+        break;
+      case "italic":
+        wrapper = document.createElement("em");
+        break;
+      case "underline":
+        wrapper = document.createElement("u");
+        break;
+      case "justifyLeft":
+      case "justifyCenter":
+      case "justifyRight":
+        wrapper = document.createElement("div");
+        wrapper.style.textAlign = cmd === "justifyLeft" ? "left" : cmd === "justifyCenter" ? "center" : "right";
+        break;
+    }
+
+    if (wrapper) {
+      const fragment = range.extractContents();
+      wrapper.appendChild(fragment);
+      range.insertNode(wrapper);
+      
+      range.setStartAfter(wrapper);
+      range.collapse(true);
       selection.removeAllRanges();
       selection.addRange(range);
     }
-    
-    // Execute the command
-    document.execCommand(cmd, false, value);
-    
-    // Update active formats
+
     setTimeout(() => updateActiveFormats(), 10);
   };
 
   const updateActiveFormats = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      setActiveFormats(new Set());
+      return;
+    }
+
     const formats = new Set<string>();
-    if (document.queryCommandState('bold')) formats.add('bold');
-    if (document.queryCommandState('italic')) formats.add('italic');
-    if (document.queryCommandState('underline')) formats.add('underline');
-    if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
-    if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
-    if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
+    let node = selection.anchorNode;
+    
+    while (node && node !== editorRef.current) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as HTMLElement;
+        const tagName = element.tagName.toLowerCase();
+        
+        if (tagName === 'strong' || tagName === 'b') formats.add('bold');
+        if (tagName === 'em' || tagName === 'i') formats.add('italic');
+        if (tagName === 'u') formats.add('underline');
+        
+        const textAlign = element.style.textAlign;
+        if (textAlign === 'left') formats.add('justifyLeft');
+        if (textAlign === 'center') formats.add('justifyCenter');
+        if (textAlign === 'right') formats.add('justifyRight');
+      }
+      node = node.parentNode;
+    }
+    
     setActiveFormats(formats);
   };
 
