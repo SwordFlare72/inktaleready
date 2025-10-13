@@ -90,45 +90,28 @@ export default function ChapterEditor() {
     const editor = editorRef.current;
     if (!editor) return;
 
-    // For image insertion
-    if (cmd === "insertImage" && value) {
-      editor.focus();
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        // No selection, append at end
-        const img = document.createElement("img");
-        img.src = value;
-        img.style.maxWidth = "100%";
-        img.style.height = "auto";
-        editor.appendChild(img);
-      } else {
-        const range = selection.getRangeAt(0);
-        const img = document.createElement("img");
-        img.src = value;
-        img.style.maxWidth = "100%";
-        img.style.height = "auto";
-        range.deleteContents();
-        range.insertNode(img);
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      updateActiveFormats();
-      return;
-    }
-
-    // For text formatting
     editor.focus();
     
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    
+    if (cmd === "insertImage" && value) {
+      const img = document.createElement("img");
+      img.src = value;
+      img.style.maxWidth = "100%";
+      img.style.height = "auto";
+      range.deleteContents();
+      range.insertNode(img);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
       updateActiveFormats();
       return;
     }
 
-    const range = selection.getRangeAt(0);
     const selectedText = range.toString();
-    
     if (!selectedText) {
       updateActiveFormats();
       return;
@@ -154,23 +137,17 @@ export default function ChapterEditor() {
     }
 
     if (wrapper) {
-      try {
-        const fragment = range.extractContents();
-        wrapper.appendChild(fragment);
-        range.insertNode(wrapper);
-        
-        // Move cursor after the wrapper
-        range.setStartAfter(wrapper);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-        
-        // Update active formats after a brief delay
-        setTimeout(() => updateActiveFormats(), 50);
-      } catch (e) {
-        console.error("Formatting error:", e);
-      }
+      const fragment = range.extractContents();
+      wrapper.appendChild(fragment);
+      range.insertNode(wrapper);
+      
+      range.setStartAfter(wrapper);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
+
+    setTimeout(() => updateActiveFormats(), 10);
   };
 
   const updateActiveFormats = () => {
