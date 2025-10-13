@@ -86,20 +86,101 @@ export default function ChapterEditor() {
     }
   }, [existing]);
 
+  const wrapSelection = (tagName: string) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    if (!range || range.collapsed) return;
+    
+    // Check if already wrapped
+    let node = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode!;
+    }
+    
+    // If already wrapped in this tag, unwrap it
+    if (node.nodeName.toLowerCase() === tagName.toLowerCase()) {
+      const parent = node.parentNode!;
+      while (node.firstChild) {
+        parent.insertBefore(node.firstChild, node);
+      }
+      parent.removeChild(node);
+      updateActiveFormats();
+      return;
+    }
+    
+    // Otherwise, wrap the selection
+    const wrapper = document.createElement(tagName);
+    try {
+      range.surroundContents(wrapper);
+    } catch {
+      // If surroundContents fails (e.g., partial selection), use extractContents
+      wrapper.appendChild(range.extractContents());
+      range.insertNode(wrapper);
+    }
+    
+    // Restore selection
+    selection.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(wrapper);
+    selection.addRange(newRange);
+    
+    updateActiveFormats();
+  };
+
   const exec = (cmd: string, value?: string) => {
     editorRef.current?.focus();
-    document.execCommand(cmd, false, value);
-    updateActiveFormats();
+    
+    // Handle formatting commands with direct DOM manipulation
+    switch (cmd) {
+      case 'bold':
+        wrapSelection('strong');
+        break;
+      case 'italic':
+        wrapSelection('em');
+        break;
+      case 'underline':
+        wrapSelection('u');
+        break;
+      default:
+        // For other commands (alignment, insertImage), use execCommand
+        document.execCommand(cmd, false, value);
+        updateActiveFormats();
+    }
   };
 
   const updateActiveFormats = () => {
     const formats = new Set<string>();
-    if (document.queryCommandState('bold')) formats.add('bold');
-    if (document.queryCommandState('italic')) formats.add('italic');
-    if (document.queryCommandState('underline')) formats.add('underline');
+    const selection = window.getSelection();
+    
+    if (!selection || selection.rangeCount === 0) {
+      setActiveFormats(formats);
+      return;
+    }
+    
+    let node = selection.anchorNode;
+    if (!node) {
+      setActiveFormats(formats);
+      return;
+    }
+    
+    // Traverse up the DOM tree to check for formatting tags
+    while (node && node !== editorRef.current) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = (node as Element).tagName.toLowerCase();
+        if (tagName === 'strong' || tagName === 'b') formats.add('bold');
+        if (tagName === 'em' || tagName === 'i') formats.add('italic');
+        if (tagName === 'u') formats.add('underline');
+      }
+      node = node.parentNode;
+    }
+    
+    // Check alignment using queryCommandState
     if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
     if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
     if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
+    
     setActiveFormats(formats);
   };
 
