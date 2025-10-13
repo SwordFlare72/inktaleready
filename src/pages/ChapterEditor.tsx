@@ -87,19 +87,86 @@ export default function ChapterEditor() {
   }, [existing]);
 
   const exec = (cmd: string, value?: string) => {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false, value);
-    updateActiveFormats();
+    if (!editorRef.current) return;
+    
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    
+    // Handle text formatting with direct DOM manipulation
+    if (cmd === 'bold' || cmd === 'italic' || cmd === 'underline') {
+      const tagName = cmd === 'bold' ? 'STRONG' : cmd === 'italic' ? 'EM' : 'U';
+      
+      // Check if we're already inside this tag
+      let node = range.commonAncestorContainer;
+      let parentElement = node.nodeType === Node.TEXT_NODE ? node.parentElement : node as HTMLElement;
+      
+      // Find if we're inside the formatting tag
+      let formattingElement: HTMLElement | null = null;
+      while (parentElement && parentElement !== editor) {
+        if (parentElement.tagName === tagName) {
+          formattingElement = parentElement;
+          break;
+        }
+        parentElement = parentElement.parentElement;
+      }
+      
+      if (formattingElement) {
+        // Remove formatting: unwrap the element
+        const parent = formattingElement.parentNode;
+        while (formattingElement.firstChild) {
+          parent?.insertBefore(formattingElement.firstChild, formattingElement);
+        }
+        parent?.removeChild(formattingElement);
+      } else if (!range.collapsed) {
+        // Apply formatting: wrap selection
+        const selectedContent = range.extractContents();
+        const formattingTag = document.createElement(tagName.toLowerCase());
+        formattingTag.appendChild(selectedContent);
+        range.insertNode(formattingTag);
+        
+        // Restore selection
+        range.selectNodeContents(formattingTag);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      
+      editor.focus();
+      setTimeout(() => updateActiveFormats(), 10);
+    } else {
+      // For alignment and other commands, use execCommand
+      document.execCommand(cmd, false, value);
+      setTimeout(() => updateActiveFormats(), 10);
+    }
   };
 
   const updateActiveFormats = () => {
+    if (!editorRef.current) return;
+    
     const formats = new Set<string>();
-    if (document.queryCommandState('bold')) formats.add('bold');
-    if (document.queryCommandState('italic')) formats.add('italic');
-    if (document.queryCommandState('underline')) formats.add('underline');
-    if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
-    if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
-    if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
+    const selection = window.getSelection();
+    
+    if (selection && selection.rangeCount > 0) {
+      let node = selection.getRangeAt(0).commonAncestorContainer;
+      let element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node as HTMLElement;
+      
+      // Traverse up the DOM tree to check for formatting tags
+      while (element && element !== editorRef.current) {
+        const tagName = element.tagName;
+        if (tagName === 'STRONG' || tagName === 'B') formats.add('bold');
+        if (tagName === 'EM' || tagName === 'I') formats.add('italic');
+        if (tagName === 'U') formats.add('underline');
+        element = element.parentElement;
+      }
+      
+      // Check alignment using queryCommandState
+      if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
+      if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
+      if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
+    }
+    
     setActiveFormats(formats);
   };
 
@@ -244,10 +311,11 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('bold') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("bold", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={() => {
+                  exec('bold');
                 }}
               >
                 <Bold className="h-4 w-4" />
@@ -256,10 +324,11 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('italic') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("italic", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={() => {
+                  exec('italic');
                 }}
               >
                 <Italic className="h-4 w-4" />
@@ -268,10 +337,11 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('underline') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("underline", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={() => {
+                  exec('underline');
                 }}
               >
                 <Underline className="h-4 w-4" />
@@ -283,10 +353,11 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyLeft') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("justifyLeft", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={() => {
+                  exec('justifyLeft');
                 }}
               >
                 <AlignLeft className="h-4 w-4" />
@@ -295,10 +366,11 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyCenter') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("justifyCenter", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={() => {
+                  exec('justifyCenter');
                 }}
               >
                 <AlignCenter className="h-4 w-4" />
@@ -307,10 +379,11 @@ export default function ChapterEditor() {
                 variant={activeFormats.has('justifyRight') ? "default" : "outline"}
                 size="sm"
                 onMouseDown={(e) => { 
-                  e.preventDefault(); 
-                  document.execCommand("justifyRight", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={() => {
+                  exec('justifyRight');
                 }}
               >
                 <AlignRight className="h-4 w-4" />
