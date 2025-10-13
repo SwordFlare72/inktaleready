@@ -226,7 +226,7 @@ export default function Notifications() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold">Updates</h1>
-            <Button onClick={() => setOpenCompose(true)}>
+            <Button onClick={() => navigate("/messages")}>
               <MessageCircle className="h-4 w-4 mr-2" />
               New Message
             </Button>
