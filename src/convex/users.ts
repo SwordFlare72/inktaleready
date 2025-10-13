@@ -72,6 +72,7 @@ export const listFollowers = query({
           _id: u._id,
           name: u.name,
           image: u.image,
+          avatarImage: (u as any).avatarImage,
           bio: u.bio,
         };
       })
@@ -98,6 +99,7 @@ export const listFollowing = query({
           _id: u._id,
           name: u.name,
           image: u.image,
+          avatarImage: (u as any).avatarImage,
           bio: u.bio,
         };
       })

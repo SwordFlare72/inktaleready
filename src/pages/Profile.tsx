@@ -562,7 +562,7 @@ export default function Profile() {
                       >
                         <div className="flex flex-col items-center gap-2">
                           <Avatar className="h-14 w-14">
-                            <AvatarImage src={u.image} />
+                            <AvatarImage src={u.avatarImage || u.image} />
                             <AvatarFallback>
                               {u.name?.charAt(0) || "U"}
                             </AvatarFallback>
@@ -1005,7 +1005,7 @@ export default function Profile() {
                     }}
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={u.image} />
+                      <AvatarImage src={u.avatarImage || u.image} />
                       <AvatarFallback>
                         {u.name?.charAt(0) || "U"}
                       </AvatarFallback>
@@ -1052,7 +1052,7 @@ export default function Profile() {
                     }}
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={u.image} />
+                      <AvatarImage src={u.avatarImage || u.image} />
                       <AvatarFallback>
                         {u.name?.charAt(0) || "U"}
                       </AvatarFallback>
