@@ -86,20 +86,89 @@ export default function ChapterEditor() {
     }
   }, [existing]);
 
+  const applyFormat = (tag: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    
+    // Check if selection is within editor
+    if (!editor.contains(range.commonAncestorContainer)) return;
+
+    // If no text selected, do nothing
+    if (range.collapsed) return;
+
+    // Extract the selected content
+    const selectedContent = range.extractContents();
+    
+    // Create the formatting element
+    const formatElement = document.createElement(tag);
+    formatElement.appendChild(selectedContent);
+    
+    // Insert the formatted content
+    range.insertNode(formatElement);
+    
+    // Move cursor after the inserted element
+    range.setStartAfter(formatElement);
+    range.setEndAfter(formatElement);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    editor.focus();
+    updateActiveFormats();
+  };
+
   const exec = (cmd: string, value?: string) => {
     editorRef.current?.focus();
+    
+    // Use direct DOM manipulation for text formatting
+    if (cmd === 'bold') {
+      applyFormat('strong');
+      return;
+    }
+    if (cmd === 'italic') {
+      applyFormat('em');
+      return;
+    }
+    if (cmd === 'underline') {
+      applyFormat('u');
+      return;
+    }
+    
+    // Use execCommand for other commands (alignment, images)
     document.execCommand(cmd, false, value);
     updateActiveFormats();
   };
 
   const updateActiveFormats = () => {
     const formats = new Set<string>();
-    if (document.queryCommandState('bold')) formats.add('bold');
-    if (document.queryCommandState('italic')) formats.add('italic');
-    if (document.queryCommandState('underline')) formats.add('underline');
+    const selection = window.getSelection();
+    
+    if (selection && selection.rangeCount > 0) {
+      let node = selection.anchorNode;
+      
+      // Traverse up the DOM tree to check for formatting tags
+      while (node && node !== editorRef.current) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as Element;
+          const tagName = element.tagName.toLowerCase();
+          
+          if (tagName === 'strong' || tagName === 'b') formats.add('bold');
+          if (tagName === 'em' || tagName === 'i') formats.add('italic');
+          if (tagName === 'u') formats.add('underline');
+        }
+        node = node.parentNode;
+      }
+    }
+    
+    // Check alignment using queryCommandState (this still works reliably)
     if (document.queryCommandState('justifyLeft')) formats.add('justifyLeft');
     if (document.queryCommandState('justifyCenter')) formats.add('justifyCenter');
     if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
+    
     setActiveFormats(formats);
   };
 
@@ -245,9 +314,11 @@ export default function ChapterEditor() {
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault(); 
-                  document.execCommand("bold", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("bold");
                 }}
               >
                 <Bold className="h-4 w-4" />
@@ -257,9 +328,11 @@ export default function ChapterEditor() {
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault(); 
-                  document.execCommand("italic", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("italic");
                 }}
               >
                 <Italic className="h-4 w-4" />
@@ -269,9 +342,11 @@ export default function ChapterEditor() {
                 size="sm"
                 onMouseDown={(e) => { 
                   e.preventDefault(); 
-                  document.execCommand("underline", false);
-                  editorRef.current?.focus();
-                  updateActiveFormats();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  exec("underline");
                 }}
               >
                 <Underline className="h-4 w-4" />
