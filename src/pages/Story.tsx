@@ -373,7 +373,7 @@ export default function StoryPage() {
           </div>
         </div>
 
-        {/* Chapters List - Modified to show only 5 latest */}
+        {/* Chapters List - Modified to show only 3 latest */}
         <div className="mb-8" id="chapters-list">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold">Chapters ({story.chapters?.length || 0})</h3>
@@ -397,7 +397,10 @@ export default function StoryPage() {
               </div>
             ) : (
               <>
-                {story.chapters.slice(0, 3).map((chapter) => (
+                {[...story.chapters]
+                  .sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0))
+                  .slice(0, 3)
+                  .map((chapter) => (
                   <motion.div
                     key={chapter._id}
                     whileHover={{ scale: 1.005 }}

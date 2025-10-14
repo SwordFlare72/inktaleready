@@ -69,7 +69,9 @@ export default function ChapterListView() {
             </div>
           ) : (
             <>
-              {story.chapters.map((chapter) => (
+              {[...story.chapters]
+                .sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0))
+                .map((chapter) => (
                 <motion.div
                   key={chapter._id}
                   whileHover={{ scale: 1.005 }}
