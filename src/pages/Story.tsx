@@ -356,8 +356,8 @@ export default function StoryPage() {
         {/* Description */}
         <div className="mb-8">
           <h3 className="text-lg font-bold mb-4">About this story</h3>
-          <div className="bg-muted/30 rounded-2xl p-6 border border-border/40">
-            <p className="text-muted-foreground leading-relaxed text-base">
+          <div className="bg-gradient-to-br from-muted/40 to-muted/20 rounded-2xl p-6 border border-border/30 shadow-sm">
+            <p className="text-foreground/90 leading-relaxed text-base whitespace-pre-wrap">
               {expandDesc || (story.description?.length || 0) <= 200
                 ? story.description
                 : `${story.description.slice(0, 200)}...`}
@@ -365,7 +365,7 @@ export default function StoryPage() {
             {story.description && story.description.length > 200 && (
               <button
                 onClick={() => setExpandDesc((v) => !v)}
-                className="mt-3 text-primary text-sm font-semibold hover:underline"
+                className="mt-4 text-primary text-sm font-semibold hover:underline transition-all"
               >
                 {expandDesc ? "Show less" : "Read more"}
               </button>
