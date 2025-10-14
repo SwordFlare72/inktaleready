@@ -56,11 +56,17 @@ export default function Earnings() {
             <div className="text-center py-8">
               <TrendingUp className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">Earnings Feature in Development</h3>
-              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                We're working on implementing a comprehensive earnings system that will allow writers 
-                to monetize their content through various methods including subscriptions, tips, and 
-                premium content. Keep creating amazing stories and building your audience!
-              </p>
+              <div className="text-muted-foreground mb-6 max-w-2xl mx-auto space-y-4">
+                <p>
+                  We plan to introduce a writer monetization system in the future where authors can earn from their stories through our platform.
+                </p>
+                <p>
+                  However, this feature will only be introduced if the app becomes successful and generates enough profit to support fair and consistent payouts.
+                </p>
+                <p>
+                  For now, we encourage you to share your stories, build your audience, and be part of our growing community — your support helps make this feature possible.
+                </p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
                 <div className="text-center p-4 border rounded-lg">
                   <h4 className="font-semibold mb-2">Reader Subscriptions</h4>
