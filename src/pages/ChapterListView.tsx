@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { Eye, Heart, ChevronLeft } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
+import { useEffect } from "react";
 
 export default function ChapterListView() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +13,11 @@ export default function ChapterListView() {
   
   const story = useQuery(api.stories.getStoryById, id ? { storyId: id as any } : "skip");
   const readingProgress = useQuery(api.readingProgress.getProgress, id ? { storyId: id as any } : "skip");
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleBack = () => {
     navigate(`/story/${id}`);
