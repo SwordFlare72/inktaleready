@@ -31,6 +31,7 @@ import ReadingListView from "./pages/ReadingListView.tsx";
 import MyStoriesList from "./pages/MyStoriesList.tsx";
 import FollowingList from "./pages/FollowingList.tsx";
 import CategoryList from "./pages/CategoryList.tsx";
+import ChapterListView from "./pages/ChapterListView.tsx";
 import { motion } from "framer-motion";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -138,6 +139,9 @@ function BottomNavGate() {
   // Add: Hide nav on category list page
   const onCategoryList = location.pathname.startsWith("/category");
 
+  // Add: Hide nav on chapter list view page
+  const onChapterListView = location.pathname.match(/^\/story\/[^/]+\/chapters/);
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
@@ -149,7 +153,8 @@ function BottomNavGate() {
     onReadingListView ||
     onProfileStories ||
     onProfileFollowing ||
-    onCategoryList
+    onCategoryList ||
+    onChapterListView
   ) return null;
 
   return <BottomNav />;
@@ -239,6 +244,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/explore" element={<Explore />} />
             <Route path="/search" element={<Search />} />
             <Route path="/story/:id" element={<Story />} />
+            <Route path="/story/:id/chapters" element={<ChapterListView />} />
             <Route path="/read/:id" element={<Reader />} />
             <Route path="/library" element={
               <ProtectedRoute><Library /></ProtectedRoute>

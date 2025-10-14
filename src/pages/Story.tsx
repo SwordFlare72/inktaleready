@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, ChevronLeft, Plus, Check } from "lucide-react";
+import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, ChevronLeft, Plus, Check, ChevronRight } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -373,9 +373,22 @@ export default function StoryPage() {
           </div>
         </div>
 
-        {/* Chapters List */}
+        {/* Chapters List - Modified to show only 5 latest */}
         <div className="mb-8" id="chapters-list">
-          <h3 className="text-lg font-bold mb-4">Chapters ({story.chapters?.length || 0})</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">Chapters ({story.chapters?.length || 0})</h3>
+            {story.chapters && story.chapters.length > 5 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/story/${id}/chapters`)}
+                className="gap-1 text-primary hover:text-primary"
+              >
+                View All
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
           <div className="space-y-3 border border-border/40 rounded-2xl p-4 bg-muted/20">
             {!story.chapters || story.chapters.length === 0 ? (
               <div className="text-center py-12 bg-muted/30 rounded-2xl">
@@ -384,7 +397,7 @@ export default function StoryPage() {
               </div>
             ) : (
               <>
-                {story.chapters.map((chapter) => (
+                {story.chapters.slice(0, 5).map((chapter) => (
                   <motion.div
                     key={chapter._id}
                     whileHover={{ scale: 1.005 }}
