@@ -258,12 +258,12 @@ export const searchStories = query({
   args: {
     searchTerm: v.string(),
     genre: v.optional(v.string()),
-    // Add advanced filters
     sortBy: v.optional(v.union(v.literal("popular"), v.literal("recent"), v.literal("views"))),
     minChapters: v.optional(v.number()),
     hasCover: v.optional(v.boolean()),
-    // Add: tag filter (match any of up to 5 tags)
     tagsAny: v.optional(v.array(v.string())),
+    language: v.optional(v.string()),
+    isMature: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Simple text search - in production you'd want full-text search
@@ -299,6 +299,19 @@ export const searchStories = query({
 
     if (args.genre) {
       filtered = filtered.filter((story) => story.genre === args.genre);
+    }
+
+    // Add: filter by language (case-insensitive) when provided
+    if (args.language) {
+      const wantLang = args.language.trim().toLowerCase();
+      filtered = filtered.filter(
+        (story) => (story.language || "").toLowerCase() === wantLang
+      );
+    }
+
+    // Add: filter to only include mature stories when requested
+    if (args.isMature) {
+      filtered = filtered.filter((story) => story.isMature === true);
     }
 
     // Apply additional filters
