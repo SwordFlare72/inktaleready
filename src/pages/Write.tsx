@@ -281,7 +281,7 @@ export default function Write() {
             onClick={() => navigate("/earnings")}
             className="h-10 w-10"
           >
-            <Wallet className="h-5 w-5" />
+            <Wallet className="h-6 w-6" />
           </Button>
         </div>
 

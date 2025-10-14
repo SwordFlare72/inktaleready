@@ -49,7 +49,7 @@ export default function Earnings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              Monetization Coming Soon
+              Monetization Plan For The Future
             </CardTitle>
           </CardHeader>
           <CardContent>
