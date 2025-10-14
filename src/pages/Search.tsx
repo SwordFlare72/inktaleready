@@ -25,6 +25,19 @@ const GENRES = [
   { value: "fanfiction", label: "Fanfiction" },
 ];
 
+// Add: Language options constant
+const LANGUAGES = [
+  { value: "all", label: "All Languages" },
+  { value: "english", label: "English" },
+  { value: "spanish", label: "Spanish" },
+  { value: "french", label: "French" },
+  { value: "german", label: "German" },
+  { value: "chinese", label: "Chinese" },
+  { value: "japanese", label: "Japanese" },
+  { value: "korean", label: "Korean" },
+  { value: "other", label: "Other" },
+];
+
 // Add: Minimal, borderless row component for stories (no Card wrapper)
 function StoryRow({
   story,
@@ -138,6 +151,9 @@ export default function Search() {
   const [sortBy, setSortBy] = useState<"recent" | "popular" | "views">((searchParams.get("sortBy") as "recent" | "popular" | "views") || "recent");
   const [hasCover, setHasCover] = useState(searchParams.get("hasCover") === "true");
   const [minChapters, setMinChapters] = useState<string>(searchParams.get("minChapters") || "");
+  // Add: new filter states
+  const [language, setLanguage] = useState(searchParams.get("language") || "all");
+  const [isMature, setIsMature] = useState(searchParams.get("isMature") === "true");
 
   // Add: simple relative time formatter for "Uploaded X ago"
   const relTime = (ts?: number) => {
@@ -167,9 +183,11 @@ export default function Search() {
     if (sortBy !== "recent") params.set("sortBy", sortBy);
     if (hasCover) params.set("hasCover", "true");
     if (minChapters) params.set("minChapters", minChapters);
+    if (language !== "all") params.set("language", language);
+    if (isMature) params.set("isMature", "true");
     
     setSearchParams(params, { replace: true });
-  }, [searchTerm, genre, mode, showFilters, tagsInput, sortBy, hasCover, minChapters, setSearchParams]);
+  }, [searchTerm, genre, mode, showFilters, tagsInput, sortBy, hasCover, minChapters, language, isMature, setSearchParams]);
 
   // Debounce search term
   useEffect(() => {
@@ -190,8 +208,9 @@ export default function Search() {
           sortBy,
           hasCover: hasCover ? true : undefined,
           minChapters: minChapters.trim() ? Number(minChapters) : undefined,
-          // Add: pass tags filter if present
           tagsAny: parsedTags.length > 0 ? parsedTags : undefined,
+          language: language !== "all" ? language : undefined,
+          isMature: isMature ? true : undefined,
         }
       : "skip"
   );
@@ -213,6 +232,8 @@ export default function Search() {
     setHasCover(false);
     setMinChapters("");
     setTagsInput("");
+    setLanguage("all");
+    setIsMature(false);
   };
 
   return (
@@ -334,7 +355,29 @@ export default function Search() {
                 />
               </div>
 
-              <div className="hidden sm:block" />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Language</label>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Languages" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between sm:justify-start sm:gap-3 border rounded-md px-3 py-2 max-w-md">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium block">Mature Content Only</label>
+                <p className="text-xs text-muted-foreground">Show only stories marked as mature</p>
+              </div>
+              <Switch checked={isMature} onCheckedChange={setIsMature} />
             </div>
 
             {/* Tags filter */}
