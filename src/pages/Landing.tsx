@@ -20,7 +20,7 @@ import {
   Sun,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 
 export default function Landing() {
   const { isLoading, isAuthenticated, user } = useAuth();
@@ -98,7 +98,7 @@ export default function Landing() {
     navigate("/library");
   };
 
-  // Small, reusable horizontal scroller section
+  // Small, reusable horizontal scroller section with navigation arrows
   const Section = ({
     title,
     items,
@@ -110,6 +110,44 @@ export default function Landing() {
     onViewAll: () => void;
     showViewAll?: boolean;
   }) => {
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const checkScroll = () => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 10
+      );
+    };
+
+    useEffect(() => {
+      checkScroll();
+      const container = scrollContainerRef.current;
+      if (container) {
+        container.addEventListener('scroll', checkScroll);
+        window.addEventListener('resize', checkScroll);
+        return () => {
+          container.removeEventListener('scroll', checkScroll);
+          window.removeEventListener('resize', checkScroll);
+        };
+      }
+    }, [items]);
+
+    const scroll = (direction: 'left' | 'right') => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      
+      const scrollAmount = container.clientWidth * 0.8;
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    };
+
     return (
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
@@ -132,42 +170,70 @@ export default function Landing() {
         ) : (items?.length ?? 0) === 0 ? (
           <div className="text-sm text-muted-foreground">Nothing here yet.</div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
-            {(items as any[]).map((story, idx) => (
+          <div className="relative group">
+            {/* Left Arrow */}
+            {canScrollLeft && (
               <button
-                key={story._id ?? idx}
-                onClick={() => navigate(`/story/${story._id}`)}
-                className="w-32 flex-shrink-0 snap-start text-left"
+                onClick={() => scroll('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                aria-label="Scroll left"
               >
-                <div className="relative">
-                  <div className="aspect-[3/4] w/full overflow-hidden rounded-lg bg-muted">
-                    {story.coverImage ? (
-                      <img
-                        src={story.coverImage}
-                        alt={story.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full grid place-items-center">
-                        <BookOpen className="h-6 w-6 text-muted-foreground" />
+                <ArrowRight className="h-5 w-5 rotate-180" />
+              </button>
+            )}
+            
+            {/* Right Arrow */}
+            {canScrollRight && (
+              <button
+                onClick={() => scroll('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                aria-label="Scroll right"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            )}
+
+            <div 
+              ref={scrollContainerRef}
+              className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {(items as any[]).map((story, idx) => (
+                <button
+                  key={story._id ?? idx}
+                  onClick={() => navigate(`/story/${story._id}`)}
+                  className="w-32 flex-shrink-0 snap-start text-left"
+                >
+                  <div className="relative">
+                    <div className="aspect-[3/4] w/full overflow-hidden rounded-lg bg-muted">
+                      {story.coverImage ? (
+                        <img
+                          src={story.coverImage}
+                          alt={story.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full grid place-items-center">
+                          <BookOpen className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    {/* Redesigned rank badge */}
+                    <div className="absolute top-2 left-2">
+                      <div className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md ring-1 ring-white/30 dark:ring-black/30 bg-gradient-to-br from-violet-600 to-fuchsia-500">
+                        {idx + 1}
                       </div>
-                    )}
-                  </div>
-                  {/* Redesigned rank badge */}
-                  <div className="absolute top-2 left-2">
-                    <div className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md ring-1 ring-white/30 dark:ring-black/30 bg-gradient-to-br from-violet-600 to-fuchsia-500">
-                      {idx + 1}
                     </div>
                   </div>
-                </div>
-                {/* Fixed-height title block for perfect row alignment, keep bigger */}
-                <div className="mt-2">
-                  <div className="text-base font-semibold leading-tight line-clamp-2 min-h-[2.5rem]">
-                    {story.title}
+                  {/* Fixed-height title block for perfect row alignment, keep bigger */}
+                  <div className="mt-2">
+                    <div className="text-base font-semibold leading-tight line-clamp-2 min-h-[2.5rem]">
+                      {story.title}
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
