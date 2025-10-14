@@ -69,7 +69,7 @@ export default function ChapterListView() {
             </div>
           ) : (
             <>
-              {story.chapters.map((chapter) => (
+              {story.chapters.slice().reverse().map((chapter) => (
                 <motion.div
                   key={chapter._id}
                   whileHover={{ scale: 1.005 }}
@@ -98,11 +98,10 @@ export default function ChapterListView() {
                           <Heart className="w-3 h-3" />
                           {chapter.likes}
                         </span>
-                        <span className="hidden sm:inline">•</span>
-                        <span className="hidden sm:inline">
-                          {chapter._creationTime ? new Date(chapter._creationTime).toLocaleDateString() : ""}
-                        </span>
                       </div>
+                    </div>
+                    <div className="shrink-0 text-xs text-muted-foreground text-right">
+                      {chapter._creationTime ? new Date(chapter._creationTime).toLocaleDateString() : ""}
                     </div>
                   </div>
                 </motion.div>
