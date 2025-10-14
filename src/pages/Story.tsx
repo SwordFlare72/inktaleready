@@ -377,7 +377,7 @@ export default function StoryPage() {
         <div className="mb-8" id="chapters-list">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold">Chapters ({story.chapters?.length || 0})</h3>
-            {story.chapters && story.chapters.length > 5 && (
+            {story.chapters && story.chapters.length > 3 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -397,7 +397,7 @@ export default function StoryPage() {
               </div>
             ) : (
               <>
-                {story.chapters.slice(0, 5).map((chapter) => (
+                {story.chapters.slice(0, 3).map((chapter) => (
                   <motion.div
                     key={chapter._id}
                     whileHover={{ scale: 1.005 }}
@@ -426,11 +426,10 @@ export default function StoryPage() {
                             <Heart className="w-3 h-3" />
                             {chapter.likes}
                           </span>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="hidden sm:inline">
-                            {chapter._creationTime ? new Date(chapter._creationTime).toLocaleDateString() : ""}
-                          </span>
                         </div>
+                      </div>
+                      <div className="shrink-0 text-xs text-muted-foreground">
+                        {chapter._creationTime ? new Date(chapter._creationTime).toLocaleDateString() : ""}
                       </div>
                     </div>
                   </motion.div>
