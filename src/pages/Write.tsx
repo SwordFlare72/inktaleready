@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle, MoreVertical } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, BookOpen, FileText, Save, Heart, MessageCircle, MoreVertical, Wallet } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -270,11 +270,19 @@ export default function Write() {
     >
       <div className="max-w-2xl mx-auto px-3 py-6 pb-28">
         {/* Header */}
-        <div className="mb-4 flex items-center justify-start">
+        <div className="mb-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-extrabold">Writer Dashboard</h1>
             <p className="text-muted-foreground text-sm">Manage your stories and connect with readers</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/earnings")}
+            className="h-10 w-10"
+          >
+            <Wallet className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Stats - revamped visual cards */}
