@@ -30,23 +30,6 @@ export default function Earnings() {
     );
   }
 
-  if (!user?.isWriter) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Writer Access Required</h2>
-            <p className="text-muted-foreground mb-4">
-              You need to be a writer to access the earnings dashboard
-            </p>
-            <Button onClick={() => navigate("/write")}>Become a Writer</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -59,61 +42,6 @@ export default function Earnings() {
           <p className="text-muted-foreground">
             Track your story performance and future earnings potential
           </p>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalViews || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Across {stats?.publishedStories || 0} published stories
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Likes</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalLikes || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Reader engagement score
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Comments</CardTitle>
-              <MessageCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalComments || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Community interactions
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Published Stories</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.publishedStories || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Out of {stats?.totalStories || 0} total
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Earnings Info */}
