@@ -128,8 +128,21 @@ export default function Write() {
       .split(",")
       .map(t => t.trim())
       .filter(Boolean);
+    
+    // Add: Validate minimum 3 tags
+    if (tagsArr.length < 3) {
+      toast.error("Please provide at least 3 tags");
+      return;
+    }
+    
     if (tagsArr.length > 20) {
       toast.error("You can add up to 20 tags");
+      return;
+    }
+
+    // Add: Validate cover image is provided
+    if (!storyCover.trim()) {
+      toast.error("Please upload a cover image");
       return;
     }
 
@@ -547,7 +560,6 @@ export default function Write() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* removed duplicate simple Tags field to avoid two inputs */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Cover Image</label>
                 <div className="flex items-center gap-3">
@@ -602,6 +614,7 @@ export default function Write() {
                   )}
                 </div>
                 {uploadingCover && <p className="text-xs mt-1 text-muted-foreground">Uploading image…</p>}
+                {!storyCover && <p className="text-xs mt-1 text-red-500">* Cover image is required</p>}
                 {storyCover && (
                   <div className="mt-2 w-24 h-32 overflow-hidden rounded border">
                     <img src={storyCover} className="w-full h-full object-cover" />
@@ -609,7 +622,7 @@ export default function Write() {
                 )}
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Tags (comma-separated, up to 20)</label>
+                <label className="text-sm font-medium mb-2 block">Tags (comma-separated, minimum 3, up to 20) *</label>
                 <Input
                   value={storyTags}
                   onChange={(e) => setStoryTags(e.target.value)}
@@ -627,9 +640,13 @@ export default function Write() {
                       </span>
                     ))}
                 </div>
+                {storyTags.split(",").map(t => t.trim()).filter(Boolean).length > 0 && 
+                 storyTags.split(",").map(t => t.trim()).filter(Boolean).length < 3 && (
+                  <p className="text-xs mt-1 text-red-500">* At least 3 tags are required</p>
+                )}
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Language</label>
+                <label className="text-sm font-medium mb-2 block">Language *</label>
                 <Select value={storyLanguage} onValueChange={setStoryLanguage}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select language" />
