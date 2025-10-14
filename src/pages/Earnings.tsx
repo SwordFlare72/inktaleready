@@ -34,9 +34,9 @@ export default function Earnings() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-background"
+      className="min-h-screen bg-background pb-32"
     >
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Earnings Dashboard</h1>
           <p className="text-muted-foreground">
@@ -44,19 +44,19 @@ export default function Earnings() {
           </p>
         </div>
 
-        {/* Earnings Info */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
+        {/* Monetization Info Card */}
+        <Card className="mb-8 border-2 shadow-lg">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <DollarSign className="h-6 w-6" />
               Monetization Plan For The Future
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <TrendingUp className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">About Monetization</h3>
-              <div className="text-muted-foreground mb-6 max-w-2xl mx-auto space-y-4">
+            <div className="text-center py-6">
+              <TrendingUp className="h-20 w-20 mx-auto mb-6 text-primary/60" />
+              <h3 className="text-2xl font-semibold mb-4">About Monetization</h3>
+              <div className="text-muted-foreground mb-6 max-w-2xl mx-auto space-y-4 text-base leading-relaxed">
                 <p>
                   We plan to introduce a writer monetization system in the future where authors can earn from their stories through our platform.
                 </p>
@@ -72,32 +72,32 @@ export default function Earnings() {
         </Card>
 
         {/* Story Performance */}
-        <Card>
+        <Card className="shadow-md">
           <CardHeader>
-            <CardTitle>Story Performance</CardTitle>
+            <CardTitle className="text-xl">Story Performance</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {stats?.stories.map((story) => (
-                <div key={story._id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-semibold">{story.title}</h4>
-                    <p className="text-sm text-muted-foreground">
+                <div key={story._id} className="flex items-center justify-between p-5 border-2 rounded-xl hover:border-primary/50 transition-colors bg-card/50">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <h4 className="font-semibold text-lg truncate">{story.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
                       {story.isPublished ? 'Published' : 'Draft'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-6 text-sm">
+                  <div className="flex items-center gap-8 text-sm">
                     <div className="text-center">
-                      <div className="font-semibold">{story.totalViews}</div>
-                      <div className="text-muted-foreground">Views</div>
+                      <div className="font-bold text-lg">{story.totalViews}</div>
+                      <div className="text-muted-foreground text-xs">Views</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold">{story.totalLikes}</div>
-                      <div className="text-muted-foreground">Likes</div>
+                      <div className="font-bold text-lg">{story.totalLikes}</div>
+                      <div className="text-muted-foreground text-xs">Likes</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold">{story.totalComments}</div>
-                      <div className="text-muted-foreground">Comments</div>
+                      <div className="font-bold text-lg">{story.totalComments}</div>
+                      <div className="text-muted-foreground text-xs">Comments</div>
                     </div>
                   </div>
                 </div>
@@ -105,10 +105,10 @@ export default function Earnings() {
             </div>
 
             {stats?.stories.length === 0 && (
-              <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">No stories yet</p>
-                <Button onClick={() => navigate("/write")}>
+              <div className="text-center py-12">
+                <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground/60" />
+                <p className="text-muted-foreground mb-4 text-lg">No stories yet</p>
+                <Button onClick={() => navigate("/write")} size="lg">
                   Create Your First Story
                 </Button>
               </div>
