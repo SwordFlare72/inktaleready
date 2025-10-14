@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, ChevronLeft, Plus, Check, ChevronRight } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,11 @@ export default function StoryPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  
+  // Scroll to top when story page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
   
   // Add: robust back handler that preserves list scroll when possible
   const handleBack = () => {
