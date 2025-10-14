@@ -26,17 +26,18 @@ export default function BottomNav() {
   };
 
   const navItems = [
-    { path: "/", icon: Home, label: "Home" },
-    { path: "/search", icon: Search, label: "Search" },
-    { path: "/library", icon: Library, label: "Library" },
-    { path: "/write", icon: PenTool, label: "Write" },
+    { path: "/", icon: Home, label: "Home", activeColor: "text-blue-500" },
+    { path: "/search", icon: Search, label: "Search", activeColor: "text-purple-500" },
+    { path: "/library", icon: Library, label: "Library", activeColor: "text-green-500" },
+    { path: "/write", icon: PenTool, label: "Write", activeColor: "text-orange-500" },
     { 
       path: "/notifications", 
       icon: Bell, 
       label: "Alerts",
+      activeColor: "text-red-500",
       badge: unreadCount && unreadCount > 0 ? unreadCount : undefined
     },
-    { path: "/profile", icon: User, label: "Profile" },
+    { path: "/profile", icon: User, label: "Profile", activeColor: "text-pink-500" },
   ];
 
   return (
@@ -50,9 +51,9 @@ export default function BottomNav() {
               key={item.path}
               to={item.path}
               onClick={handleNavClick}
-              className={`flex flex-col items-center justify-center flex-1 h-full relative ${
+              className={`flex flex-col items-center justify-center flex-1 h-full relative transition-colors ${
                 active
-                  ? "text-primary"
+                  ? item.activeColor
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
