@@ -1,95 +1,74 @@
-import { BookOpen, PenTool, Bell, User, Home, Search } from "lucide-react";
-import { useLocation, useNavigate } from "react-router";
+import { Home, Search, Library, PenTool, Bell, User } from "lucide-react";
+import { Link, useLocation } from "react-router";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useAuth } from "@/hooks/use-auth";
 
 export default function BottomNav() {
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const { isAuthenticated } = useAuth();
-
-  // Fetch unread notification count
-  const notifications = useQuery(
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // Load notifications and derive unread count from the first page
+  const notificationsData = useQuery(
     api.notifications.listForUser,
-    isAuthenticated ? { paginationOpts: { numItems: 50, cursor: null } } : "skip"
+    user ? { paginationOpts: { numItems: 100, cursor: null } } : "skip"
   );
-  const unreadCount = notifications?.page.filter(n => !n.isRead).length || 0;
+  const unreadCount =
+    notificationsData?.page?.filter((n: any) => !n.isRead).length ?? 0;
 
-  const isActive = (path: string) => {
-    if (path === "/") return pathname === "/";
-    return pathname === path || pathname.startsWith(path);
+  const handleNavClick = () => {
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const tabClass = (active: boolean) =>
-    `flex flex-col items-center gap-1 py-3 ${
-      active ? "text-purple-600" : "text-muted-foreground hover:text-foreground"
-    }`;
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
+
+  const navItems = [
+    { path: "/", icon: Home, label: "Home" },
+    { path: "/search", icon: Search, label: "Search" },
+    { path: "/library", icon: Library, label: "Library" },
+    { path: "/write", icon: PenTool, label: "Write" },
+    { 
+      path: "/notifications", 
+      icon: Bell, 
+      label: "Alerts",
+      badge: unreadCount && unreadCount > 0 ? unreadCount : undefined
+    },
+    { path: "/profile", icon: User, label: "Profile" },
+  ];
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-50">
-      {/* Make nav visible and properly sized on desktop as well */}
-      <div className="mx-auto w-full px-3 max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl">
-        <nav className="m-3 rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur border shadow-lg">
-          <div className="grid grid-cols-6">
-            <button
-              className={tabClass(isActive("/"))}
-              onClick={() => navigate("/")}
-              aria-label="Home"
-            >
-              <Home className="h-5 w-5" />
-              <span className="text-[11px] font-medium">Home</span>
-            </button>
-            <button
-              className={tabClass(isActive("/search"))}
-              onClick={() => navigate("/search")}
-              aria-label="Search"
-            >
-              <Search className="h-5 w-5" />
-              <span className="text-[11px] font-medium">Search</span>
-            </button>
-            <button
-              className={tabClass(isActive("/library"))}
-              onClick={() => navigate("/library")}
-              aria-label="Library"
-            >
-              <BookOpen className="h-5 w-5" />
-              <span className="text-[11px] font-medium">Library</span>
-            </button>
-            <button
-              className={tabClass(isActive("/write"))}
-              onClick={() => navigate("/write")}
-              aria-label="Write"
-            >
-              <PenTool className="h-5 w-5" />
-              <span className="text-[11px] font-medium">Write</span>
-            </button>
-            <button
-              className={`${tabClass(isActive("/notifications"))} relative`}
-              onClick={() => navigate("/notifications")}
-              aria-label="Alerts"
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t">
+      <div className="flex justify-around items-center h-16 max-w-screen-xl mx-auto px-2">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={handleNavClick}
+              className={`flex flex-col items-center justify-center flex-1 h-full relative ${
+                active
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               <div className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
+                <Icon className="h-5 w-5" />
+                {item.badge !== undefined && (
                   <span className="absolute -top-1 -right-1 h-4 min-w-[1rem] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full">
-                    {unreadCount > 99 ? "99+" : unreadCount}
+                    {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-medium">Alerts</span>
-            </button>
-            <button
-              className={tabClass(isActive("/profile"))}
-              onClick={() => navigate("/profile")}
-              aria-label="Profile"
-            >
-              <User className="h-5 w-5" />
-              <span className="text-[11px] font-medium">Profile</span>
-            </button>
-          </div>
-        </nav>
+              <span className="text-[10px] mt-1">{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
-    </div>
+    </nav>
   );
 }
