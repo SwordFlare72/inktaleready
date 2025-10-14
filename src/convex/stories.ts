@@ -86,6 +86,8 @@ export const createStory = mutation({
     genre: v.string(),
     tags: v.array(v.string()),
     coverImage: v.optional(v.string()),
+    language: v.optional(v.string()),
+    isMature: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -115,6 +117,8 @@ export const createStory = mutation({
       totalComments: 0,
       lastUpdated: Date.now(),
       isPublished: false,
+      language: args.language,
+      isMature: args.isMature || false,
     });
 
     // Mark user as writer if not already
@@ -152,6 +156,8 @@ export const updateStory = mutation({
     coverImage: v.optional(v.string()),
     isCompleted: v.optional(v.boolean()),
     isPublished: v.optional(v.boolean()),
+    language: v.optional(v.string()),
+    isMature: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -183,6 +189,8 @@ export const updateStory = mutation({
     if (args.coverImage !== undefined) updates.coverImage = args.coverImage;
     if (args.isCompleted !== undefined) updates.isCompleted = args.isCompleted;
     if (args.isPublished !== undefined) updates.isPublished = args.isPublished;
+    if (args.language !== undefined) updates.language = args.language;
+    if (args.isMature !== undefined) updates.isMature = args.isMature;
     
     updates.lastUpdated = Date.now();
 

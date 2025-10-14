@@ -46,6 +46,8 @@ export default function Write() {
   const [storyGenre, setStoryGenre] = useState("");
   const [storyTags, setStoryTags] = useState("");
   const [storyCover, setStoryCover] = useState("");
+  const [storyLanguage, setStoryLanguage] = useState("English");
+  const [storyIsMature, setStoryIsMature] = useState(false);
   
   const myStories = useQuery(api.stories.getMyStories, isAuthenticated ? {} : "skip");
   const selectedStory = useQuery(api.stories.getStoryById, 
@@ -67,6 +69,8 @@ export default function Write() {
   const [editTags, setEditTags] = useState("");
   const [editCover, setEditCover] = useState("");
   const [editIsCompleted, setEditIsCompleted] = useState(false);
+  const [editLanguage, setEditLanguage] = useState("English");
+  const [editIsMature, setEditIsMature] = useState(false);
 
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
@@ -136,6 +140,8 @@ export default function Write() {
         genre: storyGenre,
         tags: tagsArr,
         coverImage: storyCover.trim() || undefined,
+        language: storyLanguage,
+        isMature: storyIsMature,
       });
       toast.success("Story created successfully!");
       setShowCreateStory(false);
@@ -167,6 +173,8 @@ export default function Write() {
     setStoryGenre("");
     setStoryTags("");
     setStoryCover("");
+    setStoryLanguage("English");
+    setStoryIsMature(false);
   };
 
   // Add: simple time-ago helper
@@ -227,6 +235,8 @@ export default function Write() {
     setEditTags((story.tags || []).join(", "));
     setEditCover(story.coverImage || "");
     setEditIsCompleted(!!story.isCompleted);
+    setEditLanguage(story.language || "English");
+    setEditIsMature(!!story.isMature);
     setShowEditStory(true);
   };
 
@@ -254,6 +264,8 @@ export default function Write() {
         tags: tagsArr,
         coverImage: editCover.trim() || undefined,
         isCompleted: editIsCompleted,
+        language: editLanguage,
+        isMature: editIsMature,
       });
       toast.success("Story updated");
       setShowEditStory(false);
@@ -616,6 +628,41 @@ export default function Write() {
                     ))}
                 </div>
               </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Language</label>
+                <Select value={storyLanguage} onValueChange={setStoryLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="English">English</SelectItem>
+                    <SelectItem value="Spanish">Spanish</SelectItem>
+                    <SelectItem value="French">French</SelectItem>
+                    <SelectItem value="German">German</SelectItem>
+                    <SelectItem value="Italian">Italian</SelectItem>
+                    <SelectItem value="Portuguese">Portuguese</SelectItem>
+                    <SelectItem value="Russian">Russian</SelectItem>
+                    <SelectItem value="Japanese">Japanese</SelectItem>
+                    <SelectItem value="Korean">Korean</SelectItem>
+                    <SelectItem value="Chinese">Chinese</SelectItem>
+                    <SelectItem value="Arabic">Arabic</SelectItem>
+                    <SelectItem value="Hindi">Hindi</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Mature Content (Optional)</label>
+                <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-sm">Mature (18+)</p>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle on if this story contains mature content
+                    </p>
+                  </div>
+                  <Switch checked={storyIsMature} onCheckedChange={setStoryIsMature} />
+                </div>
+              </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowCreateStory(false)} disabled={uploadingCover}>
                   Cancel
@@ -754,6 +801,43 @@ export default function Write() {
                         {tag}
                       </span>
                     ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Language</label>
+                <Select value={editLanguage} onValueChange={setEditLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="English">English</SelectItem>
+                    <SelectItem value="Spanish">Spanish</SelectItem>
+                    <SelectItem value="French">French</SelectItem>
+                    <SelectItem value="German">German</SelectItem>
+                    <SelectItem value="Italian">Italian</SelectItem>
+                    <SelectItem value="Portuguese">Portuguese</SelectItem>
+                    <SelectItem value="Russian">Russian</SelectItem>
+                    <SelectItem value="Japanese">Japanese</SelectItem>
+                    <SelectItem value="Korean">Korean</SelectItem>
+                    <SelectItem value="Chinese">Chinese</SelectItem>
+                    <SelectItem value="Arabic">Arabic</SelectItem>
+                    <SelectItem value="Hindi">Hindi</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Mature Content (Optional)</label>
+                <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <div className="space-y-0.5">
+                    <p className="text-sm">Mature (18+)</p>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle on if this story contains mature content
+                    </p>
+                  </div>
+                  <Switch checked={editIsMature} onCheckedChange={setEditIsMature} />
                 </div>
               </div>
 

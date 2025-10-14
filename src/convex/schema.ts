@@ -99,6 +99,8 @@ const schema = defineSchema(
       totalComments: v.number(),
       lastUpdated: v.number(),
       isPublished: v.boolean(),
+      language: v.optional(v.string()),
+      isMature: v.optional(v.boolean()),
     })
       .index("by_author", ["authorId"])
       .index("by_genre", ["genre"])
