@@ -70,7 +70,7 @@ export default function ChapterListView() {
           ) : (
             <>
               {[...story.chapters]
-                .sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0))
+                .sort((a, b) => (a._creationTime || 0) - (b._creationTime || 0))
                 .map((chapter) => (
                 <motion.div
                   key={chapter._id}

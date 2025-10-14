@@ -398,8 +398,8 @@ export default function StoryPage() {
             ) : (
               <>
                 {[...story.chapters]
-                  .sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0))
-                  .slice(0, 3)
+                  .sort((a, b) => (a._creationTime || 0) - (b._creationTime || 0))
+                  .slice(-3)
                   .map((chapter) => (
                   <motion.div
                     key={chapter._id}
