@@ -26,6 +26,7 @@ export default function ChapterEditor() {
   const [kbOffset, setKbOffset] = useState(0);
   const [contentEmpty, setContentEmpty] = useState(true);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+  const [wordCount, setWordCount] = useState(0);
 
   useEffect(() => {
     const updateKB = () => {
@@ -82,9 +83,17 @@ export default function ChapterEditor() {
         editorRef.current.innerHTML = existing.content || "";
         const txt = editorRef.current.textContent || "";
         setContentEmpty(txt.trim().length === 0);
+        updateWordCount();
       }
     }
   }, [existing]);
+
+  const updateWordCount = () => {
+    if (!editorRef.current) return;
+    const text = editorRef.current.textContent || "";
+    const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+    setWordCount(words.length);
+  };
 
   const exec = (cmd: string, value?: string) => {
     editorRef.current?.focus();
@@ -196,6 +205,12 @@ export default function ChapterEditor() {
             Publish the story first to publish chapters. You can still save as draft.
           </p>
         )}
+
+        {wordCount > 0 && (
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Word count: {wordCount}
+          </p>
+        )}
       </div>
 
       <div className="max-w-2xl mx-auto px-3 space-y-4">
@@ -223,6 +238,7 @@ export default function ChapterEditor() {
             onInput={() => {
               const txt = editorRef.current?.textContent || "";
               setContentEmpty(txt.trim().length === 0);
+              updateWordCount();
             }}
             onMouseUp={updateActiveFormats}
             onKeyUp={updateActiveFormats}
@@ -323,7 +339,7 @@ export default function ChapterEditor() {
                 size="sm"
                 onMouseDown={(e) => { e.preventDefault(); handlePickImage(); }}
               >
-                <ImageIcon className="h-4 w-4 mr-2" /> Image
+                <ImageIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>
