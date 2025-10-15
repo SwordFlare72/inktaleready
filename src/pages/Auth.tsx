@@ -285,18 +285,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black dark">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black dark px-4 py-8">
       {/* Logo Section */}
-      <div className="flex justify-center pt-8 pb-4">
+      <div className="mb-6">
         <img
           src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
           alt="InkTale"
-          className="h-20 w-20 rounded-2xl shadow-lg object-cover"
+          className="h-24 w-24 rounded-2xl shadow-2xl object-cover mx-auto"
         />
       </div>
       
-      <div className="flex-1 flex items-center justify-center px-4 py-4 pb-28">
-        <div className="w-full max-w-md">
+      <div className="w-full max-w-md pb-20">
           <Card className="w-full border shadow-md">
             <CardHeader className="text-center">
               <CardTitle className="text-xl">
@@ -529,7 +528,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             )}
           </Card>
         </div>
-      </div>
 
       {/* Username setup dialog for first-time Google users */}
       <Dialog open={showUsernameDialog} onOpenChange={(open) => setShowUsernameDialog(open)}>
