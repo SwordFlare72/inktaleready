@@ -83,6 +83,7 @@ export const listConversations = query({
                 _id: partner._id,
                 name: partner.name,
                 image: partner.image,
+                avatarImage: (partner as any).avatarImage,
               }
             : null,
         };
@@ -142,6 +143,7 @@ export const listThread = query({
                 _id: sender._id,
                 name: sender.name,
                 image: sender.image,
+                avatarImage: (sender as any).avatarImage,
               }
             : null,
         };

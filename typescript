@@ -1,5 +1,7 @@
-const res = await fetch(uploadUrl, {
-  method: "POST",
-  headers: { "Content-Type": file.type },
-  body: file,
-});
+partner: partner
+  ? {
+      _id: partner._id,
+      name: partner.name,
+      image: partner.image,
+    }
+  : null,
