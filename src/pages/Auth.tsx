@@ -89,13 +89,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const cleanIdentifier = identifier.trim();
       const cleanPassword = password.trim();
 
-      // Enforce username login (not email)
-      if (cleanIdentifier.includes("@")) {
-        setError("Use your username to log in");
-        return;
-      }
-
-      // Resolve username -> email for provider
+      // Resolve email or username -> email for provider
       let email: string;
       try {
         email = await getEmailForLogin({ identifier: cleanIdentifier });
@@ -122,7 +116,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       ) {
         setError("User not signed up");
       } else {
-        setError("Invalid Username Or Password");
+        setError("Invalid Email/Username Or Password");
       }
     } finally {
       setIsLoading(false);
@@ -311,9 +305,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               <form onSubmit={doLogin}>
                 <CardContent className="pt-2 space-y-3">
                   <div>
-                    <Label className="mb-1 block">Username</Label>
+                    <Label className="mb-1 block">Email or Username</Label>
                     <Input
-                      placeholder="Enter your username"
+                      placeholder="Enter your email or username"
                       value={identifier}
                       onChange={(e) => {
                         setIdentifier(e.target.value);
