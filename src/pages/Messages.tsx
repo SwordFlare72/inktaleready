@@ -286,15 +286,26 @@ export default function Messages() {
                       </>
                     ) : (
                       <>
-                        <Avatar className="h-10 w-10 ring-[0.5px] ring-border/70">
-                          <AvatarImage src={(selectedConversation?.partner as any)?.avatarImage || selectedConversation?.partner?.image} />
-                          <AvatarFallback>
-                            {selectedConversation?.partner?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <CardTitle className="text-lg md:text-xl font-semibold px-2">
-                          {selectedPartnerName}
-                        </CardTitle>
+                        <button
+                          onClick={() => selectedPartnerId && navigate(`/profile/${selectedPartnerId}`)}
+                          className="hover:opacity-80 transition-opacity"
+                          aria-label="View profile"
+                        >
+                          <Avatar className="h-10 w-10 ring-[0.5px] ring-border/70">
+                            <AvatarImage src={(selectedConversation?.partner as any)?.avatarImage || selectedConversation?.partner?.image} />
+                            <AvatarFallback>
+                              {selectedConversation?.partner?.name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
+                        <button
+                          onClick={() => selectedPartnerId && navigate(`/profile/${selectedPartnerId}`)}
+                          className="hover:opacity-80 transition-opacity"
+                        >
+                          <CardTitle className="text-lg md:text-xl font-semibold px-2">
+                            {selectedPartnerName}
+                          </CardTitle>
+                        </button>
                       </>
                     )}
                   </div>
@@ -326,21 +337,32 @@ export default function Messages() {
                     >
                       {/* Always show avatar for group chats */}
                       {isGroupChat && (
-                        <Avatar className="h-10 w-10 flex-shrink-0">
-                          <AvatarImage src={(message.sender as any)?.avatarImage || message.sender?.image} />
-                          <AvatarFallback>
-                            {message.sender?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
+                        <button
+                          onClick={() => message.senderId && navigate(`/profile/${message.senderId}`)}
+                          className="hover:opacity-80 transition-opacity"
+                          aria-label="View profile"
+                        >
+                          <Avatar className="h-10 w-10 flex-shrink-0">
+                            <AvatarImage src={(message.sender as any)?.avatarImage || message.sender?.image} />
+                            <AvatarFallback>
+                              {message.sender?.name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
                       )}
                       
                       <div className="flex-1 min-w-0">
                         {/* Show sender name and timestamp for group messages */}
                         {isGroupChat && (
                           <div className="flex items-baseline gap-2 mb-1">
-                            <span className="font-semibold text-sm">
-                              {message.sender?.name || "Anonymous"}
-                            </span>
+                            <button
+                              onClick={() => message.senderId && navigate(`/profile/${message.senderId}`)}
+                              className="hover:opacity-80 transition-opacity"
+                            >
+                              <span className="font-semibold text-sm">
+                                {message.sender?.name || "Anonymous"}
+                              </span>
+                            </button>
                             <span className="text-xs text-muted-foreground">
                               {new Date(message._creationTime).toLocaleTimeString([], { 
                                 hour: '2-digit', 
@@ -541,12 +563,21 @@ export default function Messages() {
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={(conversation.partner as any)?.avatarImage || conversation.partner?.image} />
-                        <AvatarFallback>
-                          {conversation.partner?.name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${conversation.partnerId}`);
+                        }}
+                        className="hover:opacity-80 transition-opacity"
+                        aria-label="View profile"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={(conversation.partner as any)?.avatarImage || conversation.partner?.image} />
+                          <AvatarFallback>
+                            {conversation.partner?.name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold truncate">
                           {conversation.partner?.name || "Anonymous"}
@@ -783,12 +814,23 @@ export default function Messages() {
             {groupMembers?.map((member) => (
               <div key={member._id} className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={(member as any).avatarImage || member.image} />
-                    <AvatarFallback>{member.name?.charAt(0) || "U"}</AvatarFallback>
-                  </Avatar>
+                  <button
+                    onClick={() => navigate(`/profile/${member._id}`)}
+                    className="hover:opacity-80 transition-opacity"
+                    aria-label="View profile"
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={(member as any).avatarImage || member.image} />
+                      <AvatarFallback>{member.name?.charAt(0) || "U"}</AvatarFallback>
+                    </Avatar>
+                  </button>
                   <div>
-                    <p className="font-medium">{member.name || "Anonymous"}</p>
+                    <button
+                      onClick={() => navigate(`/profile/${member._id}`)}
+                      className="hover:opacity-80 transition-opacity text-left"
+                    >
+                      <p className="font-medium">{member.name || "Anonymous"}</p>
+                    </button>
                     {(member as any).isCreator && (
                       <p className="text-xs text-muted-foreground">Creator</p>
                     )}
