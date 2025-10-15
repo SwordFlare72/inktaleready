@@ -64,17 +64,17 @@ export default function Landing() {
   // Add: Only query Convex when the URL is configured
   const canQuery = typeof import.meta.env.VITE_CONVEX_URL === "string" && import.meta.env.VITE_CONVEX_URL.length > 0;
 
-  // New: homepage data sources (10 each)
-  const history = useQuery(api.library.listHistory, canQuery ? { paginationOpts: { numItems: 10, cursor: null } } : "skip");
-  const trending = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, sortBy: "views" } : "skip");
-  const mostPopular = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, sortBy: "popular" } : "skip");
-  const recent = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, sortBy: "recent" } : "skip");
+  // New: homepage data sources (30 each)
+  const history = useQuery(api.library.listHistory, canQuery ? { paginationOpts: { numItems: 30, cursor: null } } : "skip");
+  const trending = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 30, cursor: null }, sortBy: "views" } : "skip");
+  const mostPopular = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 30, cursor: null }, sortBy: "popular" } : "skip");
+  const recent = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 30, cursor: null }, sortBy: "recent" } : "skip");
 
   // Pick a few common genres to showcase
   const GENRES = useMemo(() => (["romance","fantasy","mystery","sci-fi","horror","adventure"] as const), []);
   const genrePages = GENRES.map((g) => ({
     genre: g,
-    data: useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 10, cursor: null }, genre: g, sortBy: "recent" } : "skip")
+    data: useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 30, cursor: null }, genre: g, sortBy: "recent" } : "skip")
   }));
 
   const handleViewAllExplore = (params: Record<string,string | undefined>) => {
@@ -152,7 +152,7 @@ export default function Landing() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-bold">{title}</h2>
-          {showViewAll && (items && (items as any[]).length >= 10) && (
+          {showViewAll && (items && (items as any[]).length >= 30) && (
             <Button variant="outline" size="sm" onClick={onViewAll}>
               View All
             </Button>
