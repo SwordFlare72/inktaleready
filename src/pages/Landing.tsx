@@ -114,6 +114,13 @@ export default function Landing() {
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
+    // Add: drag-to-scroll state/refs for desktop "swipe"
+    const isDraggingRef = useRef<boolean>(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const startXRef = useRef<number>(0);
+    const startScrollLeftRef = useRef<number>(0);
+    const clickBlockedRef = useRef<boolean>(false);
+
     const checkScroll = () => {
       const container = scrollContainerRef.current;
       if (!container) return;
@@ -146,6 +153,36 @@ export default function Landing() {
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
+      // ensure arrow enabled/disabled states reflect after the smooth scroll
+      setTimeout(checkScroll, 300);
+    };
+
+    // Add: drag handlers
+    const onMouseDown = (e: React.MouseEvent) => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      isDraggingRef.current = true;
+      setIsDragging(true);
+      startXRef.current = e.clientX;
+      startScrollLeftRef.current = container.scrollLeft;
+      clickBlockedRef.current = false;
+    };
+
+    const onMouseMove = (e: React.MouseEvent) => {
+      const container = scrollContainerRef.current;
+      if (!container || !isDraggingRef.current) return;
+      e.preventDefault();
+      const dx = e.clientX - startXRef.current;
+      if (Math.abs(dx) > 5) clickBlockedRef.current = true;
+      container.scrollLeft = startScrollLeftRef.current - dx;
+      checkScroll();
+    };
+
+    const endDrag = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      // Allow clicks again after drag ends (next click will not be blocked)
+      setTimeout(() => { clickBlockedRef.current = false; }, 0);
     };
 
     return (
@@ -195,13 +232,20 @@ export default function Landing() {
 
             <div 
               ref={scrollContainerRef}
-              className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide"
+              className={`flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onMouseDown={onMouseDown}
+              onMouseMove={onMouseMove}
+              onMouseUp={endDrag}
+              onMouseLeave={endDrag}
             >
               {(items as any[]).map((story, idx) => (
                 <button
                   key={story._id ?? idx}
-                  onClick={() => navigate(`/story/${story._id}`)}
+                  onClick={() => {
+                    if (clickBlockedRef.current) return;
+                    navigate(`/story/${story._id}`);
+                  }}
                   className="w-32 flex-shrink-0 snap-start text-left"
                 >
                   <div className="relative">
@@ -211,6 +255,7 @@ export default function Landing() {
                           src={story.coverImage}
                           alt={story.title}
                           className="w-full h-full object-cover"
+                          draggable={false} // prevent ghost-drag
                         />
                       ) : (
                         <div className="w-full h-full grid place-items-center">
@@ -225,7 +270,7 @@ export default function Landing() {
                       </div>
                     </div>
                   </div>
-                  {/* Fixed-height title block for perfect row alignment, keep bigger */}
+                  {/* Fixed-height title block */}
                   <div className="mt-2">
                     <div className="text-base font-semibold leading-tight line-clamp-2 min-h-[2.5rem]">
                       {story.title}

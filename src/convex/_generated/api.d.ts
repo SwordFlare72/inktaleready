@@ -19,6 +19,7 @@ import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as auth from "../auth.js";
 import type * as chapters from "../chapters.js";
 import type * as comments from "../comments.js";
+import type * as crons from "../crons.js";
 import type * as fileQueries from "../fileQueries.js";
 import type * as files from "../files.js";
 import type * as groupChats from "../groupChats.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chapters: typeof chapters;
   comments: typeof comments;
+  crons: typeof crons;
   fileQueries: typeof fileQueries;
   files: typeof files;
   groupChats: typeof groupChats;

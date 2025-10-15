@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
 // Get all published stories with pagination
@@ -382,11 +382,12 @@ export const listExplore = query({
 
     const result = await base.paginate(args.paginationOpts);
 
-    // Sort in memory for popular/views (within the current page only)
+    // Sort in memory for popular/views/trending (within the current page only)
     if (args.sortBy === "popular") {
       result.page.sort((a, b) => b.totalLikes - a.totalLikes);
     } else if (args.sortBy === "views") {
-      result.page.sort((a, b) => b.totalViews - a.totalViews);
+      // Use trending score for "views" sort (Trending Now section)
+      result.page.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
     }
 
     // Attach author info
@@ -502,5 +503,90 @@ export const myStats = query({
         isPublished: story.isPublished,
       })),
     };
+  },
+});
+
+// Add: Calculate trending scores based on recent engagement (last 48 hours)
+export const calculateTrendingScores = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const last24h = now - 24 * 60 * 60 * 1000;
+    const last48h = now - 48 * 60 * 60 * 1000;
+
+    // Get all published stories
+    const stories = await ctx.db
+      .query("stories")
+      .withIndex("by_published", (q) => q.eq("isPublished", true))
+      .collect();
+
+    for (const story of stories) {
+      // Get all chapters for this story
+      const chapters = await ctx.db
+        .query("chapters")
+        .withIndex("by_story", (q) => q.eq("storyId", story._id))
+        .filter((q) => q.eq(q.field("isPublished"), true))
+        .collect();
+
+      const chapterIds = chapters.map(ch => ch._id);
+
+      let score = 0;
+
+      // Calculate views from last 48h
+      for (const chapterId of chapterIds) {
+        const views = await ctx.db
+          .query("chapterViews")
+          .withIndex("by_chapter", (q) => q.eq("chapterId", chapterId))
+          .collect();
+
+        for (const view of views) {
+          if (view._creationTime >= last24h) {
+            score += 1.0; // Recent views (last 24h) get full weight
+          } else if (view._creationTime >= last48h) {
+            score += 0.5; // Older views (24-48h) get half weight
+          }
+        }
+      }
+
+      // Calculate likes from last 48h
+      for (const chapterId of chapterIds) {
+        const likes = await ctx.db
+          .query("chapterLikes")
+          .withIndex("by_chapter", (q) => q.eq("chapterId", chapterId))
+          .collect();
+
+        for (const like of likes) {
+          if (like._creationTime >= last24h) {
+            score += 3.0; // Recent likes worth 3x views
+          } else if (like._creationTime >= last48h) {
+            score += 1.5; // Older likes get half weight
+          }
+        }
+      }
+
+      // Calculate comments from last 48h
+      for (const chapterId of chapterIds) {
+        const comments = await ctx.db
+          .query("comments")
+          .withIndex("by_chapter", (q) => q.eq("chapterId", chapterId))
+          .collect();
+
+        for (const comment of comments) {
+          if (comment._creationTime >= last24h) {
+            score += 5.0; // Recent comments worth 5x views
+          } else if (comment._creationTime >= last48h) {
+            score += 2.5; // Older comments get half weight
+          }
+        }
+      }
+
+      // Update story with new trending score
+      await ctx.db.patch(story._id, {
+        trendingScore: score,
+        lastTrendingUpdate: now,
+      });
+    }
+
+    return { updated: stories.length, timestamp: now };
   },
 });

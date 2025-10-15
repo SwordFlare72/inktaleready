@@ -101,6 +101,8 @@ const schema = defineSchema(
       isPublished: v.boolean(),
       language: v.optional(v.string()),
       isMature: v.optional(v.boolean()),
+      trendingScore: v.optional(v.number()),
+      lastTrendingUpdate: v.optional(v.number()),
     })
       .index("by_author", ["authorId"])
       .index("by_genre", ["genre"])

@@ -141,3 +141,12 @@ body,
     cursor: pointer;
   }
 }
+
+/* Add: hide scrollbar utility for horizontal carousels */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
