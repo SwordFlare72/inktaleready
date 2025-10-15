@@ -1,0 +1,1 @@
+pnpm add -D electron electron-builder
