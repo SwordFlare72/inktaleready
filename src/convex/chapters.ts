@@ -57,7 +57,7 @@ export const createChapter = mutation({
     title: v.string(),
     content: v.string(),
     isDraft: v.optional(v.boolean()),
-    // Add: chapter cover
+    publishStoryToo: v.optional(v.boolean()), // New: flag to publish story along with first chapter
     coverImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -78,8 +78,12 @@ export const createChapter = mutation({
     const wordCount = args.content.split(/\s+/).length;
     const draft = args.isDraft ?? true;
 
-    // Guard: cannot publish chapter if parent story is not published
-    if (!draft && !story.isPublished) {
+    // Special handling: if this is the first chapter and publishStoryToo is true
+    const isFirstChapter = existingChapters.length === 0;
+    const shouldPublishStory = args.publishStoryToo && isFirstChapter && !draft;
+
+    // Guard: cannot publish chapter if parent story is not published (unless we're publishing both)
+    if (!draft && !story.isPublished && !shouldPublishStory) {
       throw new Error("Publish the story first before publishing chapters.");
     }
 
@@ -97,8 +101,34 @@ export const createChapter = mutation({
       coverImage: args.coverImage,
     });
 
-    // Update story stats only when published
-    if (!draft) {
+    // If publishing story along with first chapter
+    if (shouldPublishStory) {
+      await ctx.db.patch(args.storyId, {
+        isPublished: true,
+        totalChapters: 1,
+        lastUpdated: Date.now(),
+      });
+
+      // Notify followers about new story
+      const followers = await ctx.db
+        .query("follows")
+        .withIndex("by_following", (q) => q.eq("followingId", user._id))
+        .collect();
+
+      await Promise.all(
+        followers.map((f) =>
+          ctx.db.insert("notifications", {
+            userId: f.followerId,
+            type: "new_story",
+            title: "New story published",
+            message: `${user.name || "An author you follow"} published "${story.title}"`,
+            isRead: false,
+            relatedId: String(args.storyId),
+          })
+        )
+      );
+    } else if (!draft) {
+      // Update story stats only when published (normal flow)
       await ctx.db.patch(args.storyId, {
         totalChapters: story.totalChapters + 1,
         lastUpdated: Date.now(),
@@ -134,7 +164,7 @@ export const updateChapter = mutation({
     content: v.optional(v.string()),
     isPublished: v.optional(v.boolean()),
     isDraft: v.optional(v.boolean()),
-    // Add: cover image update
+    publishStoryToo: v.optional(v.boolean()), // New: flag to publish story along with first chapter
     coverImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -162,8 +192,16 @@ export const updateChapter = mutation({
     const nextPublished =
       updates.isPublished !== undefined ? updates.isPublished : chapter.isPublished;
 
-    // Guard: cannot publish chapter if parent story is not published
-    if (!prevPublished && nextPublished && !story.isPublished) {
+    // Check if this is the first chapter
+    const allChapters = await ctx.db
+      .query("chapters")
+      .withIndex("by_story", (q) => q.eq("storyId", chapter.storyId))
+      .collect();
+    const isFirstChapter = chapter.chapterNumber === 1 && allChapters.length === 1;
+    const shouldPublishStory = args.publishStoryToo && isFirstChapter && !prevPublished && nextPublished;
+
+    // Guard: cannot publish chapter if parent story is not published (unless we're publishing both)
+    if (!prevPublished && nextPublished && !story.isPublished && !shouldPublishStory) {
       throw new Error("Publish the story first before publishing chapters.");
     }
 
@@ -174,8 +212,33 @@ export const updateChapter = mutation({
       lastUpdated: Date.now(),
     });
 
-    // Handle publish state transitions for totals + notifications
-    if (!prevPublished && nextPublished) {
+    // If publishing story along with first chapter
+    if (shouldPublishStory) {
+      await ctx.db.patch(chapter.storyId, {
+        isPublished: true,
+        totalChapters: 1,
+      });
+
+      // Notify followers about new story
+      const followers = await ctx.db
+        .query("follows")
+        .withIndex("by_following", (q) => q.eq("followingId", user._id))
+        .collect();
+
+      await Promise.all(
+        followers.map((f) =>
+          ctx.db.insert("notifications", {
+            userId: f.followerId,
+            type: "new_story",
+            title: "New story published",
+            message: `${user.name || "An author you follow"} published "${story.title}"`,
+            isRead: false,
+            relatedId: String(chapter.storyId),
+          })
+        )
+      );
+    } else if (!prevPublished && nextPublished) {
+      // Handle publish state transitions for totals + notifications (normal flow)
       await ctx.db.patch(chapter.storyId, {
         totalChapters: story.totalChapters + 1,
       });

@@ -64,9 +64,20 @@ export default function ChapterEditor() {
     !chapterId && storyId ? { storyId: storyId as Id<"stories"> } : "skip"
   );
 
+  // Check if this is the first chapter of an unpublished story
+  const isFirstChapterOfUnpublishedStory = (() => {
+    if (chapterId && existing) {
+      return !existing.story?.isPublished && existing.chapterNumber === 1;
+    }
+    if (!chapterId && storyForNew) {
+      return !storyForNew.isPublished && storyForNew.totalChapters === 0;
+    }
+    return false;
+  })();
+
   const canPublish = (() => {
-    if (chapterId && existing) return !!existing.story?.isPublished;
-    if (!chapterId && storyForNew) return !!storyForNew.isPublished;
+    if (chapterId && existing) return !!existing.story?.isPublished || isFirstChapterOfUnpublishedStory;
+    if (!chapterId && storyForNew) return !!storyForNew.isPublished || isFirstChapterOfUnpublishedStory;
     return false;
   })();
 
@@ -166,16 +177,30 @@ export default function ChapterEditor() {
           content,
           isDraft: !publish,
           isPublished: publish,
+          publishStoryToo: publish && isFirstChapterOfUnpublishedStory,
         });
-        toast.success(publish ? "Chapter updated & published!" : "Draft updated!");
+        toast.success(
+          publish && isFirstChapterOfUnpublishedStory
+            ? "Story & Chapter published!"
+            : publish
+            ? "Chapter updated & published!"
+            : "Draft updated!"
+        );
       } else {
         await createChapter({
           storyId: storyId as Id<"stories">,
           title: title.trim(),
           content,
           isDraft: !publish,
+          publishStoryToo: publish && isFirstChapterOfUnpublishedStory,
         });
-        toast.success(publish ? "Chapter published!" : "Draft saved!");
+        toast.success(
+          publish && isFirstChapterOfUnpublishedStory
+            ? "Story & Chapter published!"
+            : publish
+            ? "Chapter published!"
+            : "Draft saved!"
+        );
       }
       navigate(`/write/${storyId}/manage`);
     } catch {
@@ -195,14 +220,20 @@ export default function ChapterEditor() {
               <Save className="h-4 w-4 mr-1" /> Draft
             </Button>
             <Button onClick={() => save(true)} disabled={isSaving || !canPublish} className="h-8 px-3">
-              <Save className="h-4 w-4 mr-1" /> Publish
+              <Save className="h-4 w-4 mr-1" /> 
+              {isFirstChapterOfUnpublishedStory ? "Publish Story" : "Publish"}
             </Button>
           </div>
         </div>
 
-        {!canPublish && (
+        {!canPublish && !isFirstChapterOfUnpublishedStory && (
           <p className="text-[11px] text-muted-foreground mt-1">
             Publish the story first to publish chapters. You can still save as draft.
+          </p>
+        )}
+        {isFirstChapterOfUnpublishedStory && (
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Publishing will make both your story and first chapter live.
           </p>
         )}
 
