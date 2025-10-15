@@ -285,8 +285,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1 flex items-center justify-center px-4 py-8 pb-28">
+    <div className="min-h-screen flex flex-col bg-black dark">
+      {/* Logo Section */}
+      <div className="flex justify-center pt-8 pb-4">
+        <img
+          src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
+          alt="InkTale"
+          className="h-20 w-20 rounded-2xl shadow-lg object-cover"
+        />
+      </div>
+      
+      <div className="flex-1 flex items-center justify-center px-4 py-4 pb-28">
         <div className="w-full max-w-md">
           <Card className="w-full border shadow-md">
             <CardHeader className="text-center">
