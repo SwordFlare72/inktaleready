@@ -41,7 +41,7 @@ export default function CategoryList() {
   const items = data?.page || [];
 
   return (
-    <div className="min-h-screen px-4 pt-4 pb-8">
+    <div className="min-h-screen bg-background px-4 pt-4 pb-8">
       {/* Sticky header */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur pt-2 pb-3">
         <div className="flex items-center gap-3">
