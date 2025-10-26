@@ -74,10 +74,15 @@ export const generateOTP = mutation({
     });
 
     // Schedule email sending
-    await ctx.scheduler.runAfter(0, internal.sendEmails.sendOTPEmail, {
-      email,
-      code,
-    });
+    try {
+      await ctx.scheduler.runAfter(0, internal.sendEmails.sendOTPEmail, {
+        email,
+        code,
+      });
+    } catch (emailError) {
+      console.error("Failed to schedule OTP email:", emailError);
+      // Still return success since OTP is stored, but log the error
+    }
 
     return { success: true };
   },

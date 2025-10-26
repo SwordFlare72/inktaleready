@@ -12,9 +12,11 @@ export const sendOTPEmail = internalAction({
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
     if (!RESEND_API_KEY) {
-      console.error("RESEND_API_KEY not set");
-      throw new Error("Email service not configured");
+      console.error("RESEND_API_KEY not set in environment variables");
+      throw new Error("Email service not configured. Please add RESEND_API_KEY in the API Keys tab.");
     }
+
+    console.log("Attempting to send OTP email to:", args.email);
 
     try {
       const response = await fetch("https://api.resend.com/emails", {
@@ -43,10 +45,13 @@ export const sendOTPEmail = internalAction({
 
       if (!response.ok) {
         const error = await response.text();
-        console.error("Resend API error:", error);
-        throw new Error("Failed to send email");
+        console.error("Resend API error response:", error);
+        console.error("Response status:", response.status);
+        throw new Error(`Failed to send email: ${response.status} - ${error}`);
       }
 
+      const result = await response.json();
+      console.log("OTP email sent successfully:", result);
       return { success: true };
     } catch (error) {
       console.error("Error sending OTP email:", error);
