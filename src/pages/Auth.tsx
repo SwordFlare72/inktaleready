@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX, Chrome } from "lucide-react";
+import { ArrowRight, Loader2, Mail, UserX, Chrome, Eye, EyeOff } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -47,6 +47,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSuPassword, setShowSuPassword] = useState(false);
+  const [showSuConfirm, setShowSuConfirm] = useState(false);
 
   const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
 
@@ -327,17 +332,28 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                   <div>
                     <Label className="mb-1 block">Password</Label>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        if (error) setError(null);
-                      }}
-                      disabled={isLoading}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (error) setError(null);
+                        }}
+                        disabled={isLoading}
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   {error && (
@@ -443,35 +459,57 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <Label className="mb-1 block">Password</Label>
-                      <Input
-                        type="password"
-                        placeholder="Create a password"
-                        value={suPassword}
-                        onChange={(e) => {
-                          setSuPassword(e.target.value);
-                          if (suPasswordError) setSuPasswordError(null);
-                          if (error) setError(null);
-                        }}
-                        disabled={isLoading}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showSuPassword ? "text" : "password"}
+                          placeholder="Create a password"
+                          value={suPassword}
+                          onChange={(e) => {
+                            setSuPassword(e.target.value);
+                            if (suPasswordError) setSuPasswordError(null);
+                            if (error) setError(null);
+                          }}
+                          disabled={isLoading}
+                          required
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSuPassword(!showSuPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={showSuPassword ? "Hide password" : "Show password"}
+                        >
+                          {showSuPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                       {suPasswordError && (
                         <p className="text-sm text-red-500 mt-1">{suPasswordError}</p>
                       )}
                     </div>
                     <div>
                       <Label className="mb-1 block">Confirm Password</Label>
-                      <Input
-                        type="password"
-                        placeholder="Confirm password"
-                        value={suConfirm}
-                        onChange={(e) => {
-                          setSuConfirm(e.target.value);
-                          if (error) setError(null);
-                        }}
-                        disabled={isLoading}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showSuConfirm ? "text" : "password"}
+                          placeholder="Confirm password"
+                          value={suConfirm}
+                          onChange={(e) => {
+                            setSuConfirm(e.target.value);
+                            if (error) setError(null);
+                          }}
+                          disabled={isLoading}
+                          required
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSuConfirm(!showSuConfirm)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={showSuConfirm ? "Hide password" : "Show password"}
+                        >
+                          {showSuConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
