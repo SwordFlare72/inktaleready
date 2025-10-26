@@ -3,14 +3,13 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX, Chrome, Eye, EyeOff } from "lucide-react";
+import { Chrome, Eye, EyeOff } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -42,7 +41,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [suUsernameError, setSuUsernameError] = useState<string | null>(null);
   const [suEmailError, setSuEmailError] = useState<string | null>(null);
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
-  // Add: display name (optional, free-form)
   const [suDisplayName, setSuDisplayName] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -55,11 +53,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
 
+  // OTP verification states
+  const [showOTPDialog, setShowOTPDialog] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+
   // Current user + username helper
   const me = useQuery(api.users.currentUser, {});
   const setUsername = useMutation(api.users.setUsername);
   const updateMe = useMutation(api.users.updateMe);
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
+  const generateOTP = useMutation(api.otp.generateOTP);
+  const verifyOTP = useMutation(api.otp.verifyOTP);
 
   // Helper to resolve username/email
   const getEmailForLogin = useMutation(api.users.getEmailForLogin);
@@ -234,9 +241,18 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // Only show success and navigate if username was successfully saved
-      toast.success("Account created");
-      navigate(redirectAfterAuth || "/");
+      // Show OTP dialog instead of navigating immediately
+      setOtpEmail(normalizedEmail);
+      setShowOTPDialog(true);
+      toast.success("Account created! Please verify your email");
+      
+      // Generate and send OTP
+      try {
+        await generateOTP({ email: normalizedEmail });
+      } catch (err: any) {
+        console.error("Failed to send OTP:", err);
+        toast.error("Failed to send verification code. Please try again.");
+      }
     } catch (err: any) {
       const msg = String(err?.message || "");
       if (msg.toLowerCase().includes("passwords do not match")) {
@@ -566,6 +582,91 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             )}
           </Card>
         </div>
+
+      {/* OTP Verification Dialog */}
+      <Dialog open={showOTPDialog} onOpenChange={(open) => {
+        if (!isVerifyingOTP) {
+          setShowOTPDialog(open);
+          if (!open) {
+            setOtpCode("");
+            setOtpError(null);
+          }
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify Your Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              We've sent a 6-digit verification code to <strong>{otpEmail}</strong>
+            </p>
+            <div>
+              <Label className="mb-2 block">Enter Verification Code</Label>
+              <Input
+                placeholder="000000"
+                value={otpCode}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setOtpCode(val);
+                  if (otpError) setOtpError(null);
+                }}
+                maxLength={6}
+                className="text-center text-2xl tracking-widest"
+                disabled={isVerifyingOTP}
+              />
+            </div>
+            {otpError && (
+              <p className="text-sm text-red-500">{otpError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button
+                onClick={async () => {
+                  if (otpCode.length !== 6) {
+                    setOtpError("Please enter a 6-digit code");
+                    return;
+                  }
+                  setIsVerifyingOTP(true);
+                  setOtpError(null);
+                  try {
+                    await verifyOTP({ email: otpEmail, code: otpCode });
+                    toast.success("Email verified successfully!");
+                    setShowOTPDialog(false);
+                    navigate(redirectAfterAuth || "/");
+                  } catch (err: any) {
+                    setOtpError(err?.message || "Invalid verification code");
+                  } finally {
+                    setIsVerifyingOTP(false);
+                  }
+                }}
+                disabled={otpCode.length !== 6 || isVerifyingOTP}
+                className="flex-1"
+              >
+                {isVerifyingOTP ? "Verifying..." : "Verify"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await generateOTP({ email: otpEmail });
+                    toast.success("New code sent!");
+                    setOtpCode("");
+                    setOtpError(null);
+                  } catch (err: any) {
+                    toast.error(err?.message || "Failed to resend code");
+                  }
+                }}
+                disabled={isVerifyingOTP}
+              >
+                Resend
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Code expires in 10 minutes. You can request a new code after 60 seconds.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Username setup dialog for first-time Google users */}
       <Dialog open={showUsernameDialog} onOpenChange={(open) => setShowUsernameDialog(open)}>

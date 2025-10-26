@@ -271,6 +271,18 @@ const schema = defineSchema(
       .index("by_group", ["groupChatId"])
       .index("by_sender", ["senderId"]),
 
+    // OTP verification table
+    otpVerifications: defineTable({
+      email: v.string(),
+      code: v.string(), // Hashed OTP code
+      expiresAt: v.number(),
+      attempts: v.number(),
+      isUsed: v.boolean(),
+      createdAt: v.number(),
+    })
+      .index("by_email", ["email"])
+      .index("by_email_and_expiry", ["email", "expiresAt"]),
+
     // Add: announcements tables
     announcements: defineTable({
       authorId: v.id("users"),
