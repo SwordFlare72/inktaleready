@@ -241,17 +241,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // Show OTP dialog instead of navigating immediately
-      setOtpEmail(normalizedEmail);
-      setShowOTPDialog(true);
-      toast.success("Account created! Please verify your email");
-      
-      // Generate and send OTP
+      // Generate and send OTP first, then show dialog only if successful
       try {
         await generateOTP({ email: normalizedEmail });
+        setOtpEmail(normalizedEmail);
+        setShowOTPDialog(true);
+        toast.success("Account created! Check your email for the verification code.");
       } catch (err: any) {
         console.error("Failed to send OTP:", err);
-        toast.error("Failed to send verification code. Please try again.");
+        const errorMsg = err?.message || "Failed to send verification code";
+        toast.error(errorMsg);
+        setError("Account created but failed to send verification email. Please contact support.");
       }
     } catch (err: any) {
       const msg = String(err?.message || "");
