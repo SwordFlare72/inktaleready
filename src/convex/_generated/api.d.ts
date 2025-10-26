@@ -27,11 +27,9 @@ import type * as http from "../http.js";
 import type * as library from "../library.js";
 import type * as messages from "../messages.js";
 import type * as notifications from "../notifications.js";
-import type * as otp from "../otp.js";
 import type * as readingProgress from "../readingProgress.js";
 import type * as reports from "../reports.js";
 import type * as seedDemo from "../seedDemo.js";
-import type * as sendEmails from "../sendEmails.js";
 import type * as stories from "../stories.js";
 import type * as users from "../users.js";
 
@@ -58,11 +56,9 @@ declare const fullApi: ApiFromModules<{
   library: typeof library;
   messages: typeof messages;
   notifications: typeof notifications;
-  otp: typeof otp;
   readingProgress: typeof readingProgress;
   reports: typeof reports;
   seedDemo: typeof seedDemo;
-  sendEmails: typeof sendEmails;
   stories: typeof stories;
   users: typeof users;
 }>;

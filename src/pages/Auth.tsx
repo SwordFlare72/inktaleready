@@ -3,13 +3,14 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { Chrome, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Loader2, Mail, UserX, Chrome, Eye, EyeOff } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -41,6 +42,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [suUsernameError, setSuUsernameError] = useState<string | null>(null);
   const [suEmailError, setSuEmailError] = useState<string | null>(null);
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
+  // Add: display name (optional, free-form)
   const [suDisplayName, setSuDisplayName] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -53,20 +55,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
 
-  // OTP verification states
-  const [showOTPDialog, setShowOTPDialog] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpEmail, setOtpEmail] = useState("");
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
-
   // Current user + username helper
   const me = useQuery(api.users.currentUser, {});
   const setUsername = useMutation(api.users.setUsername);
   const updateMe = useMutation(api.users.updateMe);
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
-  const generateOTP = useMutation(api.otp.generateOTP);
-  const verifyOTP = useMutation(api.otp.verifyOTP);
 
   // Helper to resolve username/email
   const getEmailForLogin = useMutation(api.users.getEmailForLogin);
@@ -167,36 +160,100 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         return;
       }
 
-      // Check username availability BEFORE anything else
+      // Check username availability BEFORE creating account
       const available = await isUsernameAvailable({ username: desired });
       if (!available) {
         setSuUsernameError("Username is already taken");
         return;
       }
 
-      // PHASE 1: Generate and send OTP FIRST (before creating account)
+      // Sign out any existing session to prevent conflicts
       try {
-        await generateOTP({ email: normalizedEmail });
-        // Store signup data temporarily for use after OTP verification
-        setOtpEmail(normalizedEmail);
-        setShowOTPDialog(true);
-        toast.success("Verification code sent! Check your email.");
-      } catch (err: any) {
-        console.error("Failed to send OTP:", err);
-        const errorMsg = err?.message || "Failed to send verification code";
-        if (errorMsg.toLowerCase().includes("invalid") || errorMsg.toLowerCase().includes("email")) {
-          setSuEmailError("Please provide a valid email address");
-        } else {
-          setError(errorMsg);
-        }
-        return;
+        await signOut();
+      } catch {
+        // Ignore signout errors if not signed in
       }
+
+      // 1) Create account
+      const fd = new FormData();
+      fd.set("email", normalizedEmail);
+      fd.set("password", suPassword);
+      fd.set("flow", "signUp");
+      await signIn("password", fd);
+
+      // 2) Try to set username (retry until session cookie is available)
+      let saved = false;
+      for (let i = 0; i < 6; i++) {
+        try {
+          await setUsername({ username: desired });
+          saved = true;
+          break;
+        } catch (err: any) {
+          const msg = String(err?.message || "").toLowerCase();
+          // If username is already taken, exit immediately
+          if (msg.includes("username is already taken")) {
+            setSuUsernameError("Username is already taken");
+            return;
+          }
+          // For "Must be authenticated" errors, retry
+          if (msg.includes("authenticated")) {
+            await new Promise((r) => setTimeout(r, 250));
+            continue;
+          }
+          // For any other unexpected error, retry unless it's the last attempt
+          if (i < 5) {
+            await new Promise((r) => setTimeout(r, 250));
+            continue;
+          }
+          // On the last attempt, throw with the actual error message
+          throw new Error("Failed to set username");
+        }
+      }
+
+      // 3) Set display name and gender (always set name to avoid "Anonymous User")
+      try {
+        const payload: Record<string, string> = {
+          name: suDisplayName.trim() || desired, // Use display name or fallback to username
+        };
+        if (suGender && suGender.trim()) payload.gender = suGender.trim();
+        await updateMe(payload as any);
+      } catch (err: any) {
+        // Log but don't block signup if this fails
+        console.error("Failed to set display name/gender:", err);
+      }
+
+      // Show dialog only for Google flow; otherwise surface inline error if username couldn't be saved
+      if (!saved) {
+        if (shouldPromptUsername) {
+          setUsernameInput(desired);
+          setShowUsernameDialog(true);
+          return;
+        } else {
+          setSuUsernameError("Could not set username. Please try again.");
+          return;
+        }
+      }
+
+      // Only show success and navigate if username was successfully saved
+      toast.success("Account created");
+      navigate(redirectAfterAuth || "/");
     } catch (err: any) {
       const msg = String(err?.message || "");
-      if (msg.toLowerCase().includes("network") || msg.toLowerCase().includes("failed to fetch")) {
+      if (msg.toLowerCase().includes("passwords do not match")) {
+        setError("Passwords do not match");
+      } else if (msg.toLowerCase().includes("failed to set username")) {
+        setError("Could not set username. Please try again.");
+      } else if (
+        msg.toLowerCase().includes("already") ||
+        msg.toLowerCase().includes("exist") ||
+        msg.toLowerCase().includes("registered") ||
+        msg.toLowerCase().includes("in use")
+      ) {
+        setError("User already signed up");
+      } else if (msg.toLowerCase().includes("network") || msg.toLowerCase().includes("failed to fetch")) {
         setError("Network error. Please try again.");
       } else {
-        setError("Validation failed. Please check your inputs.");
+        setError("Sign up failed");
       }
     } finally {
       setIsLoading(false);
@@ -509,147 +566,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             )}
           </Card>
         </div>
-
-      {/* OTP Verification Dialog */}
-      <Dialog open={showOTPDialog} onOpenChange={(open) => {
-        if (!isVerifyingOTP) {
-          setShowOTPDialog(open);
-          if (!open) {
-            setOtpCode("");
-            setOtpError(null);
-          }
-        }
-      }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Verify Your Email</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              We've sent a 6-digit verification code to <strong>{otpEmail}</strong>
-            </p>
-            <div>
-              <Label className="mb-2 block">Enter Verification Code</Label>
-              <Input
-                placeholder="000000"
-                value={otpCode}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                  setOtpCode(val);
-                  if (otpError) setOtpError(null);
-                }}
-                maxLength={6}
-                className="text-center text-2xl tracking-widest"
-                disabled={isVerifyingOTP}
-              />
-            </div>
-            {otpError && (
-              <p className="text-sm text-red-500">{otpError}</p>
-            )}
-            <div className="flex gap-2">
-              <Button
-                onClick={async () => {
-                  if (otpCode.length !== 6) {
-                    setOtpError("Please enter a 6-digit code");
-                    return;
-                  }
-                  setIsVerifyingOTP(true);
-                  setOtpError(null);
-                  try {
-                    // PHASE 2: Verify OTP first
-                    await verifyOTP({ email: otpEmail, code: otpCode });
-                    
-                    // PHASE 3: Now create the account after successful verification
-                    try {
-                      await signOut();
-                    } catch {
-                      // Ignore signout errors
-                    }
-
-                    const fd = new FormData();
-                    fd.set("email", otpEmail);
-                    fd.set("password", suPassword);
-                    fd.set("flow", "signUp");
-                    await signIn("password", fd);
-
-                    // Set username (retry until session is ready)
-                    let saved = false;
-                    const desired = suUsername.trim();
-                    for (let i = 0; i < 6; i++) {
-                      try {
-                        await setUsername({ username: desired });
-                        saved = true;
-                        break;
-                      } catch (err: any) {
-                        const msg = String(err?.message || "").toLowerCase();
-                        if (msg.includes("username is already taken")) {
-                          throw new Error("Username is already taken");
-                        }
-                        if (msg.includes("authenticated")) {
-                          await new Promise((r) => setTimeout(r, 250));
-                          continue;
-                        }
-                        if (i < 5) {
-                          await new Promise((r) => setTimeout(r, 250));
-                          continue;
-                        }
-                        throw new Error("Failed to set username");
-                      }
-                    }
-
-                    // Set display name and gender
-                    try {
-                      const payload: Record<string, string> = {
-                        name: suDisplayName.trim() || desired,
-                      };
-                      if (suGender && suGender.trim()) payload.gender = suGender.trim();
-                      await updateMe(payload as any);
-                    } catch (err: any) {
-                      console.error("Failed to set display name/gender:", err);
-                    }
-
-                    toast.success("Account created successfully!");
-                    setShowOTPDialog(false);
-                    navigate(redirectAfterAuth || "/");
-                  } catch (err: any) {
-                    const msg = String(err?.message || "");
-                    if (msg.toLowerCase().includes("username is already taken")) {
-                      setOtpError("Username is already taken. Please go back and choose another.");
-                    } else {
-                      setOtpError("Failed to create account. Please try again.");
-                    }
-                  } finally {
-                    setIsVerifyingOTP(false);
-                  }
-                }}
-                disabled={otpCode.length !== 6 || isVerifyingOTP}
-                className="flex-1"
-              >
-                {isVerifyingOTP ? "Creating account..." : "Verify & Create Account"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    await generateOTP({ email: otpEmail });
-                    toast.success("New code sent!");
-                    setOtpCode("");
-                    setOtpError(null);
-                  } catch (err: any) {
-                    toast.error(err?.message || "Failed to resend code");
-                  }
-                }}
-                disabled={isVerifyingOTP}
-              >
-                Resend
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Code expires in 10 minutes. You can request a new code after 60 seconds.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Username setup dialog for first-time Google users */}
       <Dialog open={showUsernameDialog} onOpenChange={(open) => setShowUsernameDialog(open)}>
