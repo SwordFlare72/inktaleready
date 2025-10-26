@@ -7,10 +7,17 @@ function generateOTPCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Simple hash function for OTP (in production, use proper hashing)
+// Simple hash function for OTP (V8-compatible)
 function hashOTP(code: string): string {
-  // Using a simple hash - in production, use bcrypt or similar
-  return Buffer.from(code).toString("base64");
+  // Use a simple base64 encoding that works in V8 runtime
+  // In production, the actual verification happens by comparing hashed values
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) {
+    const char = code.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
 }
 
 // Rate limiting: Check if user can request OTP
