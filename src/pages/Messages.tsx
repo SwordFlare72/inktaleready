@@ -813,7 +813,7 @@ export default function Messages() {
           <div className="mt-6 space-y-3">
             {groupMembers?.map((member) => (
               <div key={member._id} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <button
                     onClick={() => navigate(`/profile/${member._id}`)}
                     className="hover:opacity-80 transition-opacity"
@@ -824,12 +824,12 @@ export default function Messages() {
                       <AvatarFallback>{member.name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                   </button>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <button
                       onClick={() => navigate(`/profile/${member._id}`)}
                       className="hover:opacity-80 transition-opacity text-left"
                     >
-                      <p className="font-medium">{member.name || "Anonymous"}</p>
+                      <p className="font-medium truncate">{member.name || "Anonymous"}</p>
                     </button>
                     {(member as any).isCreator && (
                       <p className="text-xs text-muted-foreground">Creator</p>
@@ -837,25 +837,36 @@ export default function Messages() {
                   </div>
                 </div>
                 
-                {/* Actions */}
-                {isCreator && member._id !== user?._id && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleRemoveMember(member._id as Id<"users">)}
-                  >
-                    Remove
-                  </Button>
-                )}
-                {member._id === user?._id && !isCreator && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLeaveGroup}
-                  >
-                    Leave
-                  </Button>
-                )}
+                {/* Triple-dot menu for actions */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {/* Creator can remove other members */}
+                    {isCreator && member._id !== user?._id && (
+                      <DropdownMenuItem
+                        className="text-red-600 focus:text-red-600 cursor-pointer"
+                        onClick={() => handleRemoveMember(member._id as Id<"users">)}
+                      >
+                        <Trash className="h-4 w-4 mr-2" />
+                        Remove
+                      </DropdownMenuItem>
+                    )}
+                    {/* Any member (including creator) can leave */}
+                    {member._id === user?._id && (
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={handleLeaveGroup}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Leave Group
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ))}
           </div>

@@ -374,22 +374,26 @@ export default function Write() {
                         <BookOpen className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
+                    
+                    {/* Publish button below cover - only for unpublished stories */}
                     {!story.isPublished && (
                       <Button
                         variant="default"
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700 w-full font-medium"
-                        onClick={async () => {
-                          try {
-                            await updateStory({ storyId: story._id, isPublished: true });
-                            toast.success("Story published");
-                          } catch {
-                            toast.error("Failed to publish story");
+                        onClick={() => {
+                          if (story.totalChapters === 0) {
+                            toast.info("Write your first chapter to publish the story");
+                            navigate(`/write/${story._id}/manage`);
+                          } else {
+                            updateStory({ storyId: story._id, isPublished: true })
+                              .then(() => toast.success("Story published"))
+                              .catch(() => toast.error("Failed to publish story"));
                           }
                         }}
+                        className="bg-emerald-600 hover:bg-emerald-700 w-full font-medium"
                       >
-                        <FileText className="h-4 w-4 mr-1 flex-shrink-0" />
-                        <span className="truncate">Publish</span>
+                        <Save className="h-3 w-3 mr-1 flex-shrink-0" />
+                        <span className="truncate text-xs">Publish</span>
                       </Button>
                     )}
                   </div>

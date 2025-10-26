@@ -260,9 +260,29 @@ export const updateChapter = mutation({
         });
       }
     } else if (prevPublished && !nextPublished) {
-      await ctx.db.patch(chapter.storyId, {
+      // Chapter is being unpublished
+      const patches: Record<string, number | boolean> = {
         totalChapters: Math.max(0, story.totalChapters - 1),
-      });
+      };
+
+      // Check if there are any other published chapters
+      const otherPublishedChapters = await ctx.db
+        .query("chapters")
+        .withIndex("by_story", (q) => q.eq("storyId", chapter.storyId))
+        .filter((q) => 
+          q.and(
+            q.neq(q.field("_id"), args.chapterId),
+            q.eq(q.field("isPublished"), true)
+          )
+        )
+        .collect();
+
+      // If no other published chapters remain, unpublish the story
+      if (otherPublishedChapters.length === 0 && story.isPublished) {
+        patches.isPublished = false;
+      }
+
+      await ctx.db.patch(chapter.storyId, patches as any);
     }
 
     return args.chapterId;
@@ -451,7 +471,7 @@ export const deleteChapter = mutation({
     }
 
     // Update story totals
-    const patches: Record<string, number> = {
+    const patches: Record<string, number | boolean> = {
       lastUpdated: Date.now(),
     } as any;
 
@@ -461,6 +481,23 @@ export const deleteChapter = mutation({
 
     // Subtract this chapter's likes from story totalLikes
     patches.totalLikes = Math.max(0, story.totalLikes - likesCount);
+
+    // Check if there are any remaining published chapters after deletion
+    const remainingPublishedChapters = await ctx.db
+      .query("chapters")
+      .withIndex("by_story", (q) => q.eq("storyId", chapter.storyId))
+      .filter((q) => 
+        q.and(
+          q.neq(q.field("_id"), args.chapterId),
+          q.eq(q.field("isPublished"), true)
+        )
+      )
+      .collect();
+
+    // If no published chapters remain, unpublish the story
+    if (remainingPublishedChapters.length === 0 && story.isPublished) {
+      patches.isPublished = false;
+    }
 
     await ctx.db.patch(chapter.storyId, patches as any);
 
