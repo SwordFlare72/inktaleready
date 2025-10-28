@@ -286,6 +286,14 @@ const schema = defineSchema(
     })
       .index("by_announcement", ["announcementId"])
       .index("by_author", ["authorId"]),
+
+    // Add: OTP verifications table
+    otpVerifications: defineTable({
+      email: v.string(),
+      otp: v.string(),
+      expiresAt: v.number(),
+      attempts: v.number(),
+    }).index("by_email", ["email"]),
   },
   {
     schemaValidation: false,
