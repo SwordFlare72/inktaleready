@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX, Chrome, Eye, EyeOff, Shield } from "lucide-react";
+import { ArrowRight, Loader2, Mail, UserX, Chrome, Eye, EyeOff } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -60,7 +60,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const setUsername = useMutation(api.users.setUsername);
   const updateMe = useMutation(api.users.updateMe);
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
-  const grantSelfAdmin = useMutation(api.admin.grantSelfAdmin);
 
   // Helper to resolve username/email
   const getEmailForLogin = useMutation(api.users.getEmailForLogin);
@@ -290,69 +289,184 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  const handleGrantAdmin = async () => {
-    try {
-      const result = await grantSelfAdmin({});
-      toast.success(`Admin access granted! Role: ${result.role}`);
-      setTimeout(() => {
-        navigate("/admin");
-      }, 1000);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to grant admin access");
-    }
-  };
-
   return (
-    <>
-      <div className="min-h-screen flex flex-col items-center justify-center bg-black dark px-4 py-8">
-        {/* Logo Section */}
-        <div className="mb-6">
-          <img
-            src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
-            alt="InkTale"
-            className="h-24 w-24 rounded-2xl shadow-2xl object-cover mx-auto"
-          />
-        </div>
-        
-        <div className="w-full max-w-md pb-20">
-            <Card className="w-full border shadow-md">
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl">
-                  {mode === "login" ? "Welcome Back" : "Create your account"}
-                </CardTitle>
-                <CardDescription>
-                  {mode === "login"
-                    ? "Enter your credentials to continue"
-                    : "Join and start writing & reading"}
-                </CardDescription>
-              </CardHeader>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black dark px-4 py-8">
+      {/* Logo Section */}
+      <div className="mb-6">
+        <img
+          src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
+          alt="InkTale"
+          className="h-24 w-24 rounded-2xl shadow-2xl object-cover mx-auto"
+        />
+      </div>
+      
+      <div className="w-full max-w-md pb-20">
+          <Card className="w-full border shadow-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">
+                {mode === "login" ? "Welcome Back" : "Create your account"}
+              </CardTitle>
+              <CardDescription>
+                {mode === "login"
+                  ? "Enter your credentials to continue"
+                  : "Join and start writing & reading"}
+              </CardDescription>
+            </CardHeader>
 
-              {/* Forms */}
-              {mode === "login" ? (
-                <form onSubmit={doLogin}>
-                  <CardContent className="pt-2 space-y-3">
-                    <div>
-                      <Label className="mb-1 block">Email or Username</Label>
+            {/* Forms */}
+            {mode === "login" ? (
+              <form onSubmit={doLogin}>
+                <CardContent className="pt-2 space-y-3">
+                  <div>
+                    <Label className="mb-1 block">Email or Username</Label>
+                    <Input
+                      placeholder="Enter your email or username"
+                      value={identifier}
+                      onChange={(e) => {
+                        setIdentifier(e.target.value);
+                        if (error) setError(null);
+                      }}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label className="mb-1 block">Password</Label>
+                    <div className="relative">
                       <Input
-                        placeholder="Enter your email or username"
-                        value={identifier}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
                         onChange={(e) => {
-                          setIdentifier(e.target.value);
+                          setPassword(e.target.value);
                           if (error) setError(null);
                         }}
                         disabled={isLoading}
                         required
+                        className="pr-10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
+                  </div>
+
+                  {error && (
+                    <p className="text-sm text-red-500">{error}</p>
+                  )}
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Log In"}
+                  </Button>
+
+                  <div className="text-center text-xs text-muted-foreground">
+                    Don&apos;t have an account?{" "}
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="px-1"
+                      onClick={() => {
+                        setError(null);
+                        setMode("signup");
+                      }}
+                    >
+                      Sign up
+                    </Button>
+                  </div>
+
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="default"
+                    onClick={handleGoogle}
+                    disabled={!googleEnabled || isLoading}
+                  >
+                    <Chrome className="mr-2 h-4 w-4" />
+                    Continue with Google
+                  </Button>
+                </CardContent>
+              </form>
+            ) : (
+              <form onSubmit={doSignup}>
+                <CardContent className="pt-2 space-y-3">
+                  <div>
+                    <Label className="mb-1 block">Display Name</Label>
+                    <Input
+                      placeholder="How your name appears (e.g., Aura Master)"
+                      value={suDisplayName}
+                      onChange={(e) => {
+                        setSuDisplayName(e.target.value);
+                        if (error) setError(null);
+                      }}
+                      disabled={isLoading}
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Shown publicly. You can change this anytime.
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="mb-1 block">Username</Label>
+                    <Input
+                      placeholder="Enter your username"
+                      value={suUsername}
+                      onChange={(e) => {
+                        setSuUsername(e.target.value);
+                        if (suUsernameError) setSuUsernameError(null);
+                        if (error) setError(null);
+                      }}
+                      disabled={isLoading}
+                      required
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      3–20 chars. Letters, numbers, underscores only. Saved in lowercase.
+                    </p>
+                    {suUsernameError && (
+                      <p className="text-sm text-red-500 mt-1">{suUsernameError}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="mb-1 block">Email</Label>
+                    <Input
+                      type="email"
+                      placeholder="name@example.com"
+                      value={suEmail}
+                      onChange={(e) => {
+                        setSuEmail(e.target.value);
+                        if (suEmailError) setSuEmailError(null);
+                        if (error) setError(null);
+                      }}
+                      disabled={isLoading}
+                      required
+                    />
+                    {suEmailError && (
+                      <p className="text-sm text-red-500 mt-1">{suEmailError}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="mb-1 block">Gender (optional)</Label>
+                    <Input
+                      placeholder="e.g., Male, Female, Non-binary"
+                      value={suGender ?? ""}
+                      onChange={(e) => setSuGender(e.target.value || undefined)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <Label className="mb-1 block">Password</Label>
                       <div className="relative">
                         <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password"
-                          value={password}
+                          type={showSuPassword ? "text" : "password"}
+                          placeholder="Create a password"
+                          value={suPassword}
                           onChange={(e) => {
-                            setPassword(e.target.value);
+                            setSuPassword(e.target.value);
+                            if (suPasswordError) setSuPasswordError(null);
                             if (error) setError(null);
                           }}
                           disabled={isLoading}
@@ -361,264 +475,120 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         />
                         <button
                           type="button"
-                          onClick={() => setShowPassword(!showPassword)}
+                          onClick={() => setShowSuPassword(!showSuPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showSuPassword ? "Hide password" : "Show password"}
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showSuPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {suPasswordError && (
+                        <p className="text-sm text-red-500 mt-1">{suPasswordError}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="mb-1 block">Confirm Password</Label>
+                      <div className="relative">
+                        <Input
+                          type={showSuConfirm ? "text" : "password"}
+                          placeholder="Confirm password"
+                          value={suConfirm}
+                          onChange={(e) => {
+                            setSuConfirm(e.target.value);
+                            if (error) setError(null);
+                          }}
+                          disabled={isLoading}
+                          required
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSuConfirm(!showSuConfirm)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={showSuConfirm ? "Hide password" : "Show password"}
+                        >
+                          {showSuConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
                     </div>
+                  </div>
 
-                    {error && (
-                      <p className="text-sm text-red-500">{error}</p>
-                    )}
+                  {error && (
+                    <p className="text-sm text-red-500">{error}</p>
+                  )}
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Signing in..." : "Log In"}
-                    </Button>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={
+                      isLoading ||
+                      !suUsername.trim() ||
+                      !!suUsernameError ||
+                      !suEmail.trim() ||
+                      !!suEmailError ||
+                      !!suPasswordError ||
+                      !suPassword ||
+                      !suConfirm ||
+                      suPassword !== suConfirm
+                    }
+                  >
+                    {isLoading ? "Creating..." : "Create Account"}
+                  </Button>
 
-                    <div className="text-center text-xs text-muted-foreground">
-                      Don&apos;t have an account?{" "}
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="px-1"
-                        onClick={() => {
-                          setError(null);
-                          setMode("signup");
-                        }}
-                      >
-                        Sign up
-                      </Button>
-                    </div>
-
+                  <div className="text-center text-xs text-muted-foreground">
+                    Already have an account?{" "}
                     <Button
                       type="button"
-                      className="w-full"
-                      variant="default"
-                      onClick={handleGoogle}
-                      disabled={!googleEnabled || isLoading}
+                      variant="link"
+                      className="px-1"
+                      onClick={() => {
+                        setError(null);
+                        setSuUsernameError(null);
+                        setMode("login");
+                      }}
                     >
-                      <Chrome className="mr-2 h-4 w-4" />
-                      Continue with Google
+                      Log in
                     </Button>
-                  </CardContent>
-                </form>
-              ) : (
-                <form onSubmit={doSignup}>
-                  <CardContent className="pt-2 space-y-3">
-                    <div>
-                      <Label className="mb-1 block">Display Name</Label>
-                      <Input
-                        placeholder="How your name appears (e.g., Aura Master)"
-                        value={suDisplayName}
-                        onChange={(e) => {
-                          setSuDisplayName(e.target.value);
-                          if (error) setError(null);
-                        }}
-                        disabled={isLoading}
-                      />
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        Shown publicly. You can change this anytime.
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="mb-1 block">Username</Label>
-                      <Input
-                        placeholder="Enter your username"
-                        value={suUsername}
-                        onChange={(e) => {
-                          setSuUsername(e.target.value);
-                          if (suUsernameError) setSuUsernameError(null);
-                          if (error) setError(null);
-                        }}
-                        disabled={isLoading}
-                        required
-                      />
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        3–20 chars. Letters, numbers, underscores only. Saved in lowercase.
-                      </p>
-                      {suUsernameError && (
-                        <p className="text-sm text-red-500 mt-1">{suUsernameError}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label className="mb-1 block">Email</Label>
-                      <Input
-                        type="email"
-                        placeholder="name@example.com"
-                        value={suEmail}
-                        onChange={(e) => {
-                          setSuEmail(e.target.value);
-                          if (suEmailError) setSuEmailError(null);
-                          if (error) setError(null);
-                        }}
-                        disabled={isLoading}
-                        required
-                      />
-                      {suEmailError && (
-                        <p className="text-sm text-red-500 mt-1">{suEmailError}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label className="mb-1 block">Gender (optional)</Label>
-                      <Input
-                        placeholder="e.g., Male, Female, Non-binary"
-                        value={suGender ?? ""}
-                        onChange={(e) => setSuGender(e.target.value || undefined)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <Label className="mb-1 block">Password</Label>
-                        <div className="relative">
-                          <Input
-                            type={showSuPassword ? "text" : "password"}
-                            placeholder="Create a password"
-                            value={suPassword}
-                            onChange={(e) => {
-                              setSuPassword(e.target.value);
-                              if (suPasswordError) setSuPasswordError(null);
-                              if (error) setError(null);
-                            }}
-                            disabled={isLoading}
-                            required
-                            className="pr-10"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowSuPassword(!showSuPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            aria-label={showSuPassword ? "Hide password" : "Show password"}
-                          >
-                            {showSuPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </button>
-                        </div>
-                        {suPasswordError && (
-                          <p className="text-sm text-red-500 mt-1">{suPasswordError}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label className="mb-1 block">Confirm Password</Label>
-                        <div className="relative">
-                          <Input
-                            type={showSuConfirm ? "text" : "password"}
-                            placeholder="Confirm password"
-                            value={suConfirm}
-                            onChange={(e) => {
-                              setSuConfirm(e.target.value);
-                              if (error) setError(null);
-                            }}
-                            disabled={isLoading}
-                            required
-                            className="pr-10"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowSuConfirm(!showSuConfirm)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            aria-label={showSuConfirm ? "Hide password" : "Show password"}
-                          >
-                            {showSuConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                  </div>
 
-                    {error && (
-                      <p className="text-sm text-red-500">{error}</p>
-                    )}
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="default"
+                    onClick={handleGoogle}
+                    disabled={!googleEnabled || isLoading}
+                  >
+                    <Chrome className="mr-2 h-4 w-4" />
+                    Continue with Google
+                  </Button>
+                </CardContent>
+              </form>
+            )}
+          </Card>
+        </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={
-                        isLoading ||
-                        !suUsername.trim() ||
-                        !!suUsernameError ||
-                        !suEmail.trim() ||
-                        !!suEmailError ||
-                        !!suPasswordError ||
-                        !suPassword ||
-                        !suConfirm ||
-                        suPassword !== suConfirm
-                      }
-                    >
-                      {isLoading ? "Creating..." : "Create Account"}
-                    </Button>
-
-                    <div className="text-center text-xs text-muted-foreground">
-                      Already have an account?{" "}
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="px-1"
-                        onClick={() => {
-                          setError(null);
-                          setSuUsernameError(null);
-                          setMode("login");
-                        }}
-                      >
-                        Log in
-                      </Button>
-                    </div>
-
-                    <Button
-                      type="button"
-                      className="w-full"
-                      variant="default"
-                      onClick={handleGoogle}
-                      disabled={!googleEnabled || isLoading}
-                    >
-                      <Chrome className="mr-2 h-4 w-4" />
-                      Continue with Google
-                    </Button>
-                  </CardContent>
-                </form>
-              )}
-            </Card>
-          </div>
-
-        {/* Username setup dialog for first-time Google users */}
-        <Dialog open={showUsernameDialog} onOpenChange={(open) => setShowUsernameDialog(open)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Choose your username</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <Input
-                placeholder="Enter your username"
-                value={usernameInput}
-                onChange={(e) => setUsernameInput(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                3–20 characters. Letters, numbers, and underscores only.
-              </p>
-              <Button onClick={handleSaveUsername} disabled={!usernameInput.trim()}>
-                Save and continue
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Temporary Admin Grant Button - appears when logged in */}
-        {isAuthenticated && me && (me as any)?.role !== "admin" && (
-          <div className="fixed bottom-4 right-4 z-50">
-            <Button
-              onClick={handleGrantAdmin}
-              variant="outline"
-              size="sm"
-              className="shadow-lg"
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Grant Admin Access
+      {/* Username setup dialog for first-time Google users */}
+      <Dialog open={showUsernameDialog} onOpenChange={(open) => setShowUsernameDialog(open)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose your username</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Enter your username"
+              value={usernameInput}
+              onChange={(e) => setUsernameInput(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              3–20 characters. Letters, numbers, and underscores only.
+            </p>
+            <Button onClick={handleSaveUsername} disabled={!usernameInput.trim()}>
+              Save and continue
             </Button>
           </div>
-        )}
-      </div>
-    </>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

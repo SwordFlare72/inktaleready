@@ -1,1 +1,1 @@
-npx convex run admin:grantSelfAdmin
+pnpm add -D electron electron-builder
