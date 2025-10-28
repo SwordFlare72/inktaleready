@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
-import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import { motion } from "framer-motion";
 import { BookOpen, Eye, Heart, User, Calendar, Tag, Play, BookmarkPlus, BookmarkCheck, Share2, ChevronLeft, Plus, Check, ChevronRight } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -17,10 +17,12 @@ export default function StoryPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   
-  // Swipe state
-  const x = useMotionValue(0);
-  const opacity = useTransform(x, [-200, 0, 200], [0.5, 1, 0.5]);
+  // Scroll to top when story page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
   
+  // Add: robust back handler that preserves list scroll when possible
   const handleBack = () => {
     try {
       if (window.history.length > 1) {
@@ -53,43 +55,15 @@ export default function StoryPage() {
   // Load similar stories by genre (exclude current later in render)
   const similar = useQuery(
     api.stories.listExplore,
+    // only run when story is loaded
     story
       ? {
-          paginationOpts: { numItems: 20, cursor: null },
+          paginationOpts: { numItems: 6, cursor: null },
           genre: story.genre as any,
           sortBy: "popular",
         }
       : "skip",
   );
-
-  // Handle swipe navigation
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 100;
-    
-    if (!similar?.page || similar.page.length === 0) return;
-    
-    const otherStories = similar.page.filter(s => s._id !== (story as any)?._id);
-    if (otherStories.length === 0) return;
-    
-    const currentIndex = otherStories.findIndex(s => s._id === (story as any)?._id);
-    
-    if (info.offset.x > swipeThreshold) {
-      // Swipe right - go to previous story
-      const prevStory = currentIndex > 0 ? otherStories[currentIndex - 1] : otherStories[otherStories.length - 1];
-      if (prevStory) {
-        navigate(`/story/${prevStory._id}`);
-      }
-    } else if (info.offset.x < -swipeThreshold) {
-      // Swipe left - go to next story
-      const nextStory = currentIndex < otherStories.length - 1 ? otherStories[currentIndex + 1] : otherStories[0];
-      if (nextStory) {
-        navigate(`/story/${nextStory._id}`);
-      }
-    }
-    
-    // Reset position
-    x.set(0);
-  };
 
   if (!id) {
     navigate("/explore");
@@ -195,6 +169,7 @@ export default function StoryPage() {
     }
   };
 
+  // Add: navigate to author profile when clicking avatar or author name
   const handleAuthorClick = () => {
     try {
       const id =
@@ -235,11 +210,6 @@ export default function StoryPage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{ x, opacity }}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.2}
-      onDragEnd={handleDragEnd}
       className="min-h-screen bg-background"
     >
       {/* Sticky Header */}
@@ -515,7 +485,7 @@ export default function StoryPage() {
         )}
       </div>
 
-      {/* Reading List Dialog */}
+      {/* Reading List Dialog - Keep existing */}
       <Dialog open={showAddToList} onOpenChange={setShowAddToList}>
         <DialogContent className="max-w-md">
           <DialogHeader>
