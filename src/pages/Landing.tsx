@@ -18,9 +18,12 @@ import {
   Search as SearchIcon,
   Moon,
   Sun,
+  Shield,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useEffect, useState, useMemo, useRef } from "react";
+import { useMutation } from "convex/react";
+import { toast } from "sonner";
 
 export default function Landing() {
   const { isLoading, isAuthenticated, user } = useAuth();
@@ -330,6 +333,34 @@ export default function Landing() {
           </div>
         </div>
       </header>
+
+      {/* Temporary Admin Grant Button - appears when logged in without admin role */}
+      {!isLoading && isAuthenticated && user && (user as any)?.role !== "admin" && (
+        <div className="fixed bottom-20 right-4 z-50">
+          <Button
+            onClick={async () => {
+              try {
+                const grantSelfAdmin = (await import("@/convex/_generated/api")).api.admin.grantSelfAdmin;
+                const { useMutation } = await import("convex/react");
+                const grant = useMutation(grantSelfAdmin);
+                const result = await grant({});
+                toast.success(`Admin access granted! Role: ${result.role}`);
+                setTimeout(() => {
+                  navigate("/admin");
+                }, 1000);
+              } catch (error: any) {
+                toast.error(error.message || "Failed to grant admin access");
+              }
+            }}
+            variant="outline"
+            size="sm"
+            className="shadow-lg"
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Grant Admin Access
+          </Button>
+        </div>
+      )}
 
       {/* Sections */}
       <section className="container mx-auto px-4 py-6">
