@@ -1,7 +1,2 @@
-partner: partner
-  ? {
-      _id: partner._id,
-      name: partner.name,
-      image: partner.image,
-    }
-  : null,
+   from: "InkTale <noreply@yourdomain.com>", // Change this
+   
