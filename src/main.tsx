@@ -32,6 +32,7 @@ import MyStoriesList from "./pages/MyStoriesList.tsx";
 import FollowingList from "./pages/FollowingList.tsx";
 import CategoryList from "./pages/CategoryList.tsx";
 import ChapterListView from "./pages/ChapterListView.tsx";
+import Admin from "./pages/Admin.tsx";
 import { motion } from "framer-motion";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -142,6 +143,9 @@ function BottomNavGate() {
   // Add: Hide nav on chapter list view page
   const onChapterListView = location.pathname.match(/^\/story\/[^/]+\/chapters/);
 
+  // Add: Hide nav on admin page
+  const onAdmin = location.pathname.startsWith("/admin");
+
   if (
     location.pathname.startsWith("/auth") ||
     location.pathname.startsWith("/profile/edit") ||
@@ -154,7 +158,8 @@ function BottomNavGate() {
     onProfileStories ||
     onProfileFollowing ||
     onCategoryList ||
-    onChapterListView
+    onChapterListView ||
+    onAdmin
   ) return null;
 
   return <BottomNav />;
@@ -238,6 +243,9 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<HomeGate />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/" />} />
+            <Route path="/admin" element={
+              <ProtectedRoute><Admin /></ProtectedRoute>
+            } />
             <Route path="/dashboard" element={
               <ProtectedRoute><Dashboard /></ProtectedRoute>
             } />

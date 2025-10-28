@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as admin from "../admin.js";
+import type * as adminQueries from "../adminQueries.js";
 import type * as announcements from "../announcements.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as auth from "../auth.js";
@@ -43,6 +44,7 @@ import type * as users from "../users.js";
  */
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  adminQueries: typeof adminQueries;
   announcements: typeof announcements;
   "auth/emailOtp": typeof auth_emailOtp;
   auth: typeof auth;
