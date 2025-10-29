@@ -2,6 +2,7 @@
 
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
+import FormData from "form-data";
 
 export const moderateImage = internalAction({
   args: { storageId: v.id("_storage") },
@@ -25,26 +26,29 @@ export const moderateImage = internalAction({
 
       console.log("Moderating image with Sightengine:", args.storageId);
 
-      // Download the image as a buffer since Convex URLs are signed and may not be accessible
+      // Download the image as a buffer
       const imageResponse = await fetch(imageUrl);
       if (!imageResponse.ok) {
         throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
       }
       
       const imageBuffer = await imageResponse.arrayBuffer();
-      const imageBlob = new Blob([imageBuffer], { type: 'image/jpeg' });
-
-      // Create a proper FormData with the image blob
+      
+      // Create FormData using form-data package (proper Node.js multipart handling)
       const formData = new FormData();
-      formData.append('media', imageBlob, 'image.jpg');
+      formData.append('media', Buffer.from(imageBuffer), {
+        filename: 'image.jpg',
+        contentType: 'image/jpeg',
+      });
       formData.append('models', 'nudity-2.1,wad,offensive,text-content,qr-content,scam');
       formData.append('api_user', apiUser);
       formData.append('api_secret', apiSecret);
 
-      // CRITICAL: Do NOT set Content-Type header - let fetch handle it automatically
+      // Send to Sightengine with proper headers from form-data
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
         method: 'POST',
-        body: formData,
+        body: formData as any,
+        headers: formData.getHeaders(),
       });
 
       if (!response.ok) {
@@ -64,7 +68,7 @@ export const moderateImage = internalAction({
       const weaponScore = result.weapon?.prob || 0;
       const alcoholScore = result.alcohol?.prob || 0;
       const drugsScore = result.drugs?.prob || 0;
-      const wadScore = result.wad?.prob || 0; // Combined weapons-alcohol-drugs
+      const wadScore = result.wad?.prob || 0;
       const offensiveScore = result.offensive?.prob || 0;
       const qrcodeScore = result['qr-content']?.prob || 0;
       const scamScore = result.scam?.prob || 0;
@@ -75,7 +79,7 @@ export const moderateImage = internalAction({
 
       // Strict threshold of 0.4-0.5
       const threshold = 0.4;
-      const qrcodeThreshold = 0.5; // Slightly higher for QR codes
+      const qrcodeThreshold = 0.5;
       const textThreshold = 0.4;
 
       // Determine if content is safe
