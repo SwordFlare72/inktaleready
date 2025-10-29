@@ -22,7 +22,7 @@ export const sendOTPEmail = internalAction({
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "InkTale <onboarding@resend.dev>", // You'll change this to your domain
+        from: "InkTale <noreply@aiagentshub.site>", // You'll change this to your domain
         to: args.to,
         subject: "Your InkTale Verification Code",
         html: `
