@@ -1,1 +1,1 @@
-pnpm add -D electron electron-builder
+nslookup -type=TXT aiagentshub.site
