@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "result": {
+    "nsfw": 0.95,  // 95% confidence it's NSFW
+    "safe": 0.05,
+    "violence": 0.02,
+    "gore": 0.01
+  }
+}
