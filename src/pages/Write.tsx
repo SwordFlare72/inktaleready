@@ -74,6 +74,7 @@ export default function Write() {
 
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
+  const moderateUploadedImage = useAction(api.files.moderateUploadedImage);
   const [uploadingCover, setUploadingCover] = useState(false);
   // Better file-picker UX state
   const [createCoverName, setCreateCoverName] = useState("");
@@ -91,6 +92,24 @@ export default function Write() {
         body: file,
       });
       const { storageId } = await res.json();
+      
+      // Add: Moderate the uploaded image before returning URL
+      try {
+        const moderationResult = await moderateUploadedImage({ storageId });
+        if (!moderationResult.success) {
+          toast.error("Image rejected: Inappropriate content detected");
+          return null;
+        }
+      } catch (moderationError: any) {
+        const msg = String(moderationError?.message || "");
+        if (msg.includes("Image rejected")) {
+          toast.error(msg);
+        } else {
+          toast.error("Image moderation failed. Please try again.");
+        }
+        return null;
+      }
+      
       const publicUrl = await getFileUrl({ storageId });
       return publicUrl ?? null;
     } catch (e) {
