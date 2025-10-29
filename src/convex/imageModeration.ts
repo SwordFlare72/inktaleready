@@ -36,18 +36,19 @@ export const moderateImage = internalAction({
       
       // Create FormData using form-data package (proper Node.js multipart handling)
       const formData = new FormData();
+      
+      // Append image buffer with proper file metadata
       formData.append('media', Buffer.from(imageBuffer), {
         filename: 'image.jpg',
         contentType: 'image/jpeg',
       });
       
-      // Append as plain strings to ensure proper encoding
-      const models = 'nudity-2.1,wad,offensive,text-content,qr-content,scam';
-      formData.append('models', models);
+      // Append API parameters as plain strings
+      formData.append('models', 'nudity-2.1,wad,offensive,text-content,qr-content,scam');
       formData.append('api_user', apiUser);
       formData.append('api_secret', apiSecret);
 
-      console.log("Sending request to Sightengine with models:", models);
+      console.log("Sending request to Sightengine API...");
 
       // Send to Sightengine with proper headers from form-data
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
