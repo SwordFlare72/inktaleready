@@ -1,1 +1,1 @@
-nslookup -type=TXT aiagentshub.site
+npx convex dev --once
