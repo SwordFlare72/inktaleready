@@ -37,8 +37,8 @@ export const moderateImage = internalAction({
       const base64Image = Buffer.from(imageBuffer).toString("base64");
       console.log("Image converted to base64, size:", base64Image.length);
 
-      // Call Cloudflare AI with NSFW detection model
-      const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/defog/nsfw-detector`;
+      // Call Cloudflare AI with Llama 3.2-Vision model
+      const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
       console.log("Calling Cloudflare AI API:", apiUrl);
       
       const response = await fetch(apiUrl, {
@@ -48,7 +48,24 @@ export const moderateImage = internalAction({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          image: base64Image,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "Analyze this image for inappropriate content. Check for: nudity, sexual content, violence, gore, hate symbols, or other NSFW material. Respond with ONLY a JSON object in this exact format: {\"isSafe\": true/false, \"categories\": [\"category1\", \"category2\"], \"confidence\": 0.0-1.0, \"reason\": \"brief explanation\"}. Be strict in your assessment."
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 256
         }),
       });
 
@@ -67,29 +84,51 @@ export const moderateImage = internalAction({
       const result = await response.json();
       console.log("Cloudflare AI response:", JSON.stringify(result, null, 2));
 
-      // Parse NSFW detection model response
+      // Parse vision model response
       let isSafe = true;
       let confidence = 0;
       const categories: string[] = [];
       let analysis = "Image appears safe";
 
-      if (result.result && Array.isArray(result.result)) {
-        // Find the prediction with highest score
-        const nsfwPrediction = result.result.find((pred: any) => 
-          pred.label && pred.label.toLowerCase() === "nsfw"
-        );
+      if (result.result && result.result.response) {
+        const responseText = result.result.response;
+        console.log("Vision model response text:", responseText);
         
-        if (nsfwPrediction && nsfwPrediction.score) {
-          confidence = nsfwPrediction.score;
-          
-          // Flag as unsafe if NSFW score is above 0.5 (50% confidence)
-          if (confidence > 0.5) {
-            isSafe = false;
-            categories.push("nsfw");
-            analysis = `Image flagged as NSFW with ${(confidence * 100).toFixed(1)}% confidence`;
+        try {
+          // Try to extract JSON from the response
+          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            isSafe = parsed.isSafe !== false;
+            confidence = parsed.confidence || 0;
+            
+            if (parsed.categories && Array.isArray(parsed.categories)) {
+              categories.push(...parsed.categories);
+            }
+            
+            analysis = parsed.reason || (isSafe ? "Image appears safe" : "Image contains inappropriate content");
+            
+            // If marked as unsafe or confidence is high for unsafe content
+            if (!isSafe || confidence > 0.5) {
+              isSafe = false;
+            }
           } else {
-            analysis = `Image appears safe (NSFW confidence: ${(confidence * 100).toFixed(1)}%)`;
+            // Fallback: check for keywords in response
+            const lowerResponse = responseText.toLowerCase();
+            const unsafeKeywords = ['nsfw', 'nudity', 'sexual', 'violence', 'gore', 'inappropriate', 'unsafe', 'explicit'];
+            const foundUnsafe = unsafeKeywords.some(keyword => lowerResponse.includes(keyword));
+            
+            if (foundUnsafe) {
+              isSafe = false;
+              categories.push("potentially_inappropriate");
+              analysis = "Image may contain inappropriate content based on AI analysis";
+              confidence = 0.7;
+            }
           }
+        } catch (parseError) {
+          console.warn("Could not parse vision model JSON response:", parseError);
+          // Default to safe if we can't parse
+          analysis = "Could not fully analyze image, defaulting to safe";
         }
       } else {
         console.warn("Unexpected API response format:", result);
