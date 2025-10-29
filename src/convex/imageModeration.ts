@@ -45,7 +45,7 @@ export const moderateImage = internalAction({
       // Make direct API call with base64 image
       const formData = new FormData();
       formData.append('media', base64Image);
-      formData.append('models', 'nudity-2.1,wad,offensive,text-content,qrcode,scam');
+      formData.append('models', 'nudity-2.1,wad,offensive,text-content,qr-content,scam');
       formData.append('api_user', apiUser);
       formData.append('api_secret', apiSecret);
 
@@ -73,7 +73,7 @@ export const moderateImage = internalAction({
       const drugsScore = result.drugs?.prob || 0;
       const wadScore = result.wad?.prob || 0; // Combined weapons-alcohol-drugs
       const offensiveScore = result.offensive?.prob || 0;
-      const qrcodeScore = result.qrcode?.prob || 0;
+      const qrcodeScore = result['qr-content']?.prob || 0;
       const scamScore = result.scam?.prob || 0;
 
       // Text content checks
@@ -127,7 +127,7 @@ export const moderateImage = internalAction({
         reasons.push("offensive content");
       }
       if (qrcodeScore >= qrcodeThreshold) {
-        categories.push("qrcode");
+        categories.push("qr-content");
         reasons.push("QR codes");
       }
       if (scamScore >= threshold) {
