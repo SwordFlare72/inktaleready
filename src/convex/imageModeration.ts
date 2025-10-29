@@ -26,13 +26,40 @@ export const moderateImage = internalAction({
 
       console.log("Moderating image with Sightengine:", args.storageId);
 
+      // Download the image as a buffer since Convex URLs are signed and may not be accessible
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+      }
+      
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const imageBlob = new Blob([imageBuffer]);
+
       // Initialize Sightengine client
       const client = sightengine(apiUser, apiSecret);
 
-      // Check image for multiple content types
-      const result = await client
-        .check(["nudity-2.1", "wad", "offensive", "text-content", "qrcode", "scam"])
-        .set_url(imageUrl);
+      // Create a temporary file-like object for Sightengine
+      // We'll use the workflow API which accepts base64
+      const base64Image = Buffer.from(imageBuffer).toString('base64');
+      
+      // Make direct API call with base64 image
+      const formData = new FormData();
+      formData.append('media', base64Image);
+      formData.append('models', 'nudity-2.1,wad,offensive,text-content,qrcode,scam');
+      formData.append('api_user', apiUser);
+      formData.append('api_secret', apiSecret);
+
+      const response = await fetch('https://api.sightengine.com/1.0/check.json', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Sightengine API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
 
       console.log("Sightengine moderation result:", JSON.stringify(result, null, 2));
 
