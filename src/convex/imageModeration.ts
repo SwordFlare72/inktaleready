@@ -40,9 +40,14 @@ export const moderateImage = internalAction({
         filename: 'image.jpg',
         contentType: 'image/jpeg',
       });
-      formData.append('models', 'nudity-2.1,wad,offensive,text-content,qr-content,scam');
+      
+      // Append as plain strings to ensure proper encoding
+      const models = 'nudity-2.1,wad,offensive,text-content,qr-content,scam';
+      formData.append('models', models);
       formData.append('api_user', apiUser);
       formData.append('api_secret', apiSecret);
+
+      console.log("Sending request to Sightengine with models:", models);
 
       // Send to Sightengine with proper headers from form-data
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
@@ -53,6 +58,7 @@ export const moderateImage = internalAction({
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("Sightengine API error response:", errorText);
         throw new Error(`Sightengine API error: ${response.status} - ${errorText}`);
       }
 
