@@ -28,7 +28,6 @@ export default function EditProfile() {
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
-  const moderateUploadedImage = useAction(api.files.moderateUploadedImage);
   const changeEmail = useMutation(api.users.changeEmail);
   const { signIn, signOut } = useAuth();
 
@@ -181,22 +180,6 @@ export default function EditProfile() {
       if (!storageIdRaw || typeof storageIdRaw !== "string") {
         throw new Error("Upload failed: missing storage id");
       }
-      
-      // Add: Moderate the uploaded image
-      try {
-        const moderationResult = await moderateUploadedImage({ storageId: storageIdRaw as Id<"_storage"> });
-        if (!moderationResult.success) {
-          throw new Error("Image rejected: Inappropriate content detected");
-        }
-      } catch (moderationError: any) {
-        const msg = String(moderationError?.message || "");
-        if (msg.includes("Image rejected")) {
-          throw new Error(msg);
-        } else {
-          throw new Error("Image moderation failed. Please try again.");
-        }
-      }
-      
       return storageIdRaw as Id<"_storage">;
     } catch (e: any) {
       if (e?.name === "AbortError") {

@@ -24,7 +24,6 @@ import type * as fileQueries from "../fileQueries.js";
 import type * as files from "../files.js";
 import type * as groupChats from "../groupChats.js";
 import type * as http from "../http.js";
-import type * as imageModeration from "../imageModeration.js";
 import type * as library from "../library.js";
 import type * as messages from "../messages.js";
 import type * as notifications from "../notifications.js";
@@ -56,7 +55,6 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   groupChats: typeof groupChats;
   http: typeof http;
-  imageModeration: typeof imageModeration;
   library: typeof library;
   messages: typeof messages;
   notifications: typeof notifications;
