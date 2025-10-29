@@ -74,6 +74,7 @@ export default function Write() {
 
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
+  const moderateUploadedImage = useAction(api.files.moderateUploadedImage);
   const [uploadingCover, setUploadingCover] = useState(false);
   // Better file-picker UX state
   const [createCoverName, setCreateCoverName] = useState("");
@@ -91,10 +92,15 @@ export default function Write() {
         body: file,
       });
       const { storageId } = await res.json();
+      
+      // Moderate the uploaded image before returning URL
+      await moderateUploadedImage({ storageId });
+      
       const publicUrl = await getFileUrl({ storageId });
       return publicUrl ?? null;
-    } catch (e) {
-      toast.error("Failed to upload image");
+    } catch (e: any) {
+      const errorMsg = e?.message || "Failed to upload image";
+      toast.error(errorMsg);
       return null;
     } finally {
       setUploadingCover(false);
