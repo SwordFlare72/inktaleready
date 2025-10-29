@@ -38,7 +38,7 @@ export const moderateImage = internalAction({
       console.log("Image converted to base64, size:", base64Image.length);
 
       // Call Cloudflare AI with NSFW detection model
-      const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@hf/falconsai/nsfw_image_detection`;
+      const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/defog/nsfw-detector`;
       console.log("Calling Cloudflare AI API:", apiUrl);
       
       const response = await fetch(apiUrl, {
