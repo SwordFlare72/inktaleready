@@ -2,7 +2,6 @@
 
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
-const sightengine = require("sightengine");
 
 export const moderateImage = internalAction({
   args: { storageId: v.id("_storage") },
@@ -33,10 +32,7 @@ export const moderateImage = internalAction({
       }
       
       const imageBuffer = await imageResponse.arrayBuffer();
-      const imageBlob = new Blob([imageBuffer]);
-
-      // Initialize Sightengine client
-      const client = sightengine(apiUser, apiSecret);
+      const imageBlob = new Blob([imageBuffer], { type: 'image/jpeg' });
 
       // Create a proper FormData with the image blob
       const formData = new FormData();
@@ -45,6 +41,7 @@ export const moderateImage = internalAction({
       formData.append('api_user', apiUser);
       formData.append('api_secret', apiSecret);
 
+      // CRITICAL: Do NOT set Content-Type header - let fetch handle it automatically
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
         method: 'POST',
         body: formData,
