@@ -43,15 +43,17 @@ export const moderateImage = internalAction({
         contentType: 'image/jpeg',
       });
       
-      // Append API parameters - must be done AFTER the file
-      const models = 'nudity-2.1,wad,offensive,text-content,qr-content,scam';
-      formData.append('models', models);
+      // Append API parameters as strings (models must be comma-separated)
+      formData.append('models', 'nudity-2.1,wad,offensive,text-content,qr-content,scam');
       formData.append('api_user', apiUser);
       formData.append('api_secret', apiSecret);
 
       console.log("Sending request to Sightengine API...");
-      console.log("Models parameter:", models);
-      console.log("API User:", apiUser);
+      console.log("FormData fields:", {
+        hasMedia: true,
+        models: 'nudity-2.1,wad,offensive,text-content,qr-content,scam',
+        apiUser: apiUser,
+      });
 
       // Send to Sightengine with proper headers from form-data
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
