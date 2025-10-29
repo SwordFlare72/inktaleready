@@ -4,36 +4,35 @@ import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 
 export const moderateImage = internalAction({
-  args: { 
-    imageUrl: v.string(),
-  },
-  handler: async (ctx, args) => {
+  args: { imageUrl: v.string() },
+  handler: async (ctx, args): Promise<{
+    isSafe: boolean;
+    analysis: string;
+    categories: string[];
+    confidence?: number;
+  }> => {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
 
     if (!accountId || !apiToken) {
-      console.error("Cloudflare credentials not configured");
-      // Allow upload if moderation is not configured (fail open for development)
-      return {
-        isSafe: true,
-        analysis: "Moderation not configured",
-        categories: [],
-      };
+      throw new Error(
+        "Cloudflare credentials not configured. Please set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in your environment variables."
+      );
     }
 
     try {
-      // Fetch the image from Convex storage
+      // Fetch the image
       const imageResponse = await fetch(args.imageUrl);
       if (!imageResponse.ok) {
-        throw new Error("Failed to fetch image");
+        throw new Error("Failed to fetch image for moderation");
       }
 
-      const buffer = await imageResponse.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString("base64");
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const base64Image = Buffer.from(imageBuffer).toString("base64");
 
-      // Call Cloudflare AI vision model
+      // Call Cloudflare AI with NSFW detection model
       const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`,
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@hf/falconsai/nsfw_image_detection`,
         {
           method: "POST",
           headers: {
@@ -41,81 +40,60 @@ export const moderateImage = internalAction({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            messages: [
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "image",
-                    image: base64,
-                  },
-                  {
-                    type: "text",
-                    text: 'Analyze this image for inappropriate content. Identify: 1) NSFW content (explicit/sexual material, nudity), 2) Violence or graphic content, 3) Hateful symbols or imagery. Respond ONLY with valid JSON in this exact format: {"has_nsfw": boolean, "has_violence": boolean, "has_hateful_content": boolean, "confidence": 0-1, "details": "brief description"}',
-                  },
-                ],
-              },
-            ],
+            image: base64Image,
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error(`Cloudflare API error: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(
+          `Cloudflare AI request failed: ${response.status} - ${errorText}`
+        );
       }
 
-      const data = await response.json();
-      const analysisText = data.result?.response || "";
+      const result = await response.json();
 
-      // Try to parse JSON response
-      try {
-        // Extract JSON from response (model might add extra text)
-        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error("No JSON found in response");
+      // Parse NSFW detection model response
+      // The model returns an array of predictions with labels and scores
+      // Example: [{ label: "nsfw", score: 0.95 }, { label: "normal", score: 0.05 }]
+      
+      let isSafe = true;
+      let confidence = 0;
+      const categories: string[] = [];
+      let analysis = "Image appears safe";
+
+      if (result.result && Array.isArray(result.result)) {
+        // Find the prediction with highest score
+        const nsfwPrediction = result.result.find((pred: any) => 
+          pred.label && pred.label.toLowerCase() === "nsfw"
+        );
+        
+        if (nsfwPrediction && nsfwPrediction.score) {
+          confidence = nsfwPrediction.score;
+          
+          // Flag as unsafe if NSFW score is above 0.5 (50% confidence)
+          if (confidence > 0.5) {
+            isSafe = false;
+            categories.push("nsfw");
+            analysis = `Image flagged as NSFW with ${(confidence * 100).toFixed(1)}% confidence`;
+          } else {
+            analysis = `Image appears safe (NSFW confidence: ${(confidence * 100).toFixed(1)}%)`;
+          }
         }
-
-        const parsed = JSON.parse(jsonMatch[0]);
-        
-        const isSafe = !parsed.has_nsfw && !parsed.has_violence && !parsed.has_hateful_content;
-        const categories: string[] = [];
-        
-        if (parsed.has_nsfw) categories.push("NSFW");
-        if (parsed.has_violence) categories.push("Violence");
-        if (parsed.has_hateful_content) categories.push("Hateful Content");
-
-        return {
-          isSafe,
-          analysis: parsed.details || "Content analyzed",
-          categories,
-          confidence: parsed.confidence || 0.5,
-        };
-      } catch (parseError) {
-        console.error("Failed to parse moderation response:", analysisText);
-        // If parsing fails, be conservative and flag as unsafe if certain keywords appear
-        const lowerText = analysisText.toLowerCase();
-        const hasWarningKeywords = 
-          lowerText.includes("nsfw") || 
-          lowerText.includes("explicit") || 
-          lowerText.includes("inappropriate") ||
-          lowerText.includes("violence") ||
-          lowerText.includes("graphic");
-
-        return {
-          isSafe: !hasWarningKeywords,
-          analysis: analysisText.substring(0, 200),
-          categories: hasWarningKeywords ? ["Flagged"] : [],
-          confidence: 0.5,
-        };
       }
+
+      return {
+        isSafe,
+        analysis,
+        categories,
+        confidence,
+      };
     } catch (error: any) {
       console.error("Image moderation error:", error);
-      // Fail open - allow upload if moderation service fails
-      return {
-        isSafe: true,
-        analysis: `Moderation service error: ${error.message}`,
-        categories: [],
-      };
+      throw new Error(
+        `Image moderation failed: ${error.message || "Unknown error"}`
+      );
     }
   },
 });
