@@ -38,13 +38,9 @@ export const moderateImage = internalAction({
       // Initialize Sightengine client
       const client = sightengine(apiUser, apiSecret);
 
-      // Create a temporary file-like object for Sightengine
-      // We'll use the workflow API which accepts base64
-      const base64Image = Buffer.from(imageBuffer).toString('base64');
-      
-      // Make direct API call with base64 image
+      // Create a proper FormData with the image blob
       const formData = new FormData();
-      formData.append('media', base64Image);
+      formData.append('media', imageBlob, 'image.jpg');
       formData.append('models', 'nudity-2.1,wad,offensive,text-content,qr-content,scam');
       formData.append('api_user', apiUser);
       formData.append('api_secret', apiSecret);
