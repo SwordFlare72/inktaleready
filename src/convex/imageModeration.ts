@@ -15,6 +15,10 @@ export const moderateImage = internalAction({
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
 
     if (!accountId || !apiToken) {
+      console.error("Cloudflare credentials missing:", { 
+        hasAccountId: !!accountId, 
+        hasApiToken: !!apiToken 
+      });
       throw new Error(
         "Cloudflare credentials not configured. Please set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in your environment variables."
       );
@@ -22,42 +26,48 @@ export const moderateImage = internalAction({
 
     try {
       // Fetch the image
+      console.log("Fetching image for moderation:", args.imageUrl);
       const imageResponse = await fetch(args.imageUrl);
       if (!imageResponse.ok) {
-        throw new Error("Failed to fetch image for moderation");
+        console.error("Failed to fetch image:", imageResponse.status, imageResponse.statusText);
+        throw new Error(`Failed to fetch image for moderation: ${imageResponse.status}`);
       }
 
       const imageBuffer = await imageResponse.arrayBuffer();
       const base64Image = Buffer.from(imageBuffer).toString("base64");
+      console.log("Image converted to base64, size:", base64Image.length);
 
       // Call Cloudflare AI with NSFW detection model
-      const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@hf/falconsai/nsfw_image_detection`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            image: base64Image,
-          }),
-        }
-      );
+      const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@hf/falconsai/nsfw_image_detection`;
+      console.log("Calling Cloudflare AI API:", apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: base64Image,
+        }),
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("Cloudflare AI request failed:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
         throw new Error(
           `Cloudflare AI request failed: ${response.status} - ${errorText}`
         );
       }
 
       const result = await response.json();
+      console.log("Cloudflare AI response:", JSON.stringify(result, null, 2));
 
       // Parse NSFW detection model response
-      // The model returns an array of predictions with labels and scores
-      // Example: [{ label: "nsfw", score: 0.95 }, { label: "normal", score: 0.05 }]
-      
       let isSafe = true;
       let confidence = 0;
       const categories: string[] = [];
@@ -81,7 +91,11 @@ export const moderateImage = internalAction({
             analysis = `Image appears safe (NSFW confidence: ${(confidence * 100).toFixed(1)}%)`;
           }
         }
+      } else {
+        console.warn("Unexpected API response format:", result);
       }
+
+      console.log("Moderation result:", { isSafe, analysis, categories, confidence });
 
       return {
         isSafe,
@@ -91,6 +105,7 @@ export const moderateImage = internalAction({
       };
     } catch (error: any) {
       console.error("Image moderation error:", error);
+      console.error("Error stack:", error.stack);
       throw new Error(
         `Image moderation failed: ${error.message || "Unknown error"}`
       );
