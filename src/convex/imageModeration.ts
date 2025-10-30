@@ -43,16 +43,16 @@ export const moderateImage = internalAction({
         contentType: 'image/jpeg',
       });
       
-      // Append parameters exactly as in their example (plain strings, no casting)
+      // Append parameters exactly as in their example (explicit strings, no casting)
       formData.append('models', 'nudity,wad,offensive,text,qr,scam');
-      formData.append('api_user', apiUser);
-      formData.append('api_secret', apiSecret);
+      formData.append('api_user', String(apiUser));
+      formData.append('api_secret', String(apiSecret));
 
       console.log("Sending request to Sightengine API...");
       console.log("FormData fields:", {
         hasMedia: true,
         models: 'nudity,wad,offensive,text,qr,scam',
-        apiUser: apiUser,
+        apiUser: String(apiUser),
         apiSecret: apiSecret ? '***' : 'missing',
       });
       console.log("FormData boundary:", formData.getBoundary());
