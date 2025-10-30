@@ -53,9 +53,11 @@ export const moderateImage = internalAction({
       console.log("Sending request to Sightengine API...");
       console.log("FormData fields:", {
         hasMedia: true,
-        models: 'nudity-2.1,wad,offensive,text-content,qr-content,scam',
+        models: models,
         apiUser: apiUser,
+        apiSecret: apiSecret ? '***' : 'missing',
       });
+      console.log("FormData boundary:", formData.getBoundary());
 
       // Send to Sightengine with proper headers from form-data
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
