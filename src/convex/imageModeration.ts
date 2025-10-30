@@ -2,7 +2,6 @@
 
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
-import FormData from "form-data";
 
 export const moderateImage = internalAction({
   args: { storageId: v.id("_storage") },
@@ -34,34 +33,63 @@ export const moderateImage = internalAction({
       
       const imageBuffer = await imageResponse.arrayBuffer();
       
-      // Create FormData exactly as shown in Sightengine documentation
-      const formData = new FormData();
+      // Create boundary for multipart/form-data
+      const boundary = `----WebKitFormBoundary${Math.random().toString(36).substring(2)}`;
       
-      // Append image buffer (matching their fs.createReadStream approach)
-      formData.append('media', Buffer.from(imageBuffer), {
-        filename: 'image.jpg',
-        contentType: 'image/jpeg',
-      });
+      // Manually construct multipart/form-data body
+      const parts: Buffer[] = [];
       
-      // Append parameters exactly as in their example (explicit strings, no casting)
-      formData.append('models', 'nudity,wad,offensive,text,qr,scam');
-      formData.append('api_user', String(apiUser));
-      formData.append('api_secret', String(apiSecret));
+      // Add media field
+      parts.push(Buffer.from(
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="media"; filename="image.jpg"\r\n` +
+        `Content-Type: image/jpeg\r\n\r\n`
+      ));
+      parts.push(Buffer.from(imageBuffer));
+      parts.push(Buffer.from('\r\n'));
+      
+      // Add models field
+      parts.push(Buffer.from(
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="models"\r\n\r\n` +
+        `nudity,wad,offensive,text,qr,scam\r\n`
+      ));
+      
+      // Add api_user field
+      parts.push(Buffer.from(
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="api_user"\r\n\r\n` +
+        `${apiUser}\r\n`
+      ));
+      
+      // Add api_secret field
+      parts.push(Buffer.from(
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="api_secret"\r\n\r\n` +
+        `${apiSecret}\r\n`
+      ));
+      
+      // Add closing boundary
+      parts.push(Buffer.from(`--${boundary}--\r\n`));
+      
+      // Combine all parts
+      const body = Buffer.concat(parts);
 
       console.log("Sending request to Sightengine API...");
-      console.log("FormData fields:", {
-        hasMedia: true,
-        models: 'nudity,wad,offensive,text,qr,scam',
-        apiUser: String(apiUser),
-        apiSecret: apiSecret ? '***' : 'missing',
+      console.log("Request details:", {
+        boundary,
+        bodyLength: body.length,
+        apiUser,
+        hasApiSecret: !!apiSecret,
       });
-      console.log("FormData boundary:", formData.getBoundary());
 
-      // Send to Sightengine with headers from getHeaders() (matching their axios example)
+      // Send to Sightengine
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
         method: 'POST',
-        body: formData as any,
-        headers: formData.getHeaders(),
+        body,
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        },
       });
 
       if (!response.ok) {
