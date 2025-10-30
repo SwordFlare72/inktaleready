@@ -86,7 +86,7 @@ export const moderateImage = internalAction({
       const drugsScore = result.drugs?.prob || 0;
       const wadScore = result.wad?.prob || 0;
       const offensiveScore = result.offensive?.prob || 0;
-      const qrcodeScore = result['qr-content']?.prob || 0;
+      const qrcodeScore = result.qr?.prob || 0;
       const scamScore = result.scam?.prob || 0;
 
       // Text content checks
@@ -140,7 +140,7 @@ export const moderateImage = internalAction({
         reasons.push("offensive content");
       }
       if (qrcodeScore >= qrcodeThreshold) {
-        categories.push("qr-content");
+        categories.push("qr");
         reasons.push("QR codes");
       }
       if (scamScore >= threshold) {
