@@ -45,7 +45,7 @@ export const moderateImage = internalAction({
       
       // Append API parameters as strings (models must be comma-separated)
       // IMPORTANT: Append as plain strings, no options object
-      const models = 'nudity-2.1,wad,offensive,text-content,qr-content,scam';
+      const models = 'nudity,wad,offensive,text,qr,scam';
       formData.append('models', String(models));
       formData.append('api_user', String(apiUser));
       formData.append('api_secret', String(apiSecret));
@@ -53,7 +53,7 @@ export const moderateImage = internalAction({
       console.log("Sending request to Sightengine API...");
       console.log("FormData fields:", {
         hasMedia: true,
-        models: models,
+        models: 'nudity,wad,offensive,text,qr,scam',
         apiUser: apiUser,
         apiSecret: apiSecret ? '***' : 'missing',
       });
