@@ -34,21 +34,19 @@ export const moderateImage = internalAction({
       
       const imageBuffer = await imageResponse.arrayBuffer();
       
-      // Create FormData using form-data package (proper Node.js multipart handling)
+      // Create FormData exactly as shown in Sightengine documentation
       const formData = new FormData();
       
-      // Append image buffer with proper file metadata
+      // Append image buffer (matching their fs.createReadStream approach)
       formData.append('media', Buffer.from(imageBuffer), {
         filename: 'image.jpg',
         contentType: 'image/jpeg',
       });
       
-      // Append API parameters as strings (models must be comma-separated)
-      // IMPORTANT: Append as plain strings, no options object
-      const models = 'nudity,wad,offensive,text,qr,scam';
-      formData.append('models', String(models));
-      formData.append('api_user', String(apiUser));
-      formData.append('api_secret', String(apiSecret));
+      // Append parameters exactly as in their example (plain strings, no casting)
+      formData.append('models', 'nudity,wad,offensive,text,qr,scam');
+      formData.append('api_user', apiUser);
+      formData.append('api_secret', apiSecret);
 
       console.log("Sending request to Sightengine API...");
       console.log("FormData fields:", {
@@ -59,7 +57,7 @@ export const moderateImage = internalAction({
       });
       console.log("FormData boundary:", formData.getBoundary());
 
-      // Send to Sightengine with proper headers from form-data
+      // Send to Sightengine with headers from getHeaders() (matching their axios example)
       const response = await fetch('https://api.sightengine.com/1.0/check.json', {
         method: 'POST',
         body: formData as any,
