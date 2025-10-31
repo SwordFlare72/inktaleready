@@ -28,6 +28,7 @@ export default function EditProfile() {
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
+  const moderateUploadedImage = useAction(api.files.moderateUploadedImage);
   const changeEmail = useMutation(api.users.changeEmail);
   const { signIn, signOut } = useAuth();
 
@@ -455,6 +456,8 @@ export default function EditProfile() {
                         try {
                           setBusy(true);
                           const storageId = await uploadFileAndGetStorageId(file);
+                          // Moderate the uploaded image
+                          await moderateUploadedImage({ storageId });
                           const url = await getFileUrl({ storageId });
                           if (!url) throw new Error("Could not get file URL");
                           setBannerUrl(url); // raw signed URL
@@ -835,6 +838,8 @@ export default function EditProfile() {
                     );
 
                     const storageId = await uploadFileAndGetStorageId(file);
+                    // Moderate the uploaded image
+                    await moderateUploadedImage({ storageId });
                     const url = await getFileUrl({ storageId });
                     if (!url) throw new Error("Could not get file URL");
                     // Store URL directly (matches story cover pattern)
