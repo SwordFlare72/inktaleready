@@ -19,6 +19,7 @@ export default function ChapterEditor() {
   const updateChapter = useMutation(api.chapters.updateChapter);
   const getUploadUrl = useAction(api.files.getUploadUrl);
   const getFileUrl = useAction(api.files.getFileUrl);
+  const moderateUploadedImage = useAction(api.files.moderateUploadedImage);
 
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -134,12 +135,29 @@ export default function ChapterEditor() {
       if (!res.ok) throw new Error("Upload failed");
       const json = await res.json();
       const storageId = json.storageId as string;
+      
+      // Moderate the uploaded image
+      await moderateUploadedImage({ storageId: storageId as any });
+      
       const url = await getFileUrl({ storageId: storageId as any });
       if (!url) throw new Error("Could not resolve image URL");
       exec("insertImage", url);
       toast.success("Image inserted");
-    } catch (e) {
-      toast.error("Failed to insert image");
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      const msgLower = msg.toLowerCase();
+      
+      // Handle moderation errors with clean messages
+      if (msg.includes("Upload rejected:") || msgLower.includes("inappropriate")) {
+        const cleanMsg = msg.includes("Upload rejected:") 
+          ? msg.split("Upload rejected:")[1]?.split(" at ")[0]?.trim() || "Image contains inappropriate content"
+          : "Image contains inappropriate content";
+        toast.error(`Upload rejected: ${cleanMsg}`);
+      } else if (msgLower.includes("quota") || msgLower.includes("limit")) {
+        toast.error("Image moderation service temporarily unavailable. Please try again later.");
+      } else {
+        toast.error("Failed to insert image");
+      }
     }
   };
 
