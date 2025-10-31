@@ -52,7 +52,7 @@ export const moderateImage = internalAction({
       parts.push(Buffer.from(
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="models"\r\n\r\n` +
-        `nudity,wad,offensive,text,qr,scam\r\n`
+        `nudity,wad,offensive,text,qr-content,scam\r\n`
       ));
       
       // Add api_user field
@@ -112,7 +112,7 @@ export const moderateImage = internalAction({
       const drugsScore = result.drugs?.prob || 0;
       const wadScore = result.wad?.prob || 0;
       const offensiveScore = result.offensive?.prob || 0;
-      const qrcodeScore = result.qr?.prob || 0;
+      const qrcodeScore = result['qr-content']?.prob || 0;
       const scamScore = result.scam?.prob || 0;
 
       // Text content checks
@@ -166,7 +166,7 @@ export const moderateImage = internalAction({
         reasons.push("offensive content");
       }
       if (qrcodeScore >= qrcodeThreshold) {
-        categories.push("qr");
+        categories.push("qr-content");
         reasons.push("QR codes");
       }
       if (scamScore >= threshold) {
