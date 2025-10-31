@@ -48,11 +48,11 @@ export const moderateImage = internalAction({
       parts.push(Buffer.from(imageBuffer));
       parts.push(Buffer.from('\r\n'));
       
-      // Add models field
+      // Add models field - reduced to 3 most critical models to save operations
       parts.push(Buffer.from(
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="models"\r\n\r\n` +
-        `nudity,wad,offensive,text,qr-content,scam\r\n`
+        `nudity,wad,offensive\r\n`
       ));
       
       // Add api_user field
@@ -102,7 +102,7 @@ export const moderateImage = internalAction({
 
       console.log("Sightengine moderation result:", JSON.stringify(result, null, 2));
 
-      // Analyze results with strict thresholds (0.4-0.5)
+      // Analyze results with strict thresholds (0.4) - using only 3 critical models
       const nudityScore = Math.max(
         result.nudity?.raw || 0,
         result.nudity?.partial || 0
@@ -112,32 +112,20 @@ export const moderateImage = internalAction({
       const drugsScore = result.drugs?.prob || 0;
       const wadScore = result.wad?.prob || 0;
       const offensiveScore = result.offensive?.prob || 0;
-      const qrcodeScore = result['qr-content']?.prob || 0;
-      const scamScore = result.scam?.prob || 0;
 
-      // Text content checks
-      const hasInappropriateText = result.text?.has_inappropriate || false;
-      const textProfanityScore = result.text?.profanity || 0;
-
-      // Strict threshold of 0.4-0.5
+      // Strict threshold of 0.4
       const threshold = 0.4;
-      const qrcodeThreshold = 0.5;
-      const textThreshold = 0.4;
 
-      // Determine if content is safe
+      // Determine if content is safe (only checking 3 models now)
       const isSafe =
         nudityScore < threshold &&
         weaponScore < threshold &&
         alcoholScore < threshold &&
         drugsScore < threshold &&
         wadScore < threshold &&
-        offensiveScore < threshold &&
-        qrcodeScore < qrcodeThreshold &&
-        scamScore < threshold &&
-        !hasInappropriateText &&
-        textProfanityScore < textThreshold;
+        offensiveScore < threshold;
 
-      // Build detailed categories list for unsafe content
+      // Build detailed categories list for unsafe content (3 models only)
       const categories: string[] = [];
       const reasons: string[] = [];
 
@@ -165,18 +153,6 @@ export const moderateImage = internalAction({
         categories.push("offensive");
         reasons.push("offensive content");
       }
-      if (qrcodeScore >= qrcodeThreshold) {
-        categories.push("qr-content");
-        reasons.push("QR codes");
-      }
-      if (scamScore >= threshold) {
-        categories.push("scam");
-        reasons.push("scam-related content");
-      }
-      if (hasInappropriateText || textProfanityScore >= textThreshold) {
-        categories.push("inappropriate-text");
-        reasons.push("inappropriate text");
-      }
 
       const maxScore = Math.max(
         nudityScore,
@@ -184,10 +160,7 @@ export const moderateImage = internalAction({
         alcoholScore,
         drugsScore,
         wadScore,
-        offensiveScore,
-        qrcodeScore,
-        scamScore,
-        textProfanityScore
+        offensiveScore
       );
 
       return {
@@ -204,10 +177,6 @@ export const moderateImage = internalAction({
           drugs: drugsScore,
           wad: wadScore,
           offensive: offensiveScore,
-          qrcode: qrcodeScore,
-          scam: scamScore,
-          inappropriateText: hasInappropriateText,
-          textProfanity: textProfanityScore,
         },
       };
     } catch (error: any) {
