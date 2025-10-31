@@ -104,9 +104,9 @@ export default function Write() {
       
       // Check if it's a moderation error and show user-friendly message
       if (errorMsg.includes("Upload rejected:") || errorMsg.includes("Inappropriate")) {
-        // Extract just the reason part after "Upload rejected:"
+        // Extract just the reason part after "Upload rejected:" and before " at handler"
         const cleanMsg = errorMsg.includes("Upload rejected:") 
-          ? errorMsg.split("Upload rejected:")[1]?.trim() || "Image contains inappropriate content"
+          ? errorMsg.split("Upload rejected:")[1]?.split(" at ")[0]?.trim() || "Image contains inappropriate content"
           : "Image contains inappropriate content";
         toast.error(`Upload rejected: ${cleanMsg}`);
       } else if (errorMsg.includes("quota") || errorMsg.includes("limit")) {
