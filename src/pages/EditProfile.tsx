@@ -463,27 +463,37 @@ export default function EditProfile() {
                             "Background image selected. Click 'Save Changes' to apply.",
                           );
                         } catch (err: any) {
-                          const msg = String(err?.message || "").toLowerCase();
-                          if (msg.includes("too large")) {
+                          const msg = String(err?.message || "");
+                          const msgLower = msg.toLowerCase();
+                          
+                          // Handle moderation errors with clean messages
+                          if (msg.includes("Upload rejected:") || msgLower.includes("inappropriate")) {
+                            const cleanMsg = msg.includes("Upload rejected:") 
+                              ? msg.split("Upload rejected:")[1]?.split(" at ")[0]?.trim() || "Image contains inappropriate content"
+                              : "Image contains inappropriate content";
+                            toast.error(`Upload rejected: ${cleanMsg}`);
+                          } else if (msgLower.includes("too large")) {
                             toast.error("File too large. Try a smaller image.");
-                          } else if (msg.includes("unsupported")) {
+                          } else if (msgLower.includes("unsupported")) {
                             toast.error(
                               "Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.",
                             );
                           } else if (
-                            msg.includes("not authorized") ||
-                            msg.includes("sign in")
+                            msgLower.includes("not authorized") ||
+                            msgLower.includes("sign in")
                           ) {
                             toast.error(
                               "Upload not authorized. Please sign in again.",
                             );
-                          } else if (msg.includes("timed out")) {
+                          } else if (msgLower.includes("timed out")) {
                             toast.error("Upload timed out. Please try again.");
                           } else if (
-                            msg.includes("network") ||
-                            msg.includes("failed to fetch")
+                            msgLower.includes("network") ||
+                            msgLower.includes("failed to fetch")
                           ) {
                             toast.error("Network error. Please try again.");
+                          } else if (msgLower.includes("quota") || msgLower.includes("limit")) {
+                            toast.error("Image moderation service temporarily unavailable. Please try again later.");
                           } else {
                             toast.error("Upload failed");
                           }
@@ -834,31 +844,41 @@ export default function EditProfile() {
                       "Avatar updated. Click 'Save Changes' to apply.",
                     );
                   } catch (e: any) {
-                    const msg = String(e?.message || "").toLowerCase();
-                    if (msg.includes("too large")) {
+                    const msg = String(e?.message || "");
+                    const msgLower = msg.toLowerCase();
+                    
+                    // Handle moderation errors with clean messages
+                    if (msg.includes("Upload rejected:") || msgLower.includes("inappropriate")) {
+                      const cleanMsg = msg.includes("Upload rejected:") 
+                        ? msg.split("Upload rejected:")[1]?.split(" at ")[0]?.trim() || "Image contains inappropriate content"
+                        : "Image contains inappropriate content";
+                      toast.error(`Upload rejected: ${cleanMsg}`);
+                    } else if (msgLower.includes("too large")) {
                       toast.error("File too large. Try a smaller image.");
-                    } else if (msg.includes("unsupported")) {
+                    } else if (msgLower.includes("unsupported")) {
                       toast.error(
                         "Unsupported file type. Use PNG, JPG, JPEG, WEBP, or GIF.",
                       );
                     } else if (
-                      msg.includes("not authorized") ||
-                      msg.includes("sign in")
+                      msgLower.includes("not authorized") ||
+                      msgLower.includes("sign in")
                     ) {
                       toast.error(
                         "Upload not authorized. Please sign in again.",
                       );
-                    } else if (msg.includes("timed out")) {
+                    } else if (msgLower.includes("timed out")) {
                       toast.error("Upload timed out. Please try again.");
                     } else if (
-                      msg.includes("network") ||
-                      msg.includes("failed to fetch")
+                      msgLower.includes("network") ||
+                      msgLower.includes("failed to fetch")
                     ) {
                       toast.error("Network error. Please try again.");
-                    } else if (msg.includes("permission")) {
+                    } else if (msgLower.includes("permission")) {
                       toast.error(
                         "Permission denied. Please allow photo access.",
                       );
+                    } else if (msgLower.includes("quota") || msgLower.includes("limit")) {
+                      toast.error("Image moderation service temporarily unavailable. Please try again later.");
                     } else {
                       toast.error("Crop or upload failed");
                     }

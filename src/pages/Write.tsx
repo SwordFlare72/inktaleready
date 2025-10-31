@@ -99,8 +99,23 @@ export default function Write() {
       const publicUrl = await getFileUrl({ storageId });
       return publicUrl ?? null;
     } catch (e: any) {
+      // Extract clean error message from moderation errors
       const errorMsg = e?.message || "Failed to upload image";
-      toast.error(errorMsg);
+      
+      // Check if it's a moderation error and show user-friendly message
+      if (errorMsg.includes("Upload rejected:") || errorMsg.includes("Inappropriate")) {
+        // Extract just the reason part after "Upload rejected:"
+        const cleanMsg = errorMsg.includes("Upload rejected:") 
+          ? errorMsg.split("Upload rejected:")[1]?.trim() || "Image contains inappropriate content"
+          : "Image contains inappropriate content";
+        toast.error(`Upload rejected: ${cleanMsg}`);
+      } else if (errorMsg.includes("quota") || errorMsg.includes("limit")) {
+        toast.error("Image moderation service temporarily unavailable. Please try again later.");
+      } else if (errorMsg.includes("credentials") || errorMsg.includes("authentication")) {
+        toast.error("Image moderation service configuration error. Please contact support.");
+      } else {
+        toast.error(errorMsg);
+      }
       return null;
     } finally {
       setUploadingCover(false);
