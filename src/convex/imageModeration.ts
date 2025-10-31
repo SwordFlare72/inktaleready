@@ -23,9 +23,9 @@ export const moderateImage = internalAction({
         throw new Error("Could not retrieve image URL from storage");
       }
 
-      console.log("Moderating image with Sightengine:", args.storageId);
+      console.log("Moderating image with Sightengine (sequential):", args.storageId);
 
-      // Download the image as a buffer
+      // Download the image as a buffer once
       const imageResponse = await fetch(imageUrl);
       if (!imageResponse.ok) {
         throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
@@ -33,151 +33,124 @@ export const moderateImage = internalAction({
       
       const imageBuffer = await imageResponse.arrayBuffer();
       
-      // Create boundary for multipart/form-data
-      const boundary = `----WebKitFormBoundary${Math.random().toString(36).substring(2)}`;
-      
-      // Manually construct multipart/form-data body
-      const parts: Buffer[] = [];
-      
-      // Add media field
-      parts.push(Buffer.from(
-        `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="media"; filename="image.jpg"\r\n` +
-        `Content-Type: image/jpeg\r\n\r\n`
-      ));
-      parts.push(Buffer.from(imageBuffer));
-      parts.push(Buffer.from('\r\n'));
-      
-      // Add models field - reduced to 3 most critical models to save operations
-      parts.push(Buffer.from(
-        `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="models"\r\n\r\n` +
-        `nudity,wad,offensive\r\n`
-      ));
-      
-      // Add api_user field
-      parts.push(Buffer.from(
-        `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="api_user"\r\n\r\n` +
-        `${apiUser}\r\n`
-      ));
-      
-      // Add api_secret field
-      parts.push(Buffer.from(
-        `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="api_secret"\r\n\r\n` +
-        `${apiSecret}\r\n`
-      ));
-      
-      // Add closing boundary
-      parts.push(Buffer.from(`--${boundary}--\r\n`));
-      
-      // Combine all parts
-      const body = Buffer.concat(parts);
+      // Define models to check sequentially (most critical first)
+      const modelsToCheck = [
+        { name: "nudity", label: "nudity or sexual content", threshold: 0.4 },
+        { name: "wad", label: "weapons, alcohol, or drugs", threshold: 0.4 },
+        { name: "offensive", label: "offensive content", threshold: 0.4 },
+      ];
 
-      console.log("Sending request to Sightengine API...");
-      console.log("Request details:", {
-        boundary,
-        bodyLength: body.length,
-        apiUser,
-        hasApiSecret: !!apiSecret,
-      });
+      // Helper function to check a single model
+      const checkModel = async (modelName: string) => {
+        const boundary = `----WebKitFormBoundary${Math.random().toString(36).substring(2)}`;
+        const parts: Buffer[] = [];
+        
+        // Add media field
+        parts.push(Buffer.from(
+          `--${boundary}\r\n` +
+          `Content-Disposition: form-data; name="media"; filename="image.jpg"\r\n` +
+          `Content-Type: image/jpeg\r\n\r\n`
+        ));
+        parts.push(Buffer.from(imageBuffer));
+        parts.push(Buffer.from('\r\n'));
+        
+        // Add models field
+        parts.push(Buffer.from(
+          `--${boundary}\r\n` +
+          `Content-Disposition: form-data; name="models"\r\n\r\n` +
+          `${modelName}\r\n`
+        ));
+        
+        // Add api_user field
+        parts.push(Buffer.from(
+          `--${boundary}\r\n` +
+          `Content-Disposition: form-data; name="api_user"\r\n\r\n` +
+          `${apiUser}\r\n`
+        ));
+        
+        // Add api_secret field
+        parts.push(Buffer.from(
+          `--${boundary}\r\n` +
+          `Content-Disposition: form-data; name="api_secret"\r\n\r\n` +
+          `${apiSecret}\r\n`
+        ));
+        
+        // Add closing boundary
+        parts.push(Buffer.from(`--${boundary}--\r\n`));
+        
+        const body = Buffer.concat(parts);
 
-      // Send to Sightengine
-      const response = await fetch('https://api.sightengine.com/1.0/check.json', {
-        method: 'POST',
-        body,
-        headers: {
-          'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        },
-      });
+        console.log(`Checking model: ${modelName}...`);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Sightengine API error response:", errorText);
-        throw new Error(`Sightengine API error: ${response.status} - ${errorText}`);
+        const response = await fetch('https://api.sightengine.com/1.0/check.json', {
+          method: 'POST',
+          body,
+          headers: {
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Sightengine API error for ${modelName}:`, errorText);
+          throw new Error(`Sightengine API error: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+      };
+
+      // Check models sequentially, stopping at first failure
+      let allDetails: any = {};
+      let failedModel: { name: string; label: string; score: number } | null = null;
+
+      for (const model of modelsToCheck) {
+        const result = await checkModel(model.name);
+        console.log(`${model.name} result:`, JSON.stringify(result, null, 2));
+
+        // Extract score based on model type
+        let score = 0;
+        if (model.name === "nudity") {
+          score = Math.max(result.nudity?.raw || 0, result.nudity?.partial || 0);
+          allDetails.nudity = score;
+        } else if (model.name === "wad") {
+          score = result.wad?.prob || 0;
+          allDetails.wad = score;
+          allDetails.weapons = result.weapon?.prob || 0;
+          allDetails.alcohol = result.alcohol?.prob || 0;
+          allDetails.drugs = result.drugs?.prob || 0;
+        } else if (model.name === "offensive") {
+          score = result.offensive?.prob || 0;
+          allDetails.offensive = score;
+        }
+
+        // Check if this model detected inappropriate content
+        if (score >= model.threshold) {
+          failedModel = { name: model.name, label: model.label, score };
+          console.log(`❌ Image failed ${model.name} check (score: ${score})`);
+          break; // Stop checking further models
+        } else {
+          console.log(`✅ Image passed ${model.name} check (score: ${score})`);
+        }
       }
 
-      const result = await response.json();
-
-      console.log("Sightengine moderation result:", JSON.stringify(result, null, 2));
-
-      // Analyze results with strict thresholds (0.4) - using only 3 critical models
-      const nudityScore = Math.max(
-        result.nudity?.raw || 0,
-        result.nudity?.partial || 0
-      );
-      const weaponScore = result.weapon?.prob || 0;
-      const alcoholScore = result.alcohol?.prob || 0;
-      const drugsScore = result.drugs?.prob || 0;
-      const wadScore = result.wad?.prob || 0;
-      const offensiveScore = result.offensive?.prob || 0;
-
-      // Strict threshold of 0.4
-      const threshold = 0.4;
-
-      // Determine if content is safe (only checking 3 models now)
-      const isSafe =
-        nudityScore < threshold &&
-        weaponScore < threshold &&
-        alcoholScore < threshold &&
-        drugsScore < threshold &&
-        wadScore < threshold &&
-        offensiveScore < threshold;
-
-      // Build detailed categories list for unsafe content (3 models only)
-      const categories: string[] = [];
-      const reasons: string[] = [];
-
-      if (nudityScore >= threshold) {
-        categories.push("nudity");
-        reasons.push("nudity or sexual content");
-      }
-      if (weaponScore >= threshold) {
-        categories.push("weapons");
-        reasons.push("weapons");
-      }
-      if (alcoholScore >= threshold) {
-        categories.push("alcohol");
-        reasons.push("alcohol");
-      }
-      if (drugsScore >= threshold) {
-        categories.push("drugs");
-        reasons.push("drugs");
-      }
-      if (wadScore >= threshold) {
-        categories.push("wad");
-        reasons.push("weapons, alcohol, or drugs");
-      }
-      if (offensiveScore >= threshold) {
-        categories.push("offensive");
-        reasons.push("offensive content");
+      // Determine final result
+      if (failedModel) {
+        return {
+          safe: false,
+          confidence: failedModel.score,
+          categories: [failedModel.name],
+          reason: `Upload rejected: Inappropriate or unsafe content detected (${failedModel.label}).`,
+          details: allDetails,
+        };
       }
 
-      const maxScore = Math.max(
-        nudityScore,
-        weaponScore,
-        alcoholScore,
-        drugsScore,
-        wadScore,
-        offensiveScore
-      );
-
+      // All checks passed
       return {
-        safe: isSafe,
-        confidence: maxScore,
-        categories: categories.length > 0 ? categories : ["safe"],
-        reason: reasons.length > 0 
-          ? `Upload rejected: Inappropriate or unsafe content detected (${reasons.join(", ")}).`
-          : "Content is safe",
-        details: {
-          nudity: nudityScore,
-          weapons: weaponScore,
-          alcohol: alcoholScore,
-          drugs: drugsScore,
-          wad: wadScore,
-          offensive: offensiveScore,
-        },
+        safe: true,
+        confidence: 0,
+        categories: ["safe"],
+        reason: "Content is safe",
+        details: allDetails,
       };
     } catch (error: any) {
       console.error("Sightengine moderation error:", error);
