@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, UserX, Chrome, Eye, EyeOff } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
@@ -470,12 +471,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                   <div>
                     <Label className="mb-1 block">Gender (optional)</Label>
-                    <Input
-                      placeholder="e.g., Male, Female, Non-binary"
+                    <Select
                       value={suGender ?? ""}
-                      onChange={(e) => setSuGender(e.target.value || undefined)}
+                      onValueChange={(value) => setSuGender(value || undefined)}
                       disabled={isLoading}
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Select gender</SelectItem>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Non-binary">Non-binary</SelectItem>
+                        <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
