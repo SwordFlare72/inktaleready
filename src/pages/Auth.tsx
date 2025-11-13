@@ -125,6 +125,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("flow", "signIn");
       await signIn("password", fd);
       // Navigation handled by effect
+      setIsLoading(false);
     } catch (err: any) {
       const msg = String(err?.message || "").toLowerCase();
       if (msg.includes("network") || msg.includes("failed to fetch")) {
@@ -139,7 +140,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       } else {
         setError("Invalid Email/Username Or Password");
       }
-    } finally {
       setIsLoading(false);
     }
   };
