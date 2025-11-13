@@ -123,10 +123,24 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("email", email);
       fd.set("password", cleanPassword);
       fd.set("flow", "signIn");
-      await signIn("password", fd);
-      // Navigation handled by effect
-      setIsLoading(false);
+      
+      try {
+        await signIn("password", fd);
+        // Navigation handled by effect
+        setIsLoading(false);
+      } catch (signInErr: any) {
+        console.error("Sign in error:", signInErr);
+        const signInMsg = String(signInErr?.message || "").toLowerCase();
+        if (signInMsg.includes("invalid") || signInMsg.includes("incorrect") || signInMsg.includes("wrong")) {
+          setError("Invalid Email/Username Or Password");
+        } else {
+          setError("Login failed. Please check your credentials and try again.");
+        }
+        setIsLoading(false);
+        return;
+      }
     } catch (err: any) {
+      console.error("Login error:", err);
       const msg = String(err?.message || "").toLowerCase();
       if (msg.includes("network") || msg.includes("failed to fetch")) {
         setError("Network error. Please try again.");
