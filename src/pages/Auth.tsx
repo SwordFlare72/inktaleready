@@ -108,8 +108,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       let email: string;
       try {
         email = await getEmailForLogin({ identifier: cleanIdentifier });
-      } catch {
-        setError("User not signed up");
+      } catch (err: any) {
+        const msg = String(err?.message || "").toLowerCase();
+        if (msg.includes("not found") || msg.includes("user not found")) {
+          setError("User not signed up");
+        } else {
+          setError("Invalid Email/Username");
+        }
+        setIsLoading(false);
         return;
       }
 
