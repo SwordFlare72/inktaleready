@@ -90,7 +90,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         // Do not navigate away during signup flow; let the signup handler manage errors
         return;
       }
-      // Username exists -> proceed
+      // Username exists -> proceed to homepage
+      console.log("Login successful, redirecting to:", redirectAfterAuth || "/");
       navigate(redirectAfterAuth || "/");
     }
   }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername]);
