@@ -84,8 +84,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // If username missing:
       if (!me.username) {
         // Only open the dialog automatically for Google flow or explicit prompt
-        // OR if we are not loading (meaning login/signup flow finished or we just loaded the page)
-        if (shouldPromptUsername || !isLoading) {
+        if (shouldPromptUsername) {
           setShowUsernameDialog(true);
         }
         // Do not navigate away during signup flow; let the signup handler manage errors
@@ -94,23 +93,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // Username exists -> proceed
       navigate(redirectAfterAuth || "/");
     }
-  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername, isLoading]);
+  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername]);
 
   const doLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    
     try {
       // Normalize inputs
       const cleanIdentifier = identifier.trim();
       const cleanPassword = password.trim();
-
-      if (!cleanIdentifier || !cleanPassword) {
-        setError("Please enter both email/username and password");
-        setIsLoading(false);
-        return;
-      }
 
       // Resolve email or username -> email for provider
       let email: string;
@@ -127,7 +119,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         return;
       }
 
-      // Attempt sign in
       const fd = new FormData();
       fd.set("email", email);
       fd.set("password", cleanPassword);
@@ -135,21 +126,34 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       
       try {
         await signIn("password", fd);
-        // Success - navigation will be handled by useEffect
-        // Keep loading state true until navigation occurs
+        // Navigation handled by effect
+        setIsLoading(false);
       } catch (signInErr: any) {
         console.error("Sign in error:", signInErr);
         const signInMsg = String(signInErr?.message || "").toLowerCase();
-        if (signInMsg.includes("invalid") || signInMsg.includes("incorrect") || signInMsg.includes("wrong") || signInMsg.includes("password")) {
+        if (signInMsg.includes("invalid") || signInMsg.includes("incorrect") || signInMsg.includes("wrong")) {
           setError("Invalid Email/Username Or Password");
         } else {
           setError("Login failed. Please check your credentials and try again.");
         }
         setIsLoading(false);
+        return;
       }
     } catch (err: any) {
-      console.error("Unexpected login error:", err);
-      setError("An unexpected error occurred. Please try again.");
+      console.error("Login error:", err);
+      const msg = String(err?.message || "").toLowerCase();
+      if (msg.includes("network") || msg.includes("failed to fetch")) {
+        setError("Network error. Please try again.");
+      } else if (
+        msg.includes("not found") ||
+        msg.includes("no account") ||
+        msg.includes("no such user") ||
+        msg.includes("user not signed up")
+      ) {
+        setError("User not signed up");
+      } else {
+        setError("Invalid Email/Username Or Password");
+      }
       setIsLoading(false);
     }
   };
