@@ -104,6 +104,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const cleanIdentifier = identifier.trim();
       const cleanPassword = password.trim();
 
+      // Validate both fields are filled
+      if (!cleanIdentifier || !cleanPassword) {
+        setError("Please enter both email/username and password");
+        setIsLoading(false);
+        return;
+      }
+
       // Resolve email or username -> email for provider
       let email: string;
       try {
