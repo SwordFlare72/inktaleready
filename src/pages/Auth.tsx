@@ -100,10 +100,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    
     try {
       // Normalize inputs
       const cleanIdentifier = identifier.trim();
       const cleanPassword = password.trim();
+
+      if (!cleanIdentifier || !cleanPassword) {
+        setError("Please enter both email/username and password");
+        setIsLoading(false);
+        return;
+      }
 
       // Resolve email or username -> email for provider
       let email: string;
@@ -120,6 +127,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         return;
       }
 
+      // Attempt sign in
       const fd = new FormData();
       fd.set("email", email);
       fd.set("password", cleanPassword);
@@ -127,34 +135,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       
       try {
         await signIn("password", fd);
-        // Navigation handled by effect
-        setIsLoading(false);
+        // Success - navigation will be handled by useEffect
+        // Keep loading state true until navigation occurs
       } catch (signInErr: any) {
         console.error("Sign in error:", signInErr);
         const signInMsg = String(signInErr?.message || "").toLowerCase();
-        if (signInMsg.includes("invalid") || signInMsg.includes("incorrect") || signInMsg.includes("wrong")) {
+        if (signInMsg.includes("invalid") || signInMsg.includes("incorrect") || signInMsg.includes("wrong") || signInMsg.includes("password")) {
           setError("Invalid Email/Username Or Password");
         } else {
           setError("Login failed. Please check your credentials and try again.");
         }
         setIsLoading(false);
-        return;
       }
     } catch (err: any) {
-      console.error("Login error:", err);
-      const msg = String(err?.message || "").toLowerCase();
-      if (msg.includes("network") || msg.includes("failed to fetch")) {
-        setError("Network error. Please try again.");
-      } else if (
-        msg.includes("not found") ||
-        msg.includes("no account") ||
-        msg.includes("no such user") ||
-        msg.includes("user not signed up")
-      ) {
-        setError("User not signed up");
-      } else {
-        setError("Invalid Email/Username Or Password");
-      }
+      console.error("Unexpected login error:", err);
+      setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };
