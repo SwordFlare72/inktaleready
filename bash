@@ -1,1 +1,1 @@
-npx convex dev --once
+read_file src/hooks/use-auth.ts

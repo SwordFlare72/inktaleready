@@ -84,7 +84,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // If username missing:
       if (!me.username) {
         // Only open the dialog automatically for Google flow or explicit prompt
-        if (shouldPromptUsername) {
+        // OR if we are not loading (meaning login/signup flow finished or we just loaded the page)
+        if (shouldPromptUsername || !isLoading) {
           setShowUsernameDialog(true);
         }
         // Do not navigate away during signup flow; let the signup handler manage errors
@@ -93,7 +94,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // Username exists -> proceed
       navigate(redirectAfterAuth || "/");
     }
-  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername]);
+  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername, isLoading]);
 
   const doLogin = async (e: React.FormEvent) => {
     e.preventDefault();
