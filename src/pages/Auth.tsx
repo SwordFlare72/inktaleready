@@ -43,7 +43,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [suUsernameError, setSuUsernameError] = useState<string | null>(null);
   const [suEmailError, setSuEmailError] = useState<string | null>(null);
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
-  // Add: display name (optional, free-form)
   const [suDisplayName, setSuDisplayName] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -56,12 +55,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
 
-  // Add: OTP dialog state
+  // OTP dialog state
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [otpEmail, setOtpEmail] = useState("");
 
-  // Add: OTP mutations
+  // OTP mutations
   const generateOTP = useMutation(api.otp.generateOTP);
   const verifyOTP = useMutation(api.otp.verifyOTP);
 
@@ -83,8 +82,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     if (!authLoading && isAuthenticated && me) {
       // If username missing:
       if (!me.username) {
-        // Only open the dialog automatically for Google flow or explicit prompt
-        if (shouldPromptUsername) {
+        // Open dialog if prompted OR if page is not loading
+        if (shouldPromptUsername || !isLoading) {
           setShowUsernameDialog(true);
         }
         // Do not navigate away during signup flow; let the signup handler manage errors
@@ -93,16 +92,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // Username exists -> proceed
       navigate(redirectAfterAuth || "/");
     }
-  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername]);
+  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername, isLoading]);
 
   const doLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
-      // Normalize inputs
+      // Input Validation
       const cleanIdentifier = identifier.trim();
       const cleanPassword = password.trim();
+
+      if (!cleanIdentifier || !cleanPassword) {
+        setError("Please enter both email/username and password");
+        setIsLoading(false);
+        return;
+      }
 
       // Resolve email or username -> email for provider
       let email: string;
@@ -608,7 +613,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </Card>
         </div>
 
-      {/* Add: OTP Verification Dialog */}
+      {/* OTP Verification Dialog */}
       <Dialog open={showOTPDialog} onOpenChange={(open) => setShowOTPDialog(open)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
