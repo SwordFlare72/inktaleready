@@ -81,20 +81,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && me) {
-      // If username missing:
+      // If username missing, always prompt for it
       if (!me.username) {
-        // Only open the dialog automatically for Google flow or explicit prompt
-        if (shouldPromptUsername) {
-          setShowUsernameDialog(true);
-        }
-        // Do not navigate away during signup flow; let the signup handler manage errors
+        setShowUsernameDialog(true);
         return;
       }
       // Username exists -> proceed to homepage
       console.log("Login successful, redirecting to:", redirectAfterAuth || "/");
       navigate(redirectAfterAuth || "/");
     }
-  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, shouldPromptUsername]);
+  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth]);
 
   const doLogin = async (e: React.FormEvent) => {
     e.preventDefault();
