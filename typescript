@@ -1,2 +1,3 @@
-   from: "InkTale <noreply@yourdomain.com>", // Change this
-   
+export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
+  providers: [Password, Anonymous],
+});
