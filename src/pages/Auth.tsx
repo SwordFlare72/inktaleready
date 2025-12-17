@@ -88,7 +88,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       }
       // Username exists -> proceed to homepage
       console.log("Login successful, redirecting to:", redirectAfterAuth || "/");
-      navigate(redirectAfterAuth || "/");
+      
+      // Clean up OAuth callback URL parameters before redirecting
+      const targetPath = redirectAfterAuth || "/";
+      navigate(targetPath, { replace: true });
     }
   }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth]);
 
