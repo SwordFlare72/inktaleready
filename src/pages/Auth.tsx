@@ -86,11 +86,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         setShowUsernameDialog(true);
         return;
       }
-      // Username exists -> proceed to homepage
-      console.log("Login successful, redirecting to:", redirectAfterAuth || "/");
+      // Username exists -> proceed to dashboard
+      console.log("Login successful, redirecting to:", redirectAfterAuth || "/dashboard");
       
       // Clean up OAuth callback URL parameters before redirecting
-      const targetPath = redirectAfterAuth || "/";
+      const targetPath = redirectAfterAuth || "/dashboard";
       navigate(targetPath, { replace: true });
     }
   }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth]);
@@ -290,7 +290,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       toast.success("Account created successfully!");
       setShowOTPDialog(false);
-      navigate(redirectAfterAuth || "/");
+      navigate(redirectAfterAuth || "/dashboard", { replace: true });
     } catch (err: any) {
       toast.error(err?.message || "Invalid verification code");
     } finally {
@@ -331,7 +331,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       toast.success("Username saved!");
       setShowUsernameDialog(false);
       setShouldPromptUsername(false);
-      navigate("/");
+      navigate("/dashboard", { replace: true });
     } catch (e: any) {
       toast.error(e?.message || "Failed to save username");
     }
