@@ -1,2 +1,1 @@
-npx convex env unset AUTH_GOOGLE_CLIENT_ID
-npx convex env unset AUTH_GOOGLE_CLIENT_SECRET
+npx convex dev
