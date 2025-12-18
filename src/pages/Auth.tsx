@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX, Chrome, Eye, EyeOff } from "lucide-react";
+import { Chrome, Eye, EyeOff } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -43,7 +42,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [suUsernameError, setSuUsernameError] = useState<string | null>(null);
   const [suEmailError, setSuEmailError] = useState<string | null>(null);
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
-  // Add: display name (optional, free-form)
   const [suDisplayName, setSuDisplayName] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -56,12 +54,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
 
-  // Add: OTP dialog state
+  // OTP dialog state
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [otpEmail, setOtpEmail] = useState("");
 
-  // Add: OTP mutations
+  // OTP mutations
   const generateOTP = useMutation(api.otp.generateOTP);
   const verifyOTP = useMutation(api.otp.verifyOTP);
 
@@ -70,15 +68,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const setUsername = useMutation(api.users.setUsername);
   const updateMe = useMutation(api.users.updateMe);
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
-
-  // Helper to resolve username/email
   const getEmailForLogin = useMutation(api.users.getEmailForLogin);
 
   // Username dialog for Google first-time users
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
-  const [shouldPromptUsername, setShouldPromptUsername] = useState(false);
 
+  // Clean up OAuth callback parameters immediately on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('code') || urlParams.has('state')) {
+      console.log("OAuth callback detected, cleaning URL...");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // Handle authentication state and redirect
   useEffect(() => {
     if (!authLoading && isAuthenticated && me) {
       // If username missing, always prompt for it
@@ -89,7 +94,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // Username exists -> proceed to dashboard
       console.log("Login successful, redirecting to:", redirectAfterAuth || "/dashboard");
       
-      // Clean up OAuth callback URL parameters before redirecting
       const targetPath = redirectAfterAuth || "/dashboard";
       navigate(targetPath, { replace: true });
     }
@@ -100,18 +104,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      // Normalize inputs
       const cleanIdentifier = identifier.trim();
       const cleanPassword = password.trim();
 
-      // Validate both fields are filled
       if (!cleanIdentifier || !cleanPassword) {
         setError("Please enter both email/username and password");
         setIsLoading(false);
         return;
       }
 
-      // Resolve email or username -> email for provider
       let email: string;
       try {
         email = await getEmailForLogin({ identifier: cleanIdentifier });
@@ -133,7 +134,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       
       try {
         await signIn("password", fd);
-        // Navigation handled by effect
         setIsLoading(false);
       } catch (signInErr: any) {
         console.error("Sign in error:", signInErr);
@@ -173,21 +173,18 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setSuEmailError(null);
     setSuPasswordError(null);
     try {
-      // Basic client validation
       const desired = suUsername.trim();
       if (desired.length < 3 || desired.length > 20 || !/^[a-zA-Z0-9_]+$/.test(desired)) {
         setSuUsernameError("Invalid username format");
         return;
       }
 
-      // Email format validation
       const normalizedEmail = suEmail.replace(/\s+/g, "").toLowerCase();
       if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
         setSuEmailError("Enter a valid email address");
         return;
       }
 
-      // Password checks
       if (suPassword.length < 8) {
         setSuPasswordError("Password must be at least 8 characters");
         return;
@@ -197,14 +194,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         return;
       }
 
-      // Check username availability BEFORE sending OTP
       const available = await isUsernameAvailable({ username: desired });
       if (!available) {
         setSuUsernameError("Username is already taken");
         return;
       }
 
-      // Generate and send OTP
       try {
         await generateOTP({ email: normalizedEmail });
         setOtpEmail(normalizedEmail);
@@ -234,24 +229,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
     setIsLoading(true);
     try {
-      // Verify OTP
       await verifyOTP({ email: otpEmail, otp: otpCode });
 
-      // Sign out any existing session
       try {
         await signOut();
       } catch {
         // Ignore
       }
 
-      // Create account
       const fd = new FormData();
       fd.set("email", otpEmail);
       fd.set("password", suPassword);
       fd.set("flow", "signUp");
       await signIn("password", fd);
 
-      // Set username with retries
       let saved = false;
       for (let i = 0; i < 6; i++) {
         try {
@@ -277,7 +268,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // Set display name and gender
       try {
         const payload: Record<string, string> = {
           name: suDisplayName.trim() || suUsername.trim(),
@@ -308,11 +298,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  // Handle Google button (if enabled)
   const handleGoogle = async () => {
     try {
-      // Mark that we should prompt for username after Google if missing
-      setShouldPromptUsername(true);
       await signIn("google");
     } catch (e) {
       console.error(e);
@@ -330,7 +317,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await setUsername({ username: val });
       toast.success("Username saved!");
       setShowUsernameDialog(false);
-      setShouldPromptUsername(false);
       navigate("/dashboard", { replace: true });
     } catch (e: any) {
       toast.error(e?.message || "Failed to save username");
@@ -339,7 +325,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black dark px-4 py-8">
-      {/* Logo Section */}
       <div className="mb-6">
         <img
           src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937"
@@ -361,7 +346,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               </CardDescription>
             </CardHeader>
 
-            {/* Forms */}
             {mode === "login" ? (
               <form onSubmit={doLogin}>
                 <CardContent className="pt-2 space-y-3">
@@ -615,7 +599,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </Card>
         </div>
 
-      {/* Add: OTP Verification Dialog */}
       <Dialog open={showOTPDialog} onOpenChange={(open) => setShowOTPDialog(open)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -660,7 +643,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         </DialogContent>
       </Dialog>
 
-      {/* Username setup dialog for first-time Google users */}
       <Dialog open={showUsernameDialog} onOpenChange={(open) => setShowUsernameDialog(open)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
