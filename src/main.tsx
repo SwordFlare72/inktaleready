@@ -66,6 +66,15 @@ function GlobalRedirector() {
 
   // Only run once loading is finished
   useEffect(() => {
+    // Skip if this is an OAuth callback (preserve query params)
+    const searchParams = new URLSearchParams(location.search);
+    const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
+    
+    if (isOAuthCallback) {
+      // Don't redirect OAuth callbacks - let HomeGate handle them
+      return;
+    }
+
     // Treat users without a username as not fully authenticated
     const notFullyAuthed =
       !isAuthenticated ||
@@ -76,7 +85,7 @@ function GlobalRedirector() {
     if (!isLoading && notFullyAuthed && location.pathname !== "/auth") {
       navigate("/auth", { replace: true });
     }
-  }, [isLoading, isAuthenticated, user, location.pathname, navigate]);
+  }, [isLoading, isAuthenticated, user, location.pathname, location.search, navigate]);
 
   return null;
 }
