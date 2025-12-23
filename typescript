@@ -1,32 +1,8 @@
-function GlobalRedirector() {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const searchParams = new URLSearchParams(location.search);
-  const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
-  
-  // If OAuth callback is present on any path other than /auth, redirect immediately
-  if (isOAuthCallback && location.pathname !== "/auth") {
-    // Perform the redirect as part of the render logic
-    // This will take precedence over any child routes attempting to render
-    return <Navigate to={`/auth${location.search}`} replace />;
-  }
-
-  // Original auth state checks, now happening AFTER potential OAuth redirect
-  const { isLoading, isAuthenticated, user } = useAuth();
-
-  // Only run if not an OAuth callback AND loading is finished
-  useEffect(() => {
-    const notFullyAuthed =
-      !isAuthenticated ||
-      !user ||
-      !(user as any)?.username ||
-      (user as any)?.isAnonymous;
-
-    if (!isLoading && notFullyAuthed && location.pathname !== "/auth") {
-      navigate("/auth", { replace: true });
-    }
-  }, [isLoading, isAuthenticated, user, location.pathname, navigate]);
-
-  return null;
-}
+export default {
+  providers: [
+    {
+      domain: process.env.CONVEX_SITE_URL,  // ✅ CORRECT - matches your .env.local
+      applicationID: "convex",
+    },
+  ],
+};
