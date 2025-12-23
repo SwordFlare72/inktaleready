@@ -1,3 +1,3 @@
-   cd C:\inktale\inktaleready
-   git pull origin main
-   
+cd C:\inktale\inktaleready
+git pull
+pnpm dev
