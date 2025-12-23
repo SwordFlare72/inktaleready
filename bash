@@ -1,1 +1,1 @@
-cat .env.local
+pnpm dev
