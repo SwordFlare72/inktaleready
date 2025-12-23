@@ -52,7 +52,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [showSuPassword, setShowSuPassword] = useState(false);
   const [showSuConfirm, setShowSuConfirm] = useState(false);
 
-  const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
+  const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true" || import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === true;
 
   // OTP dialog state
   const [showOTPDialog, setShowOTPDialog] = useState(false);
