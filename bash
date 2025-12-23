@@ -1,5 +1,4 @@
-# Terminal 1: Stop and restart Convex
-npx convex dev
-
-# Terminal 2: Stop and restart frontend
-pnpm dev
+   # Stop the current server (Ctrl+C)
+   # Then restart:
+   npx convex dev
+   

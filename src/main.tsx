@@ -162,7 +162,18 @@ function BottomNavGate() {
 
 function HomeGate() {
   const { isLoading, isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  
   if (isLoading) return null;
+
+  // Add: Check if this is an OAuth callback (has code or state params)
+  const searchParams = new URLSearchParams(location.search);
+  const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
+  
+  // If OAuth callback, redirect to /auth to process it
+  if (isOAuthCallback) {
+    return <Navigate to={`/auth${location.search}`} replace />;
+  }
 
   const notFullyAuthed =
     !isAuthenticated ||
