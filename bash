@@ -1,1 +1,1 @@
-npx convex env list
+npm run dev
