@@ -1,3 +1,6 @@
-cd C:\inktale\inktaleready
-git pull
-pnpm dev
+   # Terminal 1
+   npx convex dev
+   
+   # Terminal 2
+   pnpm dev
+   
