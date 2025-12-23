@@ -164,16 +164,17 @@ function HomeGate() {
   const { isLoading, isAuthenticated, user } = useAuth();
   const location = useLocation();
   
-  if (isLoading) return null;
-
-  // Add: Check if this is an OAuth callback (has code or state params)
+  // Check for OAuth callback FIRST, before any auth state checks
   const searchParams = new URLSearchParams(location.search);
   const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
   
-  // If OAuth callback, redirect to /auth to process it
+  // If OAuth callback, redirect to /auth immediately (don't wait for auth to load)
   if (isOAuthCallback) {
     return <Navigate to={`/auth${location.search}`} replace />;
   }
+
+  // Now check auth loading state
+  if (isLoading) return null;
 
   const notFullyAuthed =
     !isAuthenticated ||
