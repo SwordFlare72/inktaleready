@@ -64,17 +64,17 @@ function GlobalRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Check for OAuth callback FIRST, before any other logic
+  const searchParams = new URLSearchParams(location.search);
+  const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
+  
+  // If OAuth callback detected on ANY path (not just root), redirect to /auth immediately
+  if (isOAuthCallback && location.pathname !== "/auth") {
+    return <Navigate to={`/auth${location.search}`} replace />;
+  }
+
   // Only run once loading is finished
   useEffect(() => {
-    // Skip if this is an OAuth callback (preserve query params)
-    const searchParams = new URLSearchParams(location.search);
-    const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
-    
-    if (isOAuthCallback) {
-      // Don't redirect OAuth callbacks - let HomeGate handle them
-      return;
-    }
-
     // Treat users without a username as not fully authenticated
     const notFullyAuthed =
       !isAuthenticated ||
@@ -85,7 +85,7 @@ function GlobalRedirector() {
     if (!isLoading && notFullyAuthed && location.pathname !== "/auth") {
       navigate("/auth", { replace: true });
     }
-  }, [isLoading, isAuthenticated, user, location.pathname, location.search, navigate]);
+  }, [isLoading, isAuthenticated, user, location.pathname, navigate]);
 
   return null;
 }
