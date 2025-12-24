@@ -18,14 +18,17 @@ http.route({
       const code = url.searchParams.get("code");
       const error = url.searchParams.get("error");
 
-      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
+      // For local development, always redirect to localhost
+      // For production, use the CONVEX_SITE_URL
+      const isDev = process.env.CONVEX_CLOUD_URL?.includes("dev:") || false;
+      const frontendUrl = isDev ? "http://localhost:5173" : (process.env.CONVEX_SITE_URL || "http://localhost:5173");
 
       if (error) {
         console.error("Google OAuth error:", error);
         return new Response(null, {
           status: 302,
           headers: {
-            Location: `${siteUrl}/auth?error=${encodeURIComponent(error)}`,
+            Location: `${frontendUrl}/auth?error=${encodeURIComponent(error)}`,
           },
         });
       }
@@ -35,7 +38,7 @@ http.route({
         return new Response(null, {
           status: 302,
           headers: {
-            Location: `${siteUrl}/auth?error=no_code`,
+            Location: `${frontendUrl}/auth?error=no_code`,
           },
         });
       }
@@ -51,25 +54,21 @@ http.route({
 
       console.log("User created/updated:", result.userId);
 
-      // For Google OAuth, we need to create a proper Convex Auth session
-      // by signing in the user through the Password provider with a temporary token
-      // Since we can't directly create sessions, redirect with user info
-      // and let the frontend handle the sign-in
-      
       // Redirect back to app with success flag and user email
       return new Response(null, {
         status: 302,
         headers: {
-          Location: `${siteUrl}/auth?google_auth=success&email=${encodeURIComponent(result.userInfo.email)}`,
+          Location: `${frontendUrl}/auth?google_auth=success&email=${encodeURIComponent(result.userInfo.email)}`,
         },
       });
     } catch (error) {
       console.error("Google OAuth callback error:", error);
-      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
+      const isDev = process.env.CONVEX_CLOUD_URL?.includes("dev:") || false;
+      const frontendUrl = isDev ? "http://localhost:5173" : (process.env.CONVEX_SITE_URL || "http://localhost:5173");
       return new Response(null, {
         status: 302,
         headers: {
-          Location: `${siteUrl}/auth?error=oauth_failed`,
+          Location: `${frontendUrl}/auth?error=oauth_failed`,
         },
       });
     }
