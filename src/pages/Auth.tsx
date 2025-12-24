@@ -10,9 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
-import { Eye, EyeOff } from "lucide-react";
+import { Chrome, Eye, EyeOff } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,7 +25,6 @@ interface AuthProps {
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Mode: "login" or "signup"
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -53,6 +52,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [showSuPassword, setShowSuPassword] = useState(false);
   const [showSuConfirm, setShowSuConfirm] = useState(false);
 
+  const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
+
   // OTP dialog state
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -69,7 +70,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const isUsernameAvailable = useMutation(api.users.isUsernameAvailable);
   const getEmailForLogin = useMutation(api.users.getEmailForLogin);
 
-  // Username dialog for authenticated users without username
+  // Username dialog for Google first-time users
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
 
@@ -78,10 +79,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') || urlParams.has('state')) {
       console.log("OAuth callback detected, cleaning URL...");
-      // Don't clean immediately - let auth process first
-      setTimeout(() => {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }, 1000);
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
@@ -300,6 +298,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  const handleGoogle = async () => {
+    try {
+      await signIn("google");
+    } catch (e) {
+      console.error(e);
+      toast.error("Google sign-in failed");
+    }
+  };
+
   const handleSaveUsername = async () => {
     const val = usernameInput.trim();
     if (!val) {
@@ -403,6 +410,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       Sign up
                     </Button>
                   </div>
+
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="default"
+                    onClick={handleGoogle}
+                    disabled={!googleEnabled || isLoading}
+                  >
+                    <Chrome className="mr-2 h-4 w-4" />
+                    Continue with Google
+                  </Button>
                 </CardContent>
               </form>
             ) : (
@@ -564,6 +582,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       Log in
                     </Button>
                   </div>
+
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="default"
+                    onClick={handleGoogle}
+                    disabled={!googleEnabled || isLoading}
+                  >
+                    <Chrome className="mr-2 h-4 w-4" />
+                    Continue with Google
+                  </Button>
                 </CardContent>
               </form>
             )}
