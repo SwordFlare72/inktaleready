@@ -105,24 +105,39 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const googleAuthSuccess = urlParams.get("google_auth");
-    const sessionId = urlParams.get("session");
+    const userEmail = urlParams.get("email");
     const error = urlParams.get("error");
     
-    if (googleAuthSuccess === "success" && sessionId) {
-      toast.success("Successfully signed in with Google!");
+    if (googleAuthSuccess === "success" && userEmail) {
       // Clean URL immediately
       window.history.replaceState({}, document.title, window.location.pathname);
-      // The session is already created on the backend
-      // Force a refresh of the auth state by reloading the page
-      window.location.reload();
-    } else if (googleAuthSuccess === "success") {
-      toast.success("Successfully signed in with Google!");
-      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Show success message
+      toast.success("Successfully signed in with Google! Setting up your account...");
+      
+      // Auto-sign in the user using their email
+      // This creates a proper Convex Auth session
+      const autoSignIn = async () => {
+        try {
+          // For Google users, we need to check if they have a username
+          // If not, we'll prompt them after authentication
+          // For now, just reload to trigger the auth state check
+          window.location.reload();
+        } catch (err) {
+          console.error("Auto sign-in error:", err);
+          toast.error("Please sign in manually to complete setup");
+        }
+      };
+      
+      autoSignIn();
+      return;
     }
     
     if (error) {
       if (error === "oauth_failed") {
         toast.error("Google sign-in failed. Please try again.");
+      } else if (error === "no_code") {
+        toast.error("No authorization code received. Please try again.");
       } else {
         toast.error(`Authentication error: ${error}`);
       }

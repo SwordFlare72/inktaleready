@@ -46,18 +46,3 @@ export const createOrUpdateGoogleUser = internalMutation({
     return newUserId;
   },
 });
-
-export const createSession = internalMutation({
-  args: {
-    userId: v.id("users"),
-  },
-  handler: async (ctx, args) => {
-    // Create a session in the authSessions table
-    const sessionId = await ctx.db.insert("authSessions", {
-      userId: args.userId,
-      expirationTime: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-    
-    return sessionId;
-  },
-});

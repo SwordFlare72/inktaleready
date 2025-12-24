@@ -16,12 +16,12 @@ http.route({
     try {
       const url = new URL(req.url);
       const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
       const error = url.searchParams.get("error");
 
+      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
+
       if (error) {
-        // Redirect to auth page with error
-        const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
+        console.error("Google OAuth error:", error);
         return new Response(null, {
           status: 302,
           headers: {
@@ -31,29 +31,36 @@ http.route({
       }
 
       if (!code) {
-        throw new Error("No authorization code received");
+        console.error("No authorization code received");
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: `${siteUrl}/auth?error=no_code`,
+          },
+        });
       }
 
-      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
       const redirectUri = `${process.env.CONVEX_SITE_URL}/auth/google/callback`;
 
       // Exchange code for tokens and create/update user
+      console.log("Exchanging code for tokens...");
       const result = await ctx.runAction(internal.googleOAuth.exchangeCodeForTokens, {
         code,
         redirectUri,
       });
 
-      // Create a Convex Auth session by generating a session token
-      // This uses Convex Auth's internal session management
-      const sessionId = await ctx.runMutation(internal.googleAuth.createSession, {
-        userId: result.userId,
-      });
+      console.log("User created/updated:", result.userId);
 
-      // Redirect back to app with session token
+      // For Google OAuth, we need to create a proper Convex Auth session
+      // by signing in the user through the Password provider with a temporary token
+      // Since we can't directly create sessions, redirect with user info
+      // and let the frontend handle the sign-in
+      
+      // Redirect back to app with success flag and user email
       return new Response(null, {
         status: 302,
         headers: {
-          Location: `${siteUrl}/auth?google_auth=success&session=${sessionId}`,
+          Location: `${siteUrl}/auth?google_auth=success&email=${encodeURIComponent(result.userInfo.email)}`,
         },
       });
     } catch (error) {
@@ -97,11 +104,9 @@ http.route({
           break;
         case "email.bounced":
           console.log(`Email bounced: ${body.data.email_id}`);
-          // You could store this in a table or send a notification
           break;
         case "email.complained":
           console.log(`Spam complaint: ${body.data.email_id}`);
-          // Handle spam complaints
           break;
         case "email.opened":
           console.log(`Email opened: ${body.data.email_id}`);
