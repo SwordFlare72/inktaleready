@@ -3,7 +3,6 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
-import Google from "@convex-dev/auth/providers/Google";
 import { DataModel } from "./_generated/dataModel";
 
 const authConfig = convexAuth({
@@ -16,7 +15,6 @@ const authConfig = convexAuth({
         };
       },
     }),
-    Google,
     Anonymous,
   ],
 });

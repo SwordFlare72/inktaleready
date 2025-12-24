@@ -8,6 +8,68 @@ const http = httpRouter();
 // Register auth routes (CRITICAL for password auth to work)
 auth.addHttpRoutes(http);
 
+// Add Google OAuth callback endpoint
+http.route({
+  path: "/auth/google/callback",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    try {
+      const url = new URL(req.url);
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
+      const error = url.searchParams.get("error");
+
+      if (error) {
+        // Redirect to auth page with error
+        const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: `${siteUrl}/auth?error=${encodeURIComponent(error)}`,
+          },
+        });
+      }
+
+      if (!code) {
+        throw new Error("No authorization code received");
+      }
+
+      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
+      const redirectUri = `${process.env.CONVEX_SITE_URL}/auth/google/callback`;
+
+      // Exchange code for tokens and create/update user
+      const result = await ctx.runAction(internal.googleOAuth.exchangeCodeForTokens, {
+        code,
+        redirectUri,
+      });
+
+      // Create a session token (simplified - you may want to use Convex Auth's session management)
+      const sessionToken = Buffer.from(JSON.stringify({
+        userId: result.userId,
+        exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
+      })).toString("base64");
+
+      // Redirect back to app with session
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `${siteUrl}/auth?session=${sessionToken}&google_auth=success`,
+          "Set-Cookie": `convex_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+        },
+      });
+    } catch (error) {
+      console.error("Google OAuth callback error:", error);
+      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `${siteUrl}/auth?error=oauth_failed`,
+        },
+      });
+    }
+  }),
+});
+
 // Resend webhook endpoint
 http.route({
   path: "/resend-webhook",

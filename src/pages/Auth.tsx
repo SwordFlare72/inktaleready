@@ -22,6 +22,24 @@ interface AuthProps {
   redirectAfterAuth?: string;
 }
 
+// Add Google OAuth helper
+const getGoogleAuthUrl = () => {
+  const clientId = "49136963756-u8li6bid91ojnvnlbgd7ngoejp90puiv.apps.googleusercontent.com";
+  const redirectUri = `${window.location.origin}/auth/google/callback`;
+  const scope = "openid email profile";
+  const state = Math.random().toString(36).substring(7);
+  
+  return `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope,
+    state,
+    access_type: "offline",
+    prompt: "consent",
+  })}`;
+};
+
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn, signOut } = useAuth();
   const navigate = useNavigate();
@@ -77,6 +95,27 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') || urlParams.has('state')) {
       console.log("OAuth callback detected, cleaning URL...");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // Add: Check for Google OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const googleAuthSuccess = urlParams.get("google_auth");
+    const error = urlParams.get("error");
+    
+    if (googleAuthSuccess === "success") {
+      toast.success("Successfully signed in with Google!");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (error) {
+      if (error === "oauth_failed") {
+        toast.error("Google sign-in failed. Please try again.");
+      } else {
+        toast.error(`Authentication error: ${error}`);
+      }
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -313,14 +352,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
     try {
-      await signIn("google");
+      const authUrl = getGoogleAuthUrl();
+      window.location.href = authUrl;
     } catch (err: any) {
       console.error("Google sign-in error:", err);
-      setError("Google sign-in failed. Please try again.");
-      setIsLoading(false);
+      setError("Failed to initiate Google sign-in. Please try again.");
     }
   };
 
