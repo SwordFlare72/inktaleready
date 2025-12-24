@@ -16,58 +16,54 @@ http.route({
     try {
       const url = new URL(req.url);
       const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
       const error = url.searchParams.get("error");
 
-      // Determine frontend URL for redirect
-      const isDev = process.env.CONVEX_CLOUD_URL?.includes("dev:") || false;
-      const frontendUrl = isDev ? "http://localhost:5173" : (process.env.CONVEX_SITE_URL || "http://localhost:5173");
-
       if (error) {
-        console.error("Google OAuth error:", error);
+        // Redirect to auth page with error
+        const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
         return new Response(null, {
           status: 302,
           headers: {
-            Location: `${frontendUrl}/auth?error=${encodeURIComponent(error)}`,
+            Location: `${siteUrl}/auth?error=${encodeURIComponent(error)}`,
           },
         });
       }
 
       if (!code) {
-        console.error("No authorization code received");
-        return new Response(null, {
-          status: 302,
-          headers: {
-            Location: `${frontendUrl}/auth?error=no_code`,
-          },
-        });
+        throw new Error("No authorization code received");
       }
 
+      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
       const redirectUri = `${process.env.CONVEX_SITE_URL}/auth/google/callback`;
 
       // Exchange code for tokens and create/update user
-      console.log("Exchanging code for tokens...");
       const result = await ctx.runAction(internal.googleOAuth.exchangeCodeForTokens, {
         code,
         redirectUri,
       });
 
-      console.log("User created/updated:", result.userId);
+      // Create a session token (simplified - you may want to use Convex Auth's session management)
+      const sessionToken = Buffer.from(JSON.stringify({
+        userId: result.userId,
+        exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
+      })).toString("base64");
 
-      // Redirect back to app with success flag and user email
+      // Redirect back to app with session
       return new Response(null, {
         status: 302,
         headers: {
-          Location: `${frontendUrl}/auth?google_auth=success&email=${encodeURIComponent(result.userInfo.email)}`,
+          Location: `${siteUrl}/auth?session=${sessionToken}&google_auth=success`,
+          "Set-Cookie": `convex_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
         },
       });
     } catch (error) {
       console.error("Google OAuth callback error:", error);
-      const isDev = process.env.CONVEX_CLOUD_URL?.includes("dev:") || false;
-      const frontendUrl = isDev ? "http://localhost:5173" : (process.env.CONVEX_SITE_URL || "http://localhost:5173");
+      const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
       return new Response(null, {
         status: 302,
         headers: {
-          Location: `${frontendUrl}/auth?error=oauth_failed`,
+          Location: `${siteUrl}/auth?error=oauth_failed`,
         },
       });
     }
@@ -102,9 +98,11 @@ http.route({
           break;
         case "email.bounced":
           console.log(`Email bounced: ${body.data.email_id}`);
+          // You could store this in a table or send a notification
           break;
         case "email.complained":
           console.log(`Spam complaint: ${body.data.email_id}`);
+          // Handle spam complaints
           break;
         case "email.opened":
           console.log(`Email opened: ${body.data.email_id}`);
