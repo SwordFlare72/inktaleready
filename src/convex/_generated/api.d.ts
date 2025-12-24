@@ -17,8 +17,6 @@ import type * as comments from "../comments.js";
 import type * as crons from "../crons.js";
 import type * as fileQueries from "../fileQueries.js";
 import type * as files from "../files.js";
-import type * as googleAuth from "../googleAuth.js";
-import type * as googleOAuth from "../googleOAuth.js";
 import type * as groupChats from "../groupChats.js";
 import type * as http from "../http.js";
 import type * as imageModeration from "../imageModeration.js";
@@ -49,8 +47,6 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   fileQueries: typeof fileQueries;
   files: typeof files;
-  googleAuth: typeof googleAuth;
-  googleOAuth: typeof googleOAuth;
   groupChats: typeof groupChats;
   http: typeof http;
   imageModeration: typeof imageModeration;
