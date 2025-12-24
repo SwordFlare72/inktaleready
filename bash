@@ -1,20 +1,5 @@
-# View Convex environment variables
-npx convex env list
+# Terminal 1: Stop and restart Convex
+npx convex dev
 
-# Set environment variable
-npx convex env set KEY "value"
-
-# Remove environment variable
-npx convex env unset KEY
-
-# View Convex logs
-npx convex logs
-
-# Run Convex function manually
-npx convex run functionName '{"arg": "value"}'
-
-# Type check
-pnpm tsc --noEmit
-
-# Lint
-pnpm lint
+# Terminal 2: Stop and restart frontend
+pnpm dev
