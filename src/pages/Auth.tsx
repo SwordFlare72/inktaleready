@@ -25,7 +25,9 @@ interface AuthProps {
 // Add Google OAuth helper
 const getGoogleAuthUrl = () => {
   const clientId = "49136963756-u8li6bid91ojnvnlbgd7ngoejp90puiv.apps.googleusercontent.com";
-  const redirectUri = `${window.location.origin}/auth/google/callback`;
+  // Use the Convex backend URL for the OAuth callback, not the frontend URL
+  const convexUrl = import.meta.env.VITE_CONVEX_URL?.replace('/api', '') || "https://adept-eagle-707.convex.cloud";
+  const redirectUri = `${convexUrl}/auth/google/callback`;
   const scope = "openid email profile";
   const state = Math.random().toString(36).substring(7);
   
