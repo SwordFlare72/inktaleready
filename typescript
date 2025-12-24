@@ -1,3 +1,1 @@
-const clientId = process.env.GOOGLE_CLIENT_ID;
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const siteUrl = process.env.CONVEX_SITE_URL || "http://localhost:5173";
