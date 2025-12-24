@@ -1,1 +1,7 @@
+# Convex
+VITE_CONVEX_URL=https://your-deployment-name.convex.cloud
 CONVEX_SITE_URL=http://localhost:5173
+
+# Google OAuth (you'll add these after getting them from Google Console)
+GOOGLE_CLIENT_ID=your-client-id-here
+GOOGLE_CLIENT_SECRET=your-client-secret-here
