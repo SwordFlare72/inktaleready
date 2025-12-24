@@ -1,5 +1,5 @@
-# Terminal 1
+# Start Convex backend
 npx convex dev
 
-# Terminal 2  
+# In a new terminal, start frontend
 pnpm dev
