@@ -1,1 +1,2 @@
-npx convex env list
+npx convex env set GOOGLE_CLIENT_ID 49136963756-u8li6bid91ojnvnlbgd7ngoejp90puiv.apps.googleusercontent.com
+npx convex env set GOOGLE_CLIENT_SECRET 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
