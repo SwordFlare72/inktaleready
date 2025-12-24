@@ -64,6 +64,15 @@ function GlobalRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Check for OAuth callback FIRST, before any other logic
+  const searchParams = new URLSearchParams(location.search);
+  const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
+  
+  // If OAuth callback detected on ANY path (not just root), redirect to /auth immediately
+  if (isOAuthCallback && location.pathname !== "/auth") {
+    return <Navigate to={`/auth${location.search}`} replace />;
+  }
+
   // Only run once loading is finished
   useEffect(() => {
     // Treat users without a username as not fully authenticated
@@ -162,6 +171,18 @@ function BottomNavGate() {
 
 function HomeGate() {
   const { isLoading, isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  
+  // Check for OAuth callback FIRST, before any auth state checks
+  const searchParams = new URLSearchParams(location.search);
+  const isOAuthCallback = searchParams.has('code') || searchParams.has('state');
+  
+  // If OAuth callback, redirect to /auth immediately (don't wait for auth to load)
+  if (isOAuthCallback) {
+    return <Navigate to={`/auth${location.search}`} replace />;
+  }
+
+  // Now check auth loading state
   if (isLoading) return null;
 
   const notFullyAuthed =

@@ -1,5 +1,12 @@
-# Terminal 1: Stop and restart Convex
-npx convex dev
+# 1. Pull the latest changes from this sandbox
+git pull
 
-# Terminal 2: Stop and restart frontend
+# 2. Stop your dev server (Ctrl+C)
+
+# 3. Push the updated config to Convex
+npx convex dev --once
+
+# 4. Restart your dev server
 pnpm dev
+
+# 5. Hard refresh your browser (Ctrl+Shift+R)
