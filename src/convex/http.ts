@@ -18,8 +18,7 @@ http.route({
       const code = url.searchParams.get("code");
       const error = url.searchParams.get("error");
 
-      // For local development, always redirect to localhost
-      // For production, use the CONVEX_SITE_URL
+      // Determine frontend URL for redirect
       const isDev = process.env.CONVEX_CLOUD_URL?.includes("dev:") || false;
       const frontendUrl = isDev ? "http://localhost:5173" : (process.env.CONVEX_SITE_URL || "http://localhost:5173");
 
