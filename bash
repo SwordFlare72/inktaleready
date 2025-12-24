@@ -1,12 +1,20 @@
-# 1. Pull the latest changes from this sandbox
-git pull
+# View Convex environment variables
+npx convex env list
 
-# 2. Stop your dev server (Ctrl+C)
+# Set environment variable
+npx convex env set KEY "value"
 
-# 3. Push the updated config to Convex
-npx convex dev --once
+# Remove environment variable
+npx convex env unset KEY
 
-# 4. Restart your dev server
-pnpm dev
+# View Convex logs
+npx convex logs
 
-# 5. Hard refresh your browser (Ctrl+Shift+R)
+# Run Convex function manually
+npx convex run functionName '{"arg": "value"}'
+
+# Type check
+pnpm tsc --noEmit
+
+# Lint
+pnpm lint
