@@ -43,18 +43,17 @@ http.route({
         redirectUri,
       });
 
-      // Create a session token (simplified - you may want to use Convex Auth's session management)
-      const sessionToken = Buffer.from(JSON.stringify({
+      // Create a Convex Auth session by generating a session token
+      // This uses Convex Auth's internal session management
+      const sessionId = await ctx.runMutation(internal.googleAuth.createSession, {
         userId: result.userId,
-        exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-      })).toString("base64");
+      });
 
-      // Redirect back to app with session
+      // Redirect back to app with session token
       return new Response(null, {
         status: 302,
         headers: {
-          Location: `${siteUrl}/auth?session=${sessionToken}&google_auth=success`,
-          "Set-Cookie": `convex_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+          Location: `${siteUrl}/auth?google_auth=success&session=${sessionId}`,
         },
       });
     } catch (error) {

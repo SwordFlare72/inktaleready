@@ -103,9 +103,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const googleAuthSuccess = urlParams.get("google_auth");
+    const sessionId = urlParams.get("session");
     const error = urlParams.get("error");
     
-    if (googleAuthSuccess === "success") {
+    if (googleAuthSuccess === "success" && sessionId) {
+      toast.success("Successfully signed in with Google!");
+      // Clean URL immediately
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // The session is already created on the backend
+      // Force a refresh of the auth state by reloading the page
+      window.location.reload();
+    } else if (googleAuthSuccess === "success") {
       toast.success("Successfully signed in with Google!");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
