@@ -1,9 +1,8 @@
-// src/convex/auth.ts
-import { convexAuth } from "@convex-dev/auth/server";
-import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
-import { Password } from "@convex-dev/auth/providers/Password";
-import Google from "@auth/core/providers/google";
-
-export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Password, Anonymous, Google],
-});
+export default {
+  providers: [
+    {
+      domain: process.env.CONVEX_SITE_URL,  // ✅ CORRECT - matches your .env.local
+      applicationID: "convex",
+    },
+  ],
+};
