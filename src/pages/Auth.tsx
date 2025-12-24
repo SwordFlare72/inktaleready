@@ -239,7 +239,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       fd.set("email", otpEmail);
       fd.set("password", suPassword);
       fd.set("flow", "signUp");
-      await signIn("password", fd);
+      
+      try {
+        await signIn("password", fd);
+      } catch (signUpErr: any) {
+        console.error("Sign up error:", signUpErr);
+        const errMsg = String(signUpErr?.message || "").toLowerCase();
+        if (errMsg.includes("already exists") || errMsg.includes("account") && errMsg.includes("exists")) {
+          toast.error("This email is already registered. Please log in instead.");
+          setShowOTPDialog(false);
+          setMode("login");
+          setIdentifier(otpEmail);
+          setIsLoading(false);
+          return;
+        }
+        throw signUpErr;
+      }
 
       let saved = false;
       for (let i = 0; i < 6; i++) {
@@ -313,15 +328,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await signIn("google");
-    } catch (err: any) {
-      console.error("Google sign-in error:", err);
-      setError("Google sign-in failed. Please try again.");
-      setIsLoading(false);
-    }
+    toast.error("Google sign-in is not configured yet. Please use email/password.");
+    return;
   };
 
   return (
