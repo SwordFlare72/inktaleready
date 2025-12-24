@@ -52,8 +52,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [showSuPassword, setShowSuPassword] = useState(false);
   const [showSuConfirm, setShowSuConfirm] = useState(false);
 
-  const googleEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
-
   // OTP dialog state
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -298,15 +296,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  const handleGoogle = async () => {
-    try {
-      await signIn("google");
-    } catch (e) {
-      console.error(e);
-      toast.error("Google sign-in failed");
-    }
-  };
-
   const handleSaveUsername = async () => {
     const val = usernameInput.trim();
     if (!val) {
@@ -410,17 +399,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       Sign up
                     </Button>
                   </div>
-
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="default"
-                    onClick={handleGoogle}
-                    disabled={!googleEnabled || isLoading}
-                  >
-                    <Chrome className="mr-2 h-4 w-4" />
-                    Continue with Google
-                  </Button>
                 </CardContent>
               </form>
             ) : (
@@ -582,17 +560,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       Log in
                     </Button>
                   </div>
-
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="default"
-                    onClick={handleGoogle}
-                    disabled={!googleEnabled || isLoading}
-                  >
-                    <Chrome className="mr-2 h-4 w-4" />
-                    Continue with Google
-                  </Button>
                 </CardContent>
               </form>
             )}
