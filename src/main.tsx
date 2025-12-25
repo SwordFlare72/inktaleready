@@ -189,7 +189,10 @@ function SplashOverlay() {
   if (!isLoading && !hold) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-black">
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-black" style={{
+      paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+    }}>
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}

@@ -281,12 +281,15 @@ export default function Landing() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
       className="min-h-screen bg-background pb-24"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+      }}
     >
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border/50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2">
+            <button onClick={() => navigate("/")} className="flex items-center gap-2 active:scale-95 transition-transform">
               <span className="text-3xl font-black tracking-tight">
                 <span className="text-[oklch(0.75_0.15_85)]">Ink</span>
                 <span className="text-foreground">Tale</span>
@@ -296,7 +299,7 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/search")}
-              className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+              className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors active:scale-95"
               aria-label="Search"
             >
               <SearchIcon className="h-5 w-5" />
@@ -304,7 +307,7 @@ export default function Landing() {
             {isAuthenticated && user?.image && (
               <button
                 onClick={() => navigate("/profile")}
-                className="h-10 w-10 rounded-full overflow-hidden border-2 border-[oklch(0.75_0.15_85)]"
+                className="h-10 w-10 rounded-full overflow-hidden border-2 border-[oklch(0.75_0.15_85)] active:scale-95 transition-transform"
               >
                 <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
               </button>
@@ -314,7 +317,7 @@ export default function Landing() {
       </header>
 
       {/* Sections */}
-      <section className="container mx-auto py-6">
+      <section className="container mx-auto py-6 scroll-container">
         <Section
           title="Reading History"
           items={history?.page}
