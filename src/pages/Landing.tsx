@@ -168,7 +168,7 @@ export default function Landing() {
 
     return (
       <div className="mb-10">
-        <div className="flex items-center justify-between mb-4 px-4">
+        <div className="flex items-center justify-between mb-4 px-6">
           <h2 className="text-2xl font-bold text-foreground">{title}</h2>
           {showViewAll && (
             <Button 
@@ -180,7 +180,7 @@ export default function Landing() {
           )}
         </div>
         {items === undefined ? (
-          <div className="h-64 flex gap-4 overflow-hidden px-4">
+          <div className="h-64 flex gap-4 overflow-hidden px-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="w-40 flex-shrink-0">
                 <div className="aspect-[2/3] rounded-xl bg-muted animate-pulse" />
@@ -189,7 +189,7 @@ export default function Landing() {
             ))}
           </div>
         ) : (items?.length ?? 0) === 0 ? (
-          <div className="text-sm text-muted-foreground px-4">Nothing here yet.</div>
+          <div className="text-sm text-muted-foreground px-6">Nothing here yet.</div>
         ) : (
           <div className="relative group">
             {canScrollLeft && (
@@ -214,7 +214,7 @@ export default function Landing() {
 
             <div 
               ref={scrollContainerRef}
-              className={`flex gap-4 overflow-x-auto pb-2 snap-x scrollbar-hide select-none px-4 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className={`flex gap-4 overflow-x-auto pb-2 snap-x scrollbar-hide select-none px-6 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
