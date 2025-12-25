@@ -214,7 +214,7 @@ export default function Landing() {
 
             <div 
               ref={scrollContainerRef}
-              className={`flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide select-none px-6 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className={`flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide select-none pl-6 pr-6 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
