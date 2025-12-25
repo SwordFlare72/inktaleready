@@ -244,6 +244,20 @@ export default function Landing() {
                           <BookOpen className="h-8 w-8 text-muted-foreground" />
                         </div>
                       )}
+                      {/* Overlay gradient for better text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      
+                      {/* Title overlay at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        <div className="text-sm font-bold leading-tight line-clamp-2 text-white drop-shadow-lg">
+                          {story.title}
+                        </div>
+                        {story.author?.name && (
+                          <div className="text-xs text-white/80 line-clamp-1 mt-1">
+                            {story.author.name}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {story.totalViews > 0 && (
                       <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
@@ -253,16 +267,6 @@ export default function Landing() {
                             ? `${(story.totalViews / 1000).toFixed(1)}K` 
                             : story.totalViews}
                         </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-base font-bold leading-tight line-clamp-2 text-[oklch(0.75_0.15_85)] mb-1">
-                      {story.title}
-                    </div>
-                    {story.author?.name && (
-                      <div className="text-xs text-muted-foreground line-clamp-1">
-                        {story.author.name}
                       </div>
                     )}
                   </div>
