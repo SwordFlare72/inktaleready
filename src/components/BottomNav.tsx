@@ -8,7 +8,6 @@ export default function BottomNav() {
   const location = useLocation();
   const { user } = useAuth();
   
-  // Load notifications and derive unread count from the first page
   const notificationsData = useQuery(
     api.notifications.listForUser,
     user ? { paginationOpts: { numItems: 100, cursor: null } } : "skip"
@@ -26,22 +25,21 @@ export default function BottomNav() {
   };
 
   const navItems = [
-    { path: "/", icon: Home, label: "Home", activeColor: "text-blue-500" },
-    { path: "/search", icon: Search, label: "Search", activeColor: "text-purple-500" },
-    { path: "/library", icon: Library, label: "Library", activeColor: "text-green-500" },
-    { path: "/write", icon: PenTool, label: "Write", activeColor: "text-orange-500" },
+    { path: "/", icon: Home, label: "Home" },
+    { path: "/search", icon: Search, label: "Search" },
+    { path: "/library", icon: Library, label: "Library" },
+    { path: "/write", icon: PenTool, label: "Write" },
     { 
       path: "/notifications", 
       icon: Bell, 
       label: "Alerts",
-      activeColor: "text-red-500",
       badge: unreadCount && unreadCount > 0 ? unreadCount : undefined
     },
-    { path: "/profile", icon: User, label: "Profile", activeColor: "text-pink-500" },
+    { path: "/profile", icon: User, label: "Profile" },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/50">
       <div className="flex justify-around items-center h-16 max-w-screen-xl mx-auto px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -51,21 +49,21 @@ export default function BottomNav() {
               key={item.path}
               to={item.path}
               onClick={handleNavClick}
-              className={`flex flex-col items-center justify-center flex-1 h-full relative transition-colors ${
+              className={`flex flex-col items-center justify-center flex-1 h-full relative transition-all duration-200 ${
                 active
-                  ? item.activeColor
+                  ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="relative">
-                <Icon className="h-5 w-5" />
+                <Icon className={`h-5 w-5 ${active ? "drop-shadow-[0_0_8px_rgba(200,160,100,0.5)]" : ""}`} />
                 {item.badge !== undefined && (
-                  <span className="absolute -top-1 -right-1 h-4 min-w-[1rem] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full">
+                  <span className="absolute -top-1 -right-1 h-4 min-w-[1rem] px-1 flex items-center justify-center text-[10px] font-bold text-background bg-primary rounded-full">
                     {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] mt-1">{item.label}</span>
+              <span className={`text-[10px] mt-1 font-medium ${active ? "text-primary" : ""}`}>{item.label}</span>
             </Link>
           );
         })}
