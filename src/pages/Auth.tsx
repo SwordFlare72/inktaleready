@@ -71,6 +71,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Username dialog for Google first-time users
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
+  const [isCompletingSignup, setIsCompletingSignup] = useState(false);
 
   // Clean up OAuth callback parameters immediately on mount
   useEffect(() => {
@@ -84,8 +85,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Handle authentication state and redirect
   useEffect(() => {
     if (!authLoading && isAuthenticated && me) {
-      // If username missing, always prompt for it
-      if (!me.username) {
+      // If username missing, always prompt for it (but not during signup completion)
+      if (!me.username && !isCompletingSignup) {
         setShowUsernameDialog(true);
         return;
       }
@@ -95,7 +96,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const targetPath = redirectAfterAuth || "/dashboard";
       navigate(targetPath, { replace: true });
     }
-  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth]);
+  }, [authLoading, isAuthenticated, me, navigate, redirectAfterAuth, isCompletingSignup]);
 
   const doLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,6 +227,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
 
     setIsLoading(true);
+    setIsCompletingSignup(true);
     try {
       await verifyOTP({ email: otpEmail, otp: otpCode });
 
@@ -252,6 +254,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           if (msg.includes("username is already taken")) {
             toast.error("Username is already taken. Please go back and choose another.");
             setShowOTPDialog(false);
+            setIsCompletingSignup(false);
             return;
           }
           if (msg.includes("authenticated")) {
@@ -278,9 +281,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       toast.success("Account created successfully!");
       setShowOTPDialog(false);
+      setIsCompletingSignup(false);
       navigate(redirectAfterAuth || "/dashboard", { replace: true });
     } catch (err: any) {
       toast.error(err?.message || "Invalid verification code");
+      setIsCompletingSignup(false);
     } finally {
       setIsLoading(false);
     }
