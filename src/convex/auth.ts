@@ -12,6 +12,7 @@ const authConfig = convexAuth({
         return {
           email: params.email as string,
           name: params.email as string,
+          authEmail: params.email as string,
         };
       },
     }),
