@@ -85,11 +85,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // Handle authentication state and redirect
   useEffect(() => {
     if (!authLoading && isAuthenticated && me) {
-      // If username missing, always prompt for it (but not during signup completion)
-      if (!me.username && !isCompletingSignup) {
+      // Skip all checks during signup completion
+      if (isCompletingSignup) {
+        return;
+      }
+      
+      // If username missing, prompt for it
+      if (!me.username) {
         setShowUsernameDialog(true);
         return;
       }
+      
       // Username exists -> proceed to dashboard
       console.log("Login successful, redirecting to:", redirectAfterAuth || "/dashboard");
       
@@ -281,8 +287,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       toast.success("Account created successfully!");
       setShowOTPDialog(false);
-      setIsCompletingSignup(false);
+      
+      // Navigate immediately before clearing the flag to prevent username dialog flash
       navigate(redirectAfterAuth || "/dashboard", { replace: true });
+      
+      // Clear the flag after a short delay to ensure navigation completes
+      setTimeout(() => {
+        setIsCompletingSignup(false);
+      }, 100);
     } catch (err: any) {
       toast.error(err?.message || "Invalid verification code");
       setIsCompletingSignup(false);
