@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
@@ -7,14 +6,7 @@ import { motion } from "framer-motion";
 import { 
   BookOpen, 
   Eye,
-  Heart,
   ArrowRight,
-  Sparkles,
-  PenTool,
-  Star,
-  TrendingUp,
-  Users,
-  Zap,
   Search as SearchIcon,
   Moon,
   Sun,
@@ -26,7 +18,6 @@ export default function Landing() {
   const { isLoading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   
-  // Add: Theme state synced with localStorage and system preference
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
     const stored = localStorage.getItem("theme");
@@ -37,7 +28,6 @@ export default function Landing() {
       document.documentElement.classList.remove("dark");
       setIsDark(false);
     } else {
-      // Fallback to prefers-color-scheme
       const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
       if (prefersDark) {
         document.documentElement.classList.add("dark");
@@ -61,16 +51,13 @@ export default function Landing() {
     }
   };
 
-  // Add: Only query Convex when the URL is configured
   const canQuery = typeof import.meta.env.VITE_CONVEX_URL === "string" && import.meta.env.VITE_CONVEX_URL.length > 0;
 
-  // New: homepage data sources (30 each)
   const history = useQuery(api.library.listHistory, canQuery ? { paginationOpts: { numItems: 30, cursor: null } } : "skip");
   const trending = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 30, cursor: null }, sortBy: "views" } : "skip");
   const mostPopular = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 30, cursor: null }, sortBy: "popular" } : "skip");
   const recent = useQuery(api.stories.listExplore, canQuery ? { paginationOpts: { numItems: 30, cursor: null }, sortBy: "recent" } : "skip");
 
-  // Pick a few common genres to showcase
   const GENRES = useMemo(() => (["romance","fantasy","mystery","sci-fi","horror","adventure"] as const), []);
   const genrePages = GENRES.map((g) => ({
     genre: g,
@@ -81,7 +68,6 @@ export default function Landing() {
     const search = new URLSearchParams();
     if (params.genre) search.set("genre", params.genre);
     if (params.sort) search.set("sort", params.sort);
-    // Provide a readable title for the new page
     if (params.genre) {
       search.set("title", `${params.genre.charAt(0).toUpperCase() + params.genre.slice(1)} Stories`);
     } else if (params.sort === "popular") {
@@ -98,7 +84,6 @@ export default function Landing() {
     navigate("/library");
   };
 
-  // Small, reusable horizontal scroller section with navigation arrows
   const Section = ({
     title,
     items,
@@ -114,7 +99,6 @@ export default function Landing() {
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
-    // Add: drag-to-scroll state/refs for desktop "swipe"
     const isDraggingRef = useRef<boolean>(false);
     const [isDragging, setIsDragging] = useState(false);
     const startXRef = useRef<number>(0);
@@ -153,11 +137,9 @@ export default function Landing() {
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
-      // ensure arrow enabled/disabled states reflect after the smooth scroll
       setTimeout(checkScroll, 300);
     };
 
-    // Add: drag handlers
     const onMouseDown = (e: React.MouseEvent) => {
       const container = scrollContainerRef.current;
       if (!container) return;
@@ -181,49 +163,49 @@ export default function Landing() {
     const endDrag = () => {
       isDraggingRef.current = false;
       setIsDragging(false);
-      // Allow clicks again after drag ends (next click will not be blocked)
       setTimeout(() => { clickBlockedRef.current = false; }, 0);
     };
 
     return (
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold">{title}</h2>
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4 px-4">
+          <h2 className="text-2xl font-bold text-foreground">{title}</h2>
           {showViewAll && (
-            <Button variant="outline" size="sm" onClick={onViewAll}>
+            <Button 
+              onClick={onViewAll}
+              className="bg-[oklch(0.75_0.15_85)] hover:bg-[oklch(0.70_0.15_85)] text-[oklch(0.15_0.01_240)] font-semibold rounded-full px-6"
+            >
               View All
             </Button>
           )}
         </div>
         {items === undefined ? (
-          <div className="h-40 flex gap-3 overflow-hidden">
+          <div className="h-64 flex gap-4 overflow-hidden px-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="w-32 flex-shrink-0">
-                <div className="aspect-[3/4] rounded-md bg-muted animate-pulse" />
-                <div className="h-3 mt-2 rounded bg-muted animate-pulse" />
+              <div key={i} className="w-40 flex-shrink-0">
+                <div className="aspect-[2/3] rounded-xl bg-muted animate-pulse" />
+                <div className="h-3 mt-3 rounded bg-muted animate-pulse" />
               </div>
             ))}
           </div>
         ) : (items?.length ?? 0) === 0 ? (
-          <div className="text-sm text-muted-foreground">Nothing here yet.</div>
+          <div className="text-sm text-muted-foreground px-4">Nothing here yet.</div>
         ) : (
           <div className="relative group">
-            {/* Left Arrow */}
             {canScrollLeft && (
               <button
                 onClick={() => scroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
                 aria-label="Scroll left"
               >
                 <ArrowRight className="h-5 w-5 rotate-180" />
               </button>
             )}
             
-            {/* Right Arrow */}
             {canScrollRight && (
               <button
                 onClick={() => scroll('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
                 aria-label="Scroll right"
               >
                 <ArrowRight className="h-5 w-5" />
@@ -232,7 +214,7 @@ export default function Landing() {
 
             <div 
               ref={scrollContainerRef}
-              className={`flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-hide select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className={`flex gap-4 overflow-x-auto pb-2 snap-x scrollbar-hide select-none px-4 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
@@ -246,35 +228,43 @@ export default function Landing() {
                     if (clickBlockedRef.current) return;
                     navigate(`/story/${story._id}`);
                   }}
-                  className="w-32 flex-shrink-0 snap-start text-left"
+                  className="w-40 flex-shrink-0 snap-start text-left group/card"
                 >
-                  <div className="relative">
-                    <div className="aspect-[3/4] w/full overflow-hidden rounded-lg bg-muted">
+                  <div className="relative overflow-hidden rounded-xl">
+                    <div className="aspect-[2/3] w-full overflow-hidden bg-muted">
                       {story.coverImage ? (
                         <img
                           src={story.coverImage}
                           alt={story.title}
-                          className="w-full h-full object-cover"
-                          draggable={false} // prevent ghost-drag
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-105"
+                          draggable={false}
                         />
                       ) : (
-                        <div className="w-full h-full grid place-items-center">
-                          <BookOpen className="h-6 w-6 text-muted-foreground" />
+                        <div className="w-full h-full grid place-items-center bg-gradient-to-br from-muted to-muted/50">
+                          <BookOpen className="h-8 w-8 text-muted-foreground" />
                         </div>
                       )}
                     </div>
-                    {/* Redesigned rank badge */}
-                    <div className="absolute top-2 left-2">
-                      <div className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md ring-1 ring-white/30 dark:ring-black/30 bg-gradient-to-br from-violet-600 to-fuchsia-500">
-                        {idx + 1}
+                    {story.totalViews > 0 && (
+                      <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                        <Eye className="h-3 w-3 text-white" />
+                        <span className="text-xs font-medium text-white">
+                          {story.totalViews >= 1000 
+                            ? `${(story.totalViews / 1000).toFixed(1)}K` 
+                            : story.totalViews}
+                        </span>
                       </div>
-                    </div>
+                    )}
                   </div>
-                  {/* Fixed-height title block */}
-                  <div className="mt-2">
-                    <div className="text-base font-semibold leading-tight line-clamp-2 min-h-[2.5rem]">
+                  <div className="mt-3">
+                    <div className="text-base font-bold leading-tight line-clamp-2 text-[oklch(0.75_0.15_85)] mb-1">
                       {story.title}
                     </div>
+                    {story.author?.name && (
+                      <div className="text-xs text-muted-foreground line-clamp-1">
+                        {story.author.name}
+                      </div>
+                    )}
                   </div>
                 </button>
               ))}
@@ -285,83 +275,70 @@ export default function Landing() {
     );
   };
 
-  const handleGetStarted = () => {
-    if (isAuthenticated) {
-      navigate("/dashboard");
-    } else {
-      navigate("/auth");
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen bg-background"
+      className="min-h-screen bg-background pb-24"
     >
-      {/* Compact Header */}
-      <header className="sticky top-0 z-40 border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border/50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-              <img src="https://harmless-tapir-303.convex.cloud/api/storage/a61232eb-6825-4896-80b3-ce2250d9b937" alt="FanFic" width={36} height={36} className="rounded-md" />
-              <span className="text-2xl font-black tracking-tight">InkTale</span>
-            </div>
-            {!isLoading && isAuthenticated && (
-              <span className="hidden sm:block text-sm text-muted-foreground">
-                Welcome, {user?.name || "Writer"}!
+            <button onClick={() => navigate("/")} className="flex items-center gap-2">
+              <span className="text-3xl font-black tracking-tight">
+                <span className="text-[oklch(0.75_0.15_85)]">Ink</span>
+                <span className="text-foreground">Tale</span>
               </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-              onClick={toggleTheme}
-              className="h-9 w-9 inline-flex items-center justify-center rounded-md border hover:bg-muted"
-            >
-              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
-            <Button onClick={() => navigate("/search")} className="gap-2">
-              <SearchIcon className="h-4 w-4" />
-              Search
-            </Button>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/search")}
+              className="h-10 w-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+              aria-label="Search"
+            >
+              <SearchIcon className="h-5 w-5" />
+            </button>
+            {isAuthenticated && user?.image && (
+              <button
+                onClick={() => navigate("/profile")}
+                className="h-10 w-10 rounded-full overflow-hidden border-2 border-[oklch(0.75_0.15_85)]"
+              >
+                <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       {/* Sections */}
-      <section className="container mx-auto px-4 py-6">
-        {/* Reading History */}
+      <section className="container mx-auto py-6">
         <Section
           title="Reading History"
           items={history?.page}
           onViewAll={handleViewAllHistory}
         />
 
-        {/* Trending Now */}
         <Section
           title="Trending Now"
           items={trending?.page}
           onViewAll={() => handleViewAllExplore({ sort: "views" })}
         />
 
-        {/* Most Popular */}
         <Section
           title="Most Popular"
           items={mostPopular?.page}
           onViewAll={() => handleViewAllExplore({ sort: "popular" })}
         />
 
-        {/* Recently Added */}
         <Section
           title="Recently Added"
           items={recent?.page}
           onViewAll={() => handleViewAllExplore({ sort: "recent" })}
         />
 
-        {/* Genre rows */}
         {genrePages.map(({ genre, data }) => (
           <Section
             key={genre}
