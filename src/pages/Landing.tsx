@@ -84,7 +84,7 @@ export default function Landing() {
     navigate("/library");
   };
 
-  const Section = ({
+  const Section = (({
     title,
     items,
     onViewAll,
@@ -191,11 +191,11 @@ export default function Landing() {
         ) : (items?.length ?? 0) === 0 ? (
           <div className="text-sm text-muted-foreground px-6">Nothing here yet.</div>
         ) : (
-          <div className="relative group">
+          <div className="relative group px-6">
             {canScrollLeft && (
               <button
                 onClick={() => scroll('left')}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                className="absolute left-8 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
                 aria-label="Scroll left"
               >
                 <ArrowRight className="h-5 w-5 rotate-180" />
@@ -205,7 +205,7 @@ export default function Landing() {
             {canScrollRight && (
               <button
                 onClick={() => scroll('right')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                className="absolute right-8 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm border shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
                 aria-label="Scroll right"
               >
                 <ArrowRight className="h-5 w-5" />
@@ -214,7 +214,7 @@ export default function Landing() {
 
             <div 
               ref={scrollContainerRef}
-              className={`flex gap-2 overflow-x-auto pb-2 snap-x scrollbar-hide select-none pl-6 pr-6 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className={`flex gap-1 overflow-x-auto pb-2 snap-x scrollbar-hide select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
@@ -277,7 +277,7 @@ export default function Landing() {
         )}
       </div>
     );
-  };
+  });
 
   return (
     <motion.div
