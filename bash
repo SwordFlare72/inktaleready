@@ -1,14 +1,5 @@
-# Install dependencies
-pnpm install
+# Build the frontend
+pnpm run build
 
-# Start Convex dev server
-npx convex dev
-
-# Start Vite dev server
-pnpm dev
-
-# Type checking
-npx tsc -b --noEmit
-
-# Run Convex function
-npx convex run <functionName> '{"arg": "value"}'
+# Deploy to your hosting platform (Vercel, Netlify, etc.)
+# Make sure to set VITE_CONVEX_URL in your hosting platform's environment variables
